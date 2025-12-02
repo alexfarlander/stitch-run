@@ -17,7 +17,7 @@ if (!supabaseServiceKey) {
  * This client bypasses Row Level Security (RLS) and should only be used in API routes.
  */
 export function createServerClient() {
-  return createClient(supabaseUrl, supabaseServiceKey, {
+  return createClient(supabaseUrl!, supabaseServiceKey!, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
