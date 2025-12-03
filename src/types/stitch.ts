@@ -3,6 +3,8 @@
  * Defines all interfaces, types, and enums for flows, runs, nodes, and worker protocol
  */
 
+import React from 'react';
+
 // ============================================================================
 // Enums
 // ============================================================================
@@ -10,7 +12,7 @@
 /**
  * Node types supported by the Stitch engine
  */
-export type NodeType = 'Worker' | 'UX' | 'Splitter' | 'Collector';
+export type NodeType = 'Worker' | 'UX' | 'Splitter' | 'Collector' | 'section' | 'section-item';
 
 /**
  * Node execution status
@@ -54,12 +56,20 @@ export interface NodeConfig {
 
 /**
  * Node definition in a flow graph
+ * Includes React Flow specific properties for nesting and styling
  */
 export interface StitchNode {
   id: string;
   type: NodeType;
   position: { x: number; y: number };
   data: NodeConfig;
+  
+  // React Flow properties for BMC nesting and layout
+  parentId?: string;           // Links an item to its Section (for nested nodes)
+  extent?: 'parent';           // Keeps item inside the Section when dragging
+  style?: React.CSSProperties; // Needed for Section width/height/colors
+  width?: number;              // Explicit width for Section boxes
+  height?: number;             // Explicit height for Section boxes
 }
 
 /**
@@ -71,6 +81,14 @@ export interface StitchEdge {
   target: string;
   sourceHandle?: string;
   targetHandle?: string;
+  type?: string; // e.g., 'journey'
+  animated?: boolean;
+  style?: React.CSSProperties;
+  data?: {
+    intensity?: number;
+    stats?: JourneyEdgeData;
+    [key: string]: any;
+  };
 }
 
 // ============================================================================
@@ -88,6 +106,8 @@ export interface StitchFlow {
     nodes: StitchNode[];
     edges: StitchEdge[];
   };
+  canvas_type: 'bmc' | 'workflow' | 'detail';
+  parent_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -115,6 +135,79 @@ export interface StitchRun {
   node_states: Record<string, NodeState>;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// BMC Architecture Types
+// ============================================================================
+
+/**
+ * Journey entry tracking entity movement through canvas sections
+ */
+export interface JourneyEntry {
+  node_id: string;
+  timestamp: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Entity tracked through the canvas (customer, lead, etc.)
+ * Stored in stitch_entities table
+ */
+export interface StitchEntity {
+  id: string;
+  canvas_id: string;
+  name: string;
+  avatar_url: string | null;
+  entity_type: string;
+  
+  // Position tracking (mutually exclusive)
+  current_node_id: string | null;      // At a station
+  current_edge_id: string | null;      // On a path
+  edge_progress: number | null;        // 0.0 to 1.0 when on edge
+  
+  journey: JourneyEntry[];
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Journey event tracking entity movement through the workflow
+ * Stored in stitch_journey_events table
+ */
+export interface JourneyEvent {
+  id: string;
+  entity_id: string;
+  event_type: 'edge_start' | 'edge_progress' | 'node_arrival' | 'node_complete' | 'manual_move';
+  node_id: string | null;
+  edge_id: string | null;
+  progress: number | null;
+  metadata: Record<string, any>;
+  timestamp: string;
+}
+
+/**
+ * Edge statistics for tracking entity traffic and conversion
+ */
+export interface JourneyEdgeData {
+  edge_id: string;
+  current_entity_count: number;      // Entities currently on this edge
+  total_entity_count: number;        // Total entities that have traversed
+  conversion_rate: number | null;    // Ratio of completions to starts
+  average_duration_ms: number | null; // Average time to traverse
+}
+
+/**
+ * Section node used in BMC canvases
+ * Extends StitchNode with BMC-specific data
+ */
+export interface SectionNode extends StitchNode {
+  type: 'section';
+  data: NodeConfig & {
+    label: string;
+    category: 'Production' | 'Customer' | 'Financial';
+  };
 }
 
 // ============================================================================

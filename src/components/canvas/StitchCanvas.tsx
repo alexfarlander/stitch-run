@@ -14,6 +14,7 @@ import {
   Node,
   Edge,
   NodeTypes,
+  EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -22,6 +23,8 @@ import { WorkerNode } from './nodes/WorkerNode';
 import { CollectorNode } from './nodes/CollectorNode';
 import { UXNode } from './nodes/UXNode';
 import { SplitterNode } from './nodes/SplitterNode';
+import { JourneyEdge } from './edges/JourneyEdge';
+import { EntityOverlay } from './entities/EntityOverlay';
 
 interface StitchCanvasProps {
   flow: StitchFlow;
@@ -33,6 +36,10 @@ const nodeTypes: NodeTypes = {
   Collector: CollectorNode,
   UX: UXNode,
   Splitter: SplitterNode,
+};
+
+const edgeTypes: EdgeTypes = {
+  journey: JourneyEdge,
 };
 
 export function StitchCanvas({ flow, run }: StitchCanvasProps) {
@@ -59,11 +66,8 @@ export function StitchCanvas({ flow, run }: StitchCanvasProps) {
       target: edge.target,
       sourceHandle: edge.sourceHandle,
       targetHandle: edge.targetHandle,
-      animated: true,
-      style: {
-        stroke: '#00ff99',
-        strokeWidth: 2,
-      },
+      type: 'journey',
+      data: { intensity: 0.6 },
     }));
   }, [flow.graph.edges]);
 
@@ -73,12 +77,10 @@ export function StitchCanvas({ flow, run }: StitchCanvasProps) {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         minZoom={0.1}
         maxZoom={2}
-        defaultEdgeOptions={{
-          animated: true,
-        }}
       >
         <Background color="#1e293b" gap={16} />
         <Controls />
@@ -101,6 +103,7 @@ export function StitchCanvas({ flow, run }: StitchCanvasProps) {
           }}
           maskColor="rgba(15, 23, 42, 0.8)"
         />
+        <EntityOverlay canvasId={flow.id} />
       </ReactFlow>
     </div>
   );

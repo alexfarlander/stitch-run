@@ -1,0 +1,167 @@
+'use client';
+
+import { useMemo, useCallback } from 'react';
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  Node,
+  Edge,
+  NodeTypes,
+  EdgeTypes,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+import { StitchFlow, StitchEntity } from '@/types/stitch';
+import { SectionNode } from './nodes/SectionNode';
+import { SectionItemNode } from './nodes/SectionItemNode';
+import { WorkerNode } from './nodes/WorkerNode';
+import { CollectorNode } from './nodes/CollectorNode';
+import { UXNode } from './nodes/UXNode';
+import { SplitterNode } from './nodes/SplitterNode';
+import { JourneyEdge } from './edges/JourneyEdge';
+import { EntityOverlay } from './entities/EntityOverlay';
+import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
+
+interface BMCCanvasProps {
+  flow: StitchFlow;
+  initialEntities?: StitchEntity[];
+}
+
+interface SectionNodeData {
+  label: string;
+  category: string;
+  child_canvas_id?: string;
+}
+
+interface ItemNodeData {
+  label: string;
+  linked_workflow_id?: string;
+  linked_canvas_id?: string;
+}
+
+export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
+  const { drillInto } = useCanvasNavigation();
+  
+  // Memoize nodeTypes so React Flow doesn't re-render constantly
+  const nodeTypes = useMemo<NodeTypes>(() => ({
+    // Background containers (The 12 Sections)
+    section: SectionNode,
+    
+    // Items inside sections (CRM, API, etc.)
+    'section-item': SectionItemNode, 
+    
+    // Workflow nodes (for drill-down views)
+    Worker: WorkerNode,
+    Collector: CollectorNode,
+    UX: UXNode,
+    Splitter: SplitterNode,
+  }), []);
+
+  const edgeTypes = useMemo<EdgeTypes>(() => ({
+    journey: JourneyEdge,
+  }), []);
+
+  // Transform flow nodes to ReactFlow nodes
+  const nodes: Node[] = useMemo(() => {
+    return flow.graph.nodes.map((node) => {
+      const isSection = node.type === 'section';
+      
+      return {
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: node.data,
+        parentNode: node.parentId,
+        extent: node.extent,
+        style: {
+          ...node.style,
+          // Sections render below items
+          zIndex: isSection ? -1 : 10,
+        },
+        width: node.width,
+        height: node.height,
+        // Lock sections in place so you don't accidentally drag the background
+        draggable: !isSection,
+        selectable: !isSection,
+        // Items connect, sections don't (usually)
+        connectable: !isSection,
+      };
+    });
+  }, [flow.graph.nodes]);
+
+  // Transform flow edges
+  const edges: Edge[] = useMemo(() => {
+    return flow.graph.edges.map((edge) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      type: 'journey',
+      animated: true, // Force animation
+      style: { stroke: '#06b6d4', strokeWidth: 2 }, // Default style backup
+      data: { intensity: 0.8 },
+    }));
+  }, [flow.graph.edges]);
+
+  // Handle section double-clicks for drill-down
+  const handleNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+    if (node.type === 'section') {
+      const data = node.data as unknown as SectionNodeData;
+      if (data.child_canvas_id) {
+        drillInto(data.child_canvas_id, data.label, 'workflow');
+      }
+    }
+  }, [drillInto]);
+
+  // Handle item single clicks for drill-down
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    if (node.type === 'item' || node.type === 'section-item') {
+      const data = node.data as unknown as ItemNodeData;
+      if (data.linked_workflow_id) {
+        drillInto(data.linked_workflow_id, data.label, 'workflow');
+      } else if (data.linked_canvas_id) {
+        drillInto(data.linked_canvas_id, data.label, 'workflow');
+      }
+    }
+  }, [drillInto]);
+
+  return (
+    <div className="w-full h-full bg-[#0a0f1a] text-white">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onNodeClick={handleNodeClick}
+        onNodeDoubleClick={handleNodeDoubleClick}
+        fitView
+        minZoom={0.5}
+        maxZoom={2}
+        colorMode="dark"
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background color="#334155" gap={24} size={1} />
+        <Controls className="bg-white/10 border-white/10 fill-white text-white" />
+        
+        <MiniMap
+          position="bottom-right"
+          nodeColor={(node) => {
+            if (node.type === 'section') {
+              const category = (node.data as any)?.category;
+              if (category === 'Production') return '#4f46e5'; // Indigo
+              if (category === 'Customer') return '#10b981'; // Emerald
+              if (category === 'Financial') return '#f59e0b'; // Amber
+            }
+            return '#64748b';
+          }}
+          maskColor="rgba(10, 15, 26, 0.8)"
+          className="bg-[#0a0f1a] border border-white/10"
+        />
+        
+        {/* The Magic Layer */}
+        <EntityOverlay canvasId={flow.id} />
+      </ReactFlow>
+    </div>
+  );
+}

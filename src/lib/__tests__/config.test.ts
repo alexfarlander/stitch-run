@@ -70,6 +70,13 @@ describe('Environment Configuration Validation', () => {
     });
 
     it('should return valid config when all environment variables are set', () => {
+      // Clear worker API keys to test only required variables
+      delete process.env.ANTHROPIC_API_KEY;
+      delete process.env.MINIMAX_API_KEY;
+      delete process.env.MINIMAX_GROUP_ID;
+      delete process.env.ELEVENLABS_API_KEY;
+      delete process.env.SHOTSTACK_API_KEY;
+
       process.env.NEXT_PUBLIC_BASE_URL = 'https://test.stitch.run';
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
