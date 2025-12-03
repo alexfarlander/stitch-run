@@ -275,6 +275,7 @@ async function createWebhookConfig(canvasId: string, workflowId: string) {
   };
   
   // Insert webhook config
+  // Use the first edge in the workflow (e1: validate -> score)
   const { data: config, error } = await supabase
     .from('stitch_webhook_configs')
     .insert({
@@ -284,7 +285,7 @@ async function createWebhookConfig(canvasId: string, workflowId: string) {
       endpoint_slug: 'linkedin-lead',
       secret: null, // No secret for demo
       workflow_id: workflowId,
-      entry_edge_id: 'edge-marketing-entry',
+      entry_edge_id: 'e1', // First edge in the workflow
       entity_mapping: entityMapping,
       is_active: true
     })
@@ -306,18 +307,14 @@ async function createWebhookConfig(canvasId: string, workflowId: string) {
 async function seedDemoEntities(canvasId: string) {
   const supabase = getAdminClient();
   
-  // Check if entities already exist
-  const { data: existing } = await supabase
+  // Delete existing demo entities to recreate with correct node IDs
+  await supabase
     .from('stitch_entities')
-    .select('id')
+    .delete()
     .eq('canvas_id', canvasId)
-    .eq('email', 'monica@example.com')
-    .single();
+    .in('email', ['monica@example.com', 'ross@example.com', 'rachel@example.com']);
   
-  if (existing) {
-    console.log('ℹ️  Demo entities already exist');
-    return;
-  }
+  console.log('🗑️  Cleaned up existing demo entities');
   
   const entities = [
     // Monica - Completed journey, now an active customer
@@ -327,15 +324,15 @@ async function seedDemoEntities(canvasId: string) {
       email: 'monica@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=monica',
       entity_type: 'customer',
-      current_node_id: 'node-active-customer',
+      current_node_id: 'item-active-subscribers', // Use existing BMC node
       journey: [
-        { type: 'entered_node', node_id: 'node-linkedin-ad', timestamp: '2024-11-01T10:00:00Z' },
-        { type: 'started_edge', edge_id: 'edge-marketing-entry', timestamp: '2024-11-01T10:01:00Z' },
-        { type: 'entered_node', node_id: 'node-demo-form', timestamp: '2024-11-02T14:00:00Z' },
-        { type: 'started_edge', edge_id: 'edge-sales-offers', timestamp: '2024-11-02T15:00:00Z' },
-        { type: 'entered_node', node_id: 'node-trial-start', timestamp: '2024-11-02T15:01:00Z' },
-        { type: 'started_edge', edge_id: 'edge-trial-customer', timestamp: '2024-11-10T09:00:00Z' },
-        { type: 'entered_node', node_id: 'node-active-customer', timestamp: '2024-11-10T09:01:00Z' },
+        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: '2024-11-01T10:00:00Z' },
+        { type: 'started_edge', edge_id: 'e-linkedin-demo', timestamp: '2024-11-01T10:01:00Z' },
+        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-11-02T14:00:00Z' },
+        { type: 'started_edge', edge_id: 'e-demo-trial', timestamp: '2024-11-02T15:00:00Z' },
+        { type: 'entered_node', node_id: 'item-free-trial', timestamp: '2024-11-02T15:01:00Z' },
+        { type: 'started_edge', edge_id: 'e-trial-pro', timestamp: '2024-11-10T09:00:00Z' },
+        { type: 'entered_node', node_id: 'item-active-subscribers', timestamp: '2024-11-10T09:01:00Z' },
         { type: 'converted', timestamp: '2024-11-10T09:01:00Z' }
       ],
       metadata: {
@@ -352,11 +349,11 @@ async function seedDemoEntities(canvasId: string) {
       email: 'ross@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ross',
       entity_type: 'lead',
-      current_node_id: 'node-demo-form',
+      current_node_id: 'item-demo-call', // Use existing BMC node
       journey: [
-        { type: 'entered_node', node_id: 'node-linkedin-ad', timestamp: '2024-11-15T08:00:00Z' },
-        { type: 'started_edge', edge_id: 'edge-marketing-entry', timestamp: '2024-11-15T08:30:00Z' },
-        { type: 'entered_node', node_id: 'node-demo-form', timestamp: '2024-11-16T11:00:00Z' }
+        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: '2024-11-15T08:00:00Z' },
+        { type: 'started_edge', edge_id: 'e-linkedin-demo', timestamp: '2024-11-15T08:30:00Z' },
+        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-11-16T11:00:00Z' }
       ],
       metadata: {
         source: 'linkedin',
@@ -372,12 +369,12 @@ async function seedDemoEntities(canvasId: string) {
       email: 'rachel@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=rachel',
       entity_type: 'lead',
-      current_edge_id: 'edge-marketing-entry',
+      current_edge_id: 'e-linkedin-demo', // Use existing BMC edge
       edge_progress: 0.3,
-      destination_node_id: 'node-demo-form',
+      destination_node_id: 'item-demo-call', // Use existing BMC node
       journey: [
-        { type: 'entered_node', node_id: 'node-linkedin-ad', timestamp: '2024-11-20T09:00:00Z' },
-        { type: 'started_edge', edge_id: 'edge-marketing-entry', timestamp: '2024-11-20T09:05:00Z' }
+        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: '2024-11-20T09:00:00Z' },
+        { type: 'started_edge', edge_id: 'e-linkedin-demo', timestamp: '2024-11-20T09:05:00Z' }
       ],
       metadata: {
         source: 'linkedin',

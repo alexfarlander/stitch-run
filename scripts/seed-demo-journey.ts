@@ -9,17 +9,19 @@
 
 import { config } from 'dotenv';
 import { join } from 'path';
+import { createClient } from '@supabase/supabase-js';
 
 // Load environment variables FIRST before any imports
 config({ path: join(__dirname, '../.env.local') });
-
-import { seedDemoJourney } from '../src/lib/seeds/demo-journey';
 
 async function main() {
   console.log('🌱 Starting Demo Journey Seed Script\n');
   
   // Verify environment variables
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !serviceRoleKey) {
     console.error('❌ Missing required environment variables:');
     console.error('   - NEXT_PUBLIC_SUPABASE_URL');
     console.error('   - SUPABASE_SERVICE_ROLE_KEY');
@@ -31,7 +33,12 @@ async function main() {
     process.env.NEXT_PUBLIC_BASE_URL = 'http://localhost:3000';
   }
   
+  // Create admin client
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  
   try {
+    // Import and run seed function
+    const { seedDemoJourney } = await import('../src/lib/seeds/demo-journey');
     await seedDemoJourney();
     console.log('\n✅ Script completed successfully!');
     process.exit(0);

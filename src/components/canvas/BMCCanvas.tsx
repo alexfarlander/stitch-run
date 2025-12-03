@@ -116,7 +116,7 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
 
   // Handle item single clicks for drill-down
   const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    if (node.type === 'item' || node.type === 'section-item') {
+    if (node.type === 'section-item') {
       const data = node.data as unknown as ItemNodeData;
       if (data.linked_workflow_id) {
         drillInto(data.linked_workflow_id, data.label, 'workflow');

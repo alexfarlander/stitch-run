@@ -26,9 +26,9 @@ The `demo-journey.ts` script creates a complete demo scenario showing entity mov
    - Triggers the Lead Capture workflow
 
 4. **Demo Entities**:
-   - **Monica Geller** - Completed the full journey, now an active customer
-   - **Ross Geller** - Stuck in Sales (Demo Form stage)
-   - **Rachel Green** - Currently traveling on an edge (30% progress)
+   - **Monica G** - Completed the full journey, now an active customer
+   - **Ross G** - Stuck in Sales (Demo Form stage)
+   - **Rachel G** - Currently traveling on an edge (30% progress)
 
 ### Usage
 
@@ -72,7 +72,7 @@ curl -X POST http://localhost:3000/api/webhooks/linkedin-lead \
   -H "Content-Type: application/json" \
   -d '{
     "data": {
-      "name": "Phoebe Buffay",
+      "name": "Phoebe B",
       "email": "phoebe@example.com"
     },
     "source": "linkedin",
@@ -98,9 +98,25 @@ The seed script is idempotent - it checks if data already exists before creating
 
 You can safely run the script multiple times.
 
+### Troubleshooting
+
+**"Entry edge not found" error when testing webhook:**
+
+The webhook configuration needs to reference an edge that exists in the workflow. If you get this error, update the webhook config:
+
+```sql
+-- Find the workflow ID
+SELECT id, name FROM stitch_flows WHERE name = 'Lead Capture Logic';
+
+-- Update the webhook config to use the first edge in the workflow
+UPDATE stitch_webhook_configs 
+SET entry_edge_id = 'e1' 
+WHERE endpoint_slug = 'linkedin-lead';
+```
+
 ### Cleanup
 
-To remove the demo data:
+To remove the demo data and start fresh:
 
 ```sql
 -- Remove demo entities
@@ -113,4 +129,13 @@ DELETE FROM stitch_webhook_configs WHERE endpoint_slug = 'linkedin-lead';
 DELETE FROM stitch_flows WHERE name = 'Lead Capture Logic';
 ```
 
-Or simply reset your database and re-run the BMC seed script.
+Then re-run the seed script to recreate everything with the correct configuration.
+
+Or simply reset your database and re-run both seed scripts:
+```bash
+# Reset and seed BMC
+npx tsx scripts/seed-bmc.ts
+
+# Seed demo journey
+npx tsx scripts/seed-demo-journey.ts
+```
