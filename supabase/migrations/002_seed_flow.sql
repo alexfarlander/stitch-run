@@ -1,0 +1,148 @@
+-- Seed the Video Factory demo flow
+INSERT INTO stitch_flows (id, name, graph, created_at, updated_at)
+VALUES (
+  '550e8400-e29b-41d4-a716-446655440000',
+  'Video Factory',
+  '{
+    "nodes": [
+      {
+        "id": "topic-input",
+        "type": "ux",
+        "position": { "x": 250, "y": 0 },
+        "data": {
+          "label": "Video Topic",
+          "prompt": "Enter a topic for your viral video (e.g., ''The History of Coffee'')"
+        }
+      },
+      {
+        "id": "script-gen",
+        "type": "worker",
+        "position": { "x": 250, "y": 150 },
+        "data": {
+          "label": "Claude Script",
+          "workerType": "claude",
+          "config": {
+            "systemPrompt": "You are a viral video script writer. Generate a script with 3-5 scenes. Each scene should have: sceneNumber, visualPrompt (for video generation), and narration (for voiceover). Return JSON: { \"scenes\": [{ \"sceneNumber\": 1, \"visualPrompt\": \"...\", \"narration\": \"...\" }] }",
+            "model": "claude-3-5-sonnet-20241022"
+          }
+        }
+      },
+      {
+        "id": "script-review",
+        "type": "ux",
+        "position": { "x": 250, "y": 300 },
+        "data": {
+          "label": "Review Script",
+          "prompt": "Review the generated scenes. Click Complete to proceed."
+        }
+      },
+      {
+        "id": "scene-splitter",
+        "type": "splitter",
+        "position": { "x": 250, "y": 450 },
+        "data": {
+          "label": "Scene Splitter",
+          "arrayPath": "scenes"
+        }
+      },
+      {
+        "id": "video-gen",
+        "type": "worker",
+        "position": { "x": 0, "y": 600 },
+        "data": {
+          "label": "MiniMax Video",
+          "workerType": "minimax",
+          "config": {
+            "promptPath": "visualPrompt"
+          }
+        }
+      },
+      {
+        "id": "voice-gen",
+        "type": "worker",
+        "position": { "x": 0, "y": 750 },
+        "data": {
+          "label": "ElevenLabs Voice",
+          "workerType": "elevenlabs",
+          "config": {
+            "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+            "textPath": "narration"
+          }
+        }
+      },
+      {
+        "id": "scene-collector",
+        "type": "collector",
+        "position": { "x": 250, "y": 900 },
+        "data": {
+          "label": "Scene Collector"
+        }
+      },
+      {
+        "id": "final-assembly",
+        "type": "worker",
+        "position": { "x": 250, "y": 1050 },
+        "data": {
+          "label": "Shotstack Assembly",
+          "workerType": "shotstack",
+          "config": {
+            "scenesPath": "collectedScenes"
+          }
+        }
+      },
+      {
+        "id": "final-preview",
+        "type": "ux",
+        "position": { "x": 250, "y": 1200 },
+        "data": {
+          "label": "Final Preview",
+          "prompt": "Your video is ready! Check the output."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "topic-input",
+        "target": "script-gen"
+      },
+      {
+        "id": "e2",
+        "source": "script-gen",
+        "target": "script-review"
+      },
+      {
+        "id": "e3",
+        "source": "script-review",
+        "target": "scene-splitter"
+      },
+      {
+        "id": "e4",
+        "source": "scene-splitter",
+        "target": "video-gen"
+      },
+      {
+        "id": "e5",
+        "source": "video-gen",
+        "target": "voice-gen"
+      },
+      {
+        "id": "e6",
+        "source": "voice-gen",
+        "target": "scene-collector"
+      },
+      {
+        "id": "e7",
+        "source": "scene-collector",
+        "target": "final-assembly"
+      },
+      {
+        "id": "e8",
+        "source": "final-assembly",
+        "target": "final-preview"
+      }
+    ]
+  }',
+  NOW(),
+  NOW()
+);

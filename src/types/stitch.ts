@@ -33,6 +33,7 @@ export type NodeStatus =
 export interface NodeConfig {
   // Worker node config
   webhookUrl?: string;
+  workerType?: string; // Type of integrated worker (e.g., "claude", "minimax", "elevenlabs", "shotstack")
   
   // Splitter node config
   arrayPath?: string; // JSON path to extract array (e.g., "items" or "data.results")
@@ -140,4 +141,64 @@ export interface WorkerCallback {
   status: 'completed' | 'failed';
   output?: any;
   error?: string;
+}
+
+// ============================================================================
+// Worker Integration Types
+// ============================================================================
+
+/**
+ * Scene structure used in video generation workflows
+ * Output from Claude, consumed by MiniMax and ElevenLabs
+ */
+export interface Scene {
+  visual_prompt: string;  // Text description for video generation
+  voice_text: string;     // Text for voice narration
+  duration?: number;      // Optional duration in seconds
+  videoUrl?: string;      // URL to generated video (from MiniMax)
+  audioUrl?: string;      // URL to generated audio (from ElevenLabs)
+}
+
+/**
+ * Shotstack clip asset definition
+ */
+export interface ShotstackAsset {
+  type: 'video' | 'audio';
+  src: string;  // URL to the asset
+}
+
+/**
+ * Shotstack clip definition
+ */
+export interface ShotstackClip {
+  asset: ShotstackAsset;
+  start: number;  // Start time in seconds
+  length: number; // Duration in seconds
+}
+
+/**
+ * Shotstack track definition
+ */
+export interface ShotstackTrack {
+  clips: ShotstackClip[];
+}
+
+/**
+ * Shotstack timeline structure for video assembly
+ */
+export interface ShotstackTimeline {
+  background: string;  // Background color (e.g., "#000000")
+  tracks: ShotstackTrack[];
+}
+
+/**
+ * Shotstack API payload
+ */
+export interface ShotstackPayload {
+  timeline: ShotstackTimeline;
+  output: {
+    format: string;      // e.g., "mp4"
+    resolution: string;  // e.g., "sd", "hd", "1080"
+  };
+  callback: string;  // Callback URL
 }

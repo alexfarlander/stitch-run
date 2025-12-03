@@ -62,10 +62,22 @@ export async function POST(
 
     // Update node state based on callback status
     if (callback.status === 'completed') {
-      // Update to completed with output (Requirement 5.3)
+      // Merge callback output with any stored input from the node state
+      // This implements the "pass-through" pattern for async workers
+      const currentNodeState = run.node_states[nodeId];
+      const storedInput = currentNodeState?.output || {};
+      
+      // Merge: stored input + new callback output
+      // This ensures data flows through the pipeline (e.g., voice_text survives for downstream nodes)
+      const mergedOutput = {
+        ...storedInput,
+        ...callback.output,
+      };
+
+      // Update to completed with merged output (Requirement 5.3)
       await updateNodeState(runId, nodeId, {
         status: 'completed',
-        output: callback.output,
+        output: mergedOutput,
       });
     } else {
       // Update to failed with error (Requirement 5.4)

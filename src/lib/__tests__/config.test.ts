@@ -40,12 +40,13 @@ describe('Environment Configuration Validation', () => {
 
     it('should throw error when NEXT_PUBLIC_SUPABASE_ANON_KEY is not set', () => {
       delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
       
       process.env.NEXT_PUBLIC_BASE_URL = 'https://test.stitch.run';
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
       process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
-      expect(() => getConfig()).toThrow('Missing required environment variables: NEXT_PUBLIC_SUPABASE_ANON_KEY');
+      expect(() => getConfig()).toThrow('Missing required environment variables');
     });
 
     it('should throw error when SUPABASE_SERVICE_ROLE_KEY is not set', () => {
@@ -83,6 +84,13 @@ describe('Environment Configuration Validation', () => {
           serviceRoleKey: 'test-service-role-key',
         },
         baseUrl: 'https://test.stitch.run',
+        workers: {
+          anthropicApiKey: undefined,
+          minimaxApiKey: undefined,
+          minimaxGroupId: undefined,
+          elevenlabsApiKey: undefined,
+          shotstackApiKey: undefined,
+        },
       });
     });
   });

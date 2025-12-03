@@ -10,6 +10,13 @@ export interface StitchConfig {
     serviceRoleKey: string;
   };
   baseUrl: string;
+  workers: {
+    anthropicApiKey?: string;
+    minimaxApiKey?: string;
+    minimaxGroupId?: string;
+    elevenlabsApiKey?: string;
+    shotstackApiKey?: string;
+  };
 }
 
 /**
@@ -36,6 +43,13 @@ export function getConfig(): StitchConfig {
     );
   }
 
+  // Worker API keys are optional - workers will validate their own requirements
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  const minimaxApiKey = process.env.MINIMAX_API_KEY;
+  const minimaxGroupId = process.env.MINIMAX_GROUP_ID;
+  const elevenlabsApiKey = process.env.ELEVENLABS_API_KEY;
+  const shotstackApiKey = process.env.SHOTSTACK_API_KEY;
+
   return {
     supabase: {
       url: supabaseUrl!,
@@ -43,6 +57,13 @@ export function getConfig(): StitchConfig {
       serviceRoleKey: supabaseServiceRoleKey!,
     },
     baseUrl: baseUrl!,
+    workers: {
+      anthropicApiKey,
+      minimaxApiKey,
+      minimaxGroupId,
+      elevenlabsApiKey,
+      shotstackApiKey,
+    },
   };
 }
 

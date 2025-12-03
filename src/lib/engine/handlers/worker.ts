@@ -7,6 +7,7 @@
 import { WorkerPayload, NodeConfig, StitchRun } from '@/types/stitch';
 import { getConfig } from '@/lib/config';
 import { updateNodeState } from '@/lib/db/runs';
+import { workerRegistry } from '@/lib/workers';
 
 /**
  * Constructs the callback URL for a worker
@@ -49,14 +50,14 @@ export function buildWorkerPayload(
 }
 
 /**
- * Fires a worker node by sending HTTP POST to the webhook URL
- * Validates: Requirements 4.1, 4.5, 9.6
+ * Fires a worker node by either using an integrated worker or sending HTTP POST to webhook URL
+ * Validates: Requirements 1.1, 1.2, 4.1, 4.5, 9.6
  * 
  * @param runId - The run ID
  * @param nodeId - The node ID
  * @param config - The node configuration
  * @param input - The merged input from upstream nodes
- * @returns Promise that resolves when the webhook is fired
+ * @returns Promise that resolves when the worker is fired
  */
 export async function fireWorkerNode(
   runId: string,
@@ -69,6 +70,29 @@ export async function fireWorkerNode(
     status: 'running',
   });
 
+  // Check if this is an integrated worker (Requirements 1.1, 1.2)
+  if (config.workerType && workerRegistry.hasWorker(config.workerType)) {
+    try {
+      const worker = workerRegistry.getWorker(config.workerType);
+      await worker.execute(runId, nodeId, config, input);
+      // Integrated worker handles its own callbacks and state updates
+      return;
+    } catch (error) {
+      // Handle worker execution errors
+      let errorMessage = 'Integrated worker execution failed';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      await updateNodeState(runId, nodeId, {
+        status: 'failed',
+        error: errorMessage,
+      });
+      return;
+    }
+  }
+
+  // Fall back to webhook-based worker for backward compatibility
   // Validate webhook URL exists
   if (!config.webhookUrl) {
     await updateNodeState(runId, nodeId, {
