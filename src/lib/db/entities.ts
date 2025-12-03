@@ -209,3 +209,109 @@ export async function getJourneyHistory(
 
   return (data || []) as JourneyEvent[];
 }
+
+/**
+ * Create a journey event for entity movement
+ * Records entity movement through the workflow for analytics and tracking
+ * 
+ * @param entityId - UUID of the entity
+ * @param eventType - Type of journey event
+ * @param nodeId - Optional node ID for node-related events
+ * @param edgeId - Optional edge ID for edge-related events
+ * @param progress - Optional progress value for edge progress events
+ * @param metadata - Optional additional metadata
+ * @returns Created journey event
+ */
+export async function createJourneyEvent(
+  entityId: string,
+  eventType: 'edge_start' | 'edge_progress' | 'node_arrival' | 'node_complete' | 'manual_move',
+  nodeId?: string | null,
+  edgeId?: string | null,
+  progress?: number | null,
+  metadata?: Record<string, any>
+): Promise<JourneyEvent> {
+  const supabase = getAdminClient();
+
+  const { data, error } = await supabase
+    .from('stitch_journey_events')
+    .insert({
+      entity_id: entityId,
+      event_type: eventType,
+      node_id: nodeId || null,
+      edge_id: edgeId || null,
+      progress: progress || null,
+      metadata: metadata || {},
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    throw new Error(`Failed to create journey event: ${error?.message}`);
+  }
+
+  return data as JourneyEvent;
+}
+
+/**
+ * Move entity to a target section (for worker node entity movement)
+ * Updates entity's current_node_id and creates a journey event
+ * 
+ * Requirements: 5.3, 5.4
+ * 
+ * @param entityId - UUID of the entity
+ * @param targetSectionId - ID of the target section node
+ * @param completeAs - How to mark the completion (success, failure, neutral)
+ * @param metadata - Optional metadata about the movement
+ * @param setEntityType - Optional: Convert entity type (e.g., lead → customer)
+ * @returns Updated entity
+ */
+export async function moveEntityToSection(
+  entityId: string,
+  targetSectionId: string,
+  completeAs: 'success' | 'failure' | 'neutral',
+  metadata?: Record<string, any>,
+  setEntityType?: 'customer' | 'churned' | 'lead'
+): Promise<StitchEntity> {
+  const supabase = getAdminClient();
+
+  // Build update payload
+  const updatePayload: any = {
+    current_node_id: targetSectionId,
+    current_edge_id: null,
+    edge_progress: null,
+  };
+
+  // Add entity_type conversion if specified
+  if (setEntityType) {
+    updatePayload.entity_type = setEntityType;
+  }
+
+  // Update entity's current_node_id to target section
+  const { data: updatedEntity, error: updateError } = await supabase
+    .from('stitch_entities')
+    .update(updatePayload)
+    .eq('id', entityId)
+    .select()
+    .single();
+
+  if (updateError || !updatedEntity) {
+    throw new Error(`Failed to move entity to section: ${updateError?.message}`);
+  }
+
+  // Create journey event for the movement
+  await createJourneyEvent(
+    entityId,
+    'node_arrival',
+    targetSectionId,
+    null,
+    null,
+    {
+      ...metadata,
+      completion_status: completeAs,
+      movement_type: 'worker_entity_movement',
+      entity_type_changed: setEntityType ? { to: setEntityType } : undefined,
+    }
+  );
+
+  return updatedEntity as StitchEntity;
+}

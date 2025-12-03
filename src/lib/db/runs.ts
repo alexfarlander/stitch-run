@@ -5,15 +5,22 @@
 
 import { createServerClient } from '../supabase/server';
 import { getAdminClient } from '../supabase/client';
-import { StitchRun, NodeState, StitchFlow } from '@/types/stitch';
-import { getFlow } from './flows';
+import { StitchRun, NodeState, StitchFlow, TriggerMetadata } from '@/types/stitch';
+import { getFlow, getFlowAdmin } from './flows';
 
 /**
  * Create a new run for a flow
  * Initializes all nodes to 'pending' status
- * Validates: Requirements 2.6
+ * Supports optional entity_id and trigger metadata for webhook-triggered runs
+ * Validates: Requirements 2.6, 3.1, 3.2, 3.3
  */
-export async function createRun(flowId: string): Promise<StitchRun> {
+export async function createRun(
+  flowId: string,
+  options?: {
+    entity_id?: string | null;
+    trigger?: TriggerMetadata;
+  }
+): Promise<StitchRun> {
   const supabase = createServerClient();
 
   // Get the flow to initialize node states
@@ -30,12 +37,98 @@ export async function createRun(flowId: string): Promise<StitchRun> {
     };
   }
 
+  // Build insert payload with optional fields
+  const insertPayload: any = {
+    flow_id: flowId,
+    node_states: nodeStates,
+  };
+
+  // Add entity_id if provided
+  if (options?.entity_id !== undefined) {
+    insertPayload.entity_id = options.entity_id;
+  }
+
+  // Add trigger metadata if provided, otherwise use default manual trigger
+  if (options?.trigger) {
+    insertPayload.trigger = options.trigger;
+  } else {
+    insertPayload.trigger = {
+      type: 'manual',
+      source: null,
+      event_id: null,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   const { data, error } = await supabase
     .from('stitch_runs')
-    .insert({
-      flow_id: flowId,
-      node_states: nodeStates,
-    })
+    .insert(insertPayload)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create run: ${error.message}`);
+  }
+
+  return data as StitchRun;
+}
+
+/**
+ * Create a new run for a flow using admin client (for webhooks without auth)
+ * Initializes all nodes to 'pending' status
+ * Supports optional entity_id and trigger metadata for webhook-triggered runs
+ * Use this in webhook endpoints where there are no cookies/session
+ * Validates: Requirements 2.6, 3.1, 3.2, 3.3
+ */
+export async function createRunAdmin(
+  flowId: string,
+  options?: {
+    entity_id?: string | null;
+    trigger?: TriggerMetadata;
+  }
+): Promise<StitchRun> {
+  const supabase = getAdminClient();
+
+  // Get the flow to initialize node states
+  const flow = await getFlowAdmin(flowId);
+  if (!flow) {
+    throw new Error(`Flow not found: ${flowId}`);
+  }
+
+  // Initialize all nodes to 'pending' status
+  const nodeStates: Record<string, NodeState> = {};
+  for (const node of flow.graph.nodes) {
+    nodeStates[node.id] = {
+      status: 'pending',
+    };
+  }
+
+  // Build insert payload with optional fields
+  const insertPayload: any = {
+    flow_id: flowId,
+    node_states: nodeStates,
+  };
+
+  // Add entity_id if provided
+  if (options?.entity_id !== undefined) {
+    insertPayload.entity_id = options.entity_id;
+  }
+
+  // Add trigger metadata if provided, otherwise use default manual trigger
+  if (options?.trigger) {
+    insertPayload.trigger = options.trigger;
+  } else {
+    insertPayload.trigger = {
+      type: 'manual',
+      source: null,
+      event_id: null,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('stitch_runs')
+    .insert(insertPayload)
     .select()
     .single();
 

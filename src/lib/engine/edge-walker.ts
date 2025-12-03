@@ -1,10 +1,10 @@
 /**
  * Edge-Walking Orchestration
  * Implements the edge-walking execution model
- * Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7
+ * Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 11.3
  */
 
-import { StitchFlow, StitchRun, StitchNode } from '@/types/stitch';
+import { StitchFlow, StitchRun, StitchNode, TriggerMetadata } from '@/types/stitch';
 import {
   getOutboundEdges,
   getTargetNodes,
@@ -16,6 +16,67 @@ import { fireWorkerNode } from './handlers/worker';
 import { fireUXNode } from './handlers/ux';
 import { fireSplitterNode } from './handlers/splitter';
 import { fireCollectorNode } from './handlers/collector';
+import { createRun } from '../db/runs';
+import { getFlow } from '../db/flows';
+import { moveEntityToSection } from '../db/entities';
+
+/**
+ * Starts a new workflow execution
+ * Validates: Requirement 11.3 (Workflow-Entity Attachment)
+ * 
+ * @param flowId - The flow to execute
+ * @param options - Execution options (entity, trigger, initial input)
+ * @returns The created run
+ */
+export async function startRun(
+  flowId: string,
+  options: {
+    entityId?: string | null;
+    trigger?: TriggerMetadata;
+    input?: any;
+  } = {}
+): Promise<StitchRun> {
+  // 1. Create the run record (supports entity_id and trigger)
+  const run = await createRun(flowId, {
+    entity_id: options.entityId,
+    trigger: options.trigger,
+  });
+
+  // 2. Fetch the flow definition
+  const flow = await getFlow(flowId);
+  if (!flow) {
+    throw new Error(`Flow not found: ${flowId}`);
+  }
+
+  // 3. Find entry nodes (nodes with no incoming edges)
+  const entryNodes = findEntryNodes(flow);
+
+  // 4. Fire entry nodes
+  for (const node of entryNodes) {
+    if (node.type === 'UX') {
+      // UX nodes start in 'waiting_for_user'
+      await fireUXNode(run.id, node.id, node.data, options.input || {});
+      
+      // If we have an entity, move it to this node immediately
+      if (options.entityId) {
+        await moveEntityToSection(options.entityId, node.id, 'neutral');
+      }
+    } else {
+      // Fire other nodes (Worker, Splitter, etc.)
+      await fireNode(node.id, flow, run);
+    }
+  }
+
+  return run;
+}
+
+/**
+ * Helper to find nodes with no incoming edges (entry nodes)
+ */
+function findEntryNodes(flow: StitchFlow): StitchNode[] {
+  const targetIds = new Set(flow.graph.edges.map(e => e.target));
+  return flow.graph.nodes.filter(n => !targetIds.has(n.id));
+}
 
 /**
  * Walks edges from a completed node and fires downstream nodes
@@ -30,6 +91,25 @@ export async function walkEdges(
   flow: StitchFlow,
   run: StitchRun
 ): Promise<void> {
+  // --- Handle Entity Movement ---
+  if (run.entity_id) {
+    try {
+      const { handleNodeCompletion } = await import('../../stitch/engine/entity-movement');
+      
+      // Get the output of the completed node
+      const nodeState = run.node_states[completedNodeId];
+      const output = nodeState?.output;
+      
+      // Check for movement (Success case)
+      // Note: walkEdges is only called on success, so success=true
+      await handleNodeCompletion(run, completedNodeId, output, true);
+    } catch (error) {
+      console.error('Failed to handle entity movement:', error);
+      // Continue execution - visual movement failure shouldn't stop workflow
+    }
+  }
+  // -----------------------------------
+
   // Check if this is a terminal node (Requirement 9.7)
   if (isTerminalNode(completedNodeId, flow)) {
     // No outbound edges, stop edge-walking

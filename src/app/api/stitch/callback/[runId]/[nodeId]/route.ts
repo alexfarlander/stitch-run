@@ -87,10 +87,19 @@ export async function POST(
       });
     }
 
+    // Apply entity movement if configured (Requirements 5.1, 5.2, 5.3, 5.4, 5.5)
+    const flow = await getFlowAdmin(run.flow_id);
+    if (flow) {
+      const node = flow.graph.nodes.find(n => n.id === nodeId);
+      if (node && node.type === 'Worker') {
+        const { applyEntityMovement } = await import('@/lib/engine/handlers/worker');
+        await applyEntityMovement(runId, nodeId, node.data, callback.status);
+      }
+    }
+
     // Trigger edge-walking if node completed successfully (Requirement 5.5)
     if (callback.status === 'completed') {
       // Get the flow to perform edge-walking (use admin client)
-      const flow = await getFlowAdmin(run.flow_id);
       if (flow) {
         // Get updated run state after the update (use admin client)
         const updatedRun = await getRunAdmin(runId);

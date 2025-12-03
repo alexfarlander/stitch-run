@@ -50,6 +50,69 @@ export function buildWorkerPayload(
 }
 
 /**
+ * Apply entity movement based on worker node outcome
+ * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5
+ * 
+ * @param runId - The run ID
+ * @param nodeId - The node ID
+ * @param config - The node configuration (may include entityMovement)
+ * @param status - The final status of the worker node ('completed' or 'failed')
+ * @returns Promise that resolves when entity movement is applied
+ */
+export async function applyEntityMovement(
+  runId: string,
+  nodeId: string,
+  config: NodeConfig,
+  status: 'completed' | 'failed'
+): Promise<void> {
+  // Import here to avoid circular dependencies
+  const { getRunAdmin } = await import('@/lib/db/runs');
+  const { moveEntityToSection } = await import('@/lib/db/entities');
+
+  // Check if entityMovement is configured
+  const workerConfig = config as any;
+  if (!workerConfig.entityMovement) {
+    return; // No entity movement configured
+  }
+
+  // Get the run to find the entity_id
+  const run = await getRunAdmin(runId);
+  if (!run || !run.entity_id) {
+    return; // No entity associated with this run
+  }
+
+  // Determine which movement action to apply
+  let movementAction;
+  if (status === 'completed' && workerConfig.entityMovement.onSuccess) {
+    movementAction = workerConfig.entityMovement.onSuccess;
+  } else if (status === 'failed' && workerConfig.entityMovement.onFailure) {
+    movementAction = workerConfig.entityMovement.onFailure;
+  }
+
+  if (!movementAction) {
+    return; // No movement action configured for this outcome
+  }
+
+  // Apply the entity movement
+  try {
+    await moveEntityToSection(
+      run.entity_id,
+      movementAction.targetSectionId,
+      movementAction.completeAs,
+      {
+        run_id: runId,
+        node_id: nodeId,
+        worker_status: status,
+      },
+      movementAction.setEntityType  // Pass entity type conversion if specified
+    );
+  } catch (error) {
+    console.error('Failed to apply entity movement:', error);
+    // Don't throw - entity movement failure shouldn't break the workflow
+  }
+}
+
+/**
  * Fires a worker node by either using an integrated worker or sending HTTP POST to webhook URL
  * Validates: Requirements 1.1, 1.2, 4.1, 4.5, 9.6
  * 

@@ -60,6 +60,65 @@ describe('Run Database Operations', () => {
       expect(Object.keys(run.node_states)).toHaveLength(3);
     });
 
+    it('should create run with default manual trigger when no trigger provided', async () => {
+      const run = await createRun(testFlowId);
+      testRunId = run.id;
+
+      expect(run.trigger).toBeDefined();
+      expect(run.trigger.type).toBe('manual');
+      expect(run.trigger.source).toBeNull();
+      expect(run.trigger.event_id).toBeNull();
+      expect(run.trigger.timestamp).toBeDefined();
+    });
+
+    it('should create run with null entity_id when provided (Requirement 3.3)', async () => {
+      const run = await createRun(testFlowId, { entity_id: null });
+      testRunId = run.id;
+
+      expect(run.entity_id).toBeNull();
+    });
+
+    it('should create run with webhook trigger metadata (Requirement 3.1, 3.2)', async () => {
+      const webhookEventId = '87654321-4321-4321-4321-210987654321';
+      const timestamp = new Date().toISOString();
+      
+      const run = await createRun(testFlowId, {
+        trigger: {
+          type: 'webhook',
+          source: 'stripe',
+          event_id: webhookEventId,
+          timestamp: timestamp,
+        },
+      });
+      testRunId = run.id;
+
+      expect(run.trigger).toBeDefined();
+      expect(run.trigger.type).toBe('webhook');
+      expect(run.trigger.source).toBe('stripe');
+      expect(run.trigger.event_id).toBe(webhookEventId);
+      expect(run.trigger.timestamp).toBe(timestamp);
+    });
+
+    it('should create run with both entity_id and trigger metadata', async () => {
+      const webhookEventId = '87654321-4321-4321-4321-210987654321';
+      
+      const run = await createRun(testFlowId, {
+        entity_id: null,
+        trigger: {
+          type: 'webhook',
+          source: 'hubspot',
+          event_id: webhookEventId,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      testRunId = run.id;
+
+      expect(run.entity_id).toBeNull();
+      expect(run.trigger.type).toBe('webhook');
+      expect(run.trigger.source).toBe('hubspot');
+      expect(run.trigger.event_id).toBe(webhookEventId);
+    });
+
     it('should throw error for non-existent flow', async () => {
       await expect(
         createRun('00000000-0000-0000-0000-000000000000')

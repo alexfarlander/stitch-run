@@ -50,6 +50,35 @@ export interface NodeConfig {
   [key: string]: any;
 }
 
+/**
+ * Worker node data with entity movement configuration
+ * Extends NodeConfig with webhook-specific entity movement behavior
+ */
+export interface WorkerNodeData extends NodeConfig {
+  webhookUrl?: string;
+  workerType?: string;
+  entityMovement?: EntityMovementConfig;
+}
+
+/**
+ * Entity movement configuration for worker nodes
+ * Defines how entities should move based on worker outcomes
+ */
+export interface EntityMovementConfig {
+  onSuccess?: EntityMovementAction;
+  onFailure?: EntityMovementAction;
+}
+
+/**
+ * Entity movement action specification
+ * Defines target section and completion status for entity movement
+ */
+export interface EntityMovementAction {
+  targetSectionId: string;     // Section node ID to move entity to
+  completeAs: 'success' | 'failure' | 'neutral';  // How to mark completion
+  setEntityType?: 'customer' | 'churned' | 'lead';  // Optional: Convert entity type (e.g., lead → customer)
+}
+
 // ============================================================================
 // Graph Structure
 // ============================================================================
@@ -126,13 +155,26 @@ export interface NodeState {
 }
 
 /**
+ * Trigger metadata for workflow runs
+ * Records what initiated a workflow execution
+ */
+export interface TriggerMetadata {
+  type: 'webhook' | 'manual' | 'scheduled' | 'entity_arrival';
+  source: string | null;
+  event_id: string | null;
+  timestamp: string;
+}
+
+/**
  * Run instance stored in stitch_runs table
  * Represents an execution of a flow with its state
  */
 export interface StitchRun {
   id: string;
   flow_id: string;
+  entity_id: string | null;  // Link to entity
   node_states: Record<string, NodeState>;
+  trigger: TriggerMetadata;  // Trigger information
   created_at: string;
   updated_at: string;
 }
@@ -208,6 +250,57 @@ export interface SectionNode extends StitchNode {
     label: string;
     category: 'Production' | 'Customer' | 'Financial';
   };
+}
+
+// ============================================================================
+// Webhook System Types
+// ============================================================================
+
+/**
+ * Entity mapping configuration for webhooks
+ * Defines how webhook payload fields map to entity attributes
+ */
+export interface EntityMapping {
+  name: string;              // JSON path or static value
+  email?: string;            // JSON path or static value
+  entity_type: string;       // JSON path or static value
+  avatar_url?: string;       // JSON path or static value
+  metadata?: Record<string, string>; // Map of field name to JSON path
+}
+
+/**
+ * Webhook configuration stored in stitch_webhook_configs table
+ * Defines how a webhook endpoint processes incoming requests
+ */
+export interface WebhookConfig {
+  id: string;
+  canvas_id: string;
+  name: string;
+  source: string;
+  endpoint_slug: string;
+  secret: string | null;
+  workflow_id: string;
+  entry_edge_id: string;
+  entity_mapping: EntityMapping;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Webhook event stored in stitch_webhook_events table
+ * Audit log for all received webhook requests
+ */
+export interface WebhookEvent {
+  id: string;
+  webhook_config_id: string;
+  received_at: string;
+  payload: Record<string, any>;
+  entity_id: string | null;
+  workflow_run_id: string | null;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error: string | null;
+  processed_at: string | null;
 }
 
 // ============================================================================
