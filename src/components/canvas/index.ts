@@ -9,6 +9,7 @@ export { WorkerNode } from './nodes/WorkerNode';
 export { CollectorNode } from './nodes/CollectorNode';
 export { UXNode } from './nodes/UXNode';
 export { SplitterNode } from './nodes/SplitterNode';
+export { MediaSelectNode } from './nodes/MediaSelectNode';
 export { SectionNode } from './nodes/SectionNode';
 export { SectionItemNode } from './nodes/SectionItemNode';
 export { useNodeStatus } from './hooks/useNodeStatus';

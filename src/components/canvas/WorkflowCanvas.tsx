@@ -24,6 +24,7 @@ import { WorkerNode } from './nodes/WorkerNode';
 import { CollectorNode } from './nodes/CollectorNode';
 import { UXNode } from './nodes/UXNode';
 import { SplitterNode } from './nodes/SplitterNode';
+import { MediaSelectNode } from './nodes/MediaSelectNode';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 import { useRealtimeRun } from '@/hooks/useRealtimeRun';
 import { supabase } from '@/lib/supabase/client';
@@ -39,6 +40,7 @@ const nodeTypes: NodeTypes = {
   Collector: CollectorNode as any,
   UX: UXNode as any,
   Splitter: SplitterNode as any,
+  MediaSelect: MediaSelectNode as any,
 };
 
 export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {

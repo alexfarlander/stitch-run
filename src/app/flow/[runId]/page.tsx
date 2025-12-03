@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { StitchFlow, StitchRun } from '@/types/stitch';
 import { RunViewer } from '@/components/RunViewer';
+import { FlowLayout } from '@/components/FlowLayout';
 import { Clock, Zap } from 'lucide-react';
 
 interface PageProps {
@@ -47,7 +48,7 @@ export default async function FlowPage({ params }: PageProps) {
   const waitingCount = nodeStates.filter((s) => s.status === 'waiting_for_user').length;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-950">
+    <FlowLayout>
       {/* Header */}
       <div className="border-b border-slate-800 bg-slate-900 px-6 py-4 shadow-lg">
         <div className="flex items-center justify-between">
@@ -105,6 +106,6 @@ export default async function FlowPage({ params }: PageProps) {
       <div className="flex-1 relative">
         <RunViewer initialRun={run} flow={flow} />
       </div>
-    </div>
+    </FlowLayout>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { StitchCanvas, BMCCanvas } from '@/components/canvas';
+import { Navigation } from '@/components/Navigation';
 import { supabase } from '@/lib/supabase/client';
 import { StitchFlow } from '@/types/stitch';
 
@@ -54,6 +55,7 @@ export default function CanvasPage() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-950">
+      <Navigation />
       <div className="border-b border-slate-800 bg-slate-900 px-6 py-4">
         <h1 className="text-2xl font-bold text-white">{canvas.name}</h1>
         <p className="text-sm text-slate-400 mt-1">Living Business Model Canvas</p>

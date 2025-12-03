@@ -20,6 +20,7 @@ import { WorkerNode } from './nodes/WorkerNode';
 import { CollectorNode } from './nodes/CollectorNode';
 import { UXNode } from './nodes/UXNode';
 import { SplitterNode } from './nodes/SplitterNode';
+import { MediaSelectNode } from './nodes/MediaSelectNode';
 import { JourneyEdge } from './edges/JourneyEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
@@ -57,6 +58,7 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
     Collector: CollectorNode,
     UX: UXNode,
     Splitter: SplitterNode,
+    MediaSelect: MediaSelectNode,
   }), []);
 
   const edgeTypes = useMemo<EdgeTypes>(() => ({

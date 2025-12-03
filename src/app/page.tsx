@@ -7,6 +7,7 @@
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { HomeLayout } from '@/components/HomeLayout';
 
 export default async function Home() {
   const supabase = createServerClient();
@@ -25,7 +26,8 @@ export default async function Home() {
   
   // If no BMC exists, show setup instructions
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+    <HomeLayout>
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
       <main className="flex flex-col items-center gap-8 p-8 max-w-2xl">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
@@ -85,5 +87,6 @@ export default async function Home() {
         </div>
       </main>
     </div>
+    </HomeLayout>
   );
 }

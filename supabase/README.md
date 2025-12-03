@@ -52,6 +52,14 @@ Migrations are located in `supabase/migrations/` and are applied in order by tim
 ### Current Migrations
 
 - `20241202000001_create_stitch_tables.sql`: Creates the core `stitch_flows` and `stitch_runs` tables
+- `002_seed_flow.sql`: Seeds initial flow data
+- `003_bmc_architecture.sql`: Business Model Canvas architecture
+- `004_entity_position_tracking.sql`: Entity position tracking system
+- `005_journey_events_table.sql`: Journey events logging
+- `006_atomic_movements.sql`: Atomic entity movements
+- `007_add_missing_entity_fields.sql`: Additional entity fields
+- `008_webhook_system.sql`: Webhook configuration and event logging
+- `009_media_library.sql`: Media library system with storage (see [MEDIA_LIBRARY_SETUP.md](./MEDIA_LIBRARY_SETUP.md))
 
 ## Database Schema
 

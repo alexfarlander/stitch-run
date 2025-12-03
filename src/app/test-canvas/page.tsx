@@ -11,6 +11,8 @@ import { StitchFlow, StitchRun } from '@/types/stitch';
 const mockFlow: StitchFlow = {
   id: 'test-flow',
   name: 'Test Flow',
+  canvas_type: 'workflow',
+  parent_id: null,
   graph: {
     nodes: [
       {
@@ -59,6 +61,13 @@ const mockFlow: StitchFlow = {
 const mockRun: StitchRun = {
   id: 'test-run',
   flow_id: 'test-flow',
+  entity_id: null,
+  trigger: {
+    type: 'manual',
+    source: null,
+    event_id: null,
+    timestamp: new Date().toISOString(),
+  },
   node_states: {
     start: { status: 'completed', output: { data: 'test' } },
     splitter: { status: 'completed', output: { items: [1, 2, 3] } },

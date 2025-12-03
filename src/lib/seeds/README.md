@@ -1,6 +1,13 @@
-# Demo Journey Seed
+# Seed Scripts
 
-This directory contains seed scripts for populating the Stitch database with demo data.
+This directory contains seed scripts for populating the Stitch database with demo data and workflows.
+
+## Available Seeds
+
+1. **BMC Canvas** (`seed-bmc.ts`) - Creates the default Business Model Canvas
+2. **Demo Journey** (`demo-journey.ts`) - Creates demo entities and lead capture workflow
+3. **Wireframe Generation** (`wireframe-workflow.ts`) - Creates AI-powered wireframe generation workflow
+4. **Video Factory V2** (`video-factory-v2.ts`) - Creates video production workflow from wireframes
 
 ## Demo Journey: Monica's Journey
 
@@ -139,3 +146,83 @@ npx tsx scripts/seed-bmc.ts
 # Seed demo journey
 npx tsx scripts/seed-demo-journey.ts
 ```
+
+
+---
+
+## Video Factory V2 Workflow
+
+The `video-factory-v2.ts` script creates a complete video production workflow that converts wireframes into videos with voice narration and background music.
+
+### What It Creates
+
+A workflow with 11 nodes that:
+1. **Select Wireframes** - MediaSelect node filtered to wireframe type
+2. **Load Wireframes** - Worker that loads full metadata for selected wireframes
+3. **Voice Settings** - UX node for configuring voice narration settings
+4. **Scene Splitter** - Splits wireframes array for parallel processing
+5. **Generate Video** - Image-to-video worker (parallel)
+6. **Generate Voice** - ElevenLabs voice generation worker (parallel)
+7. **Mix Scene** - Shotstack worker to combine video + audio (parallel)
+8. **Scene Collector** - Waits for all parallel scene processing to complete
+9. **Music Selection** - MediaSelect node filtered to audio type
+10. **Final Assembly** - Shotstack worker to concatenate all scenes and add music
+11. **Final Review** - UX node for reviewing the final video
+
+### Usage
+
+```bash
+npx tsx scripts/seed-video-factory-v2.ts
+```
+
+### Prerequisites
+
+1. The default BMC canvas must exist (run `npx tsx scripts/seed-bmc.ts` first)
+2. Media Library tables must exist (migration 009)
+3. Environment variables must be set:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `VIDEO_GENERATION_ADAPTER` (optional, defaults to 'mock')
+   - API keys for video generation services (if not using mock)
+
+### Workflow Features
+
+- **Media Library Integration**: Reads wireframes and music from the centralized Media Library
+- **Parallel Processing**: Uses the M-shape pattern (Splitter → Parallel Workers → Collector) for efficient scene processing
+- **Multi-Worker Coordination**: Coordinates image-to-video, voice generation, and video mixing workers
+- **Final Assembly**: Concatenates all scene videos and adds background music
+
+### Verification
+
+To verify the workflow was created correctly:
+
+```bash
+npx tsx scripts/verify-video-factory-v2.ts
+```
+
+This will display:
+- Workflow name and ID
+- Number of nodes and edges
+- List of all node types
+
+### Requirements Validated
+
+- **6.1**: Loads wireframe metadata from Media Library
+- **6.2**: Generates videos from wireframes using image-to-video API
+- **6.3**: Saves videos to Media Library with source image reference
+- **6.4**: Generates voiceover audio and saves to Media Library
+- **6.5**: Assembles final video by concatenating scene videos
+
+---
+
+## Wireframe Generation Workflow
+
+The `wireframe-workflow.ts` script creates an AI-powered wireframe generation workflow that converts scripts into visual wireframes.
+
+### Usage
+
+```bash
+npx tsx scripts/seed-wireframe-workflow.ts
+```
+
+See the wireframe-workflow.ts file for detailed documentation.
