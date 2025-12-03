@@ -21,6 +21,7 @@ import { CollectorNode } from './nodes/CollectorNode';
 import { UXNode } from './nodes/UXNode';
 import { SplitterNode } from './nodes/SplitterNode';
 import { MediaSelectNode } from './nodes/MediaSelectNode';
+import { IntegrationItem, PersonItem, CodeItem, DataItem } from './items';
 import { JourneyEdge } from './edges/JourneyEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
@@ -51,7 +52,13 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
     section: SectionNode,
     
     // Items inside sections (CRM, API, etc.)
-    'section-item': SectionItemNode, 
+    'section-item': SectionItemNode,
+    
+    // Production-side items
+    'integration-item': IntegrationItem,
+    'person-item': PersonItem,
+    'code-item': CodeItem,
+    'data-item': DataItem,
     
     // Workflow nodes (for drill-down views)
     Worker: WorkerNode,
