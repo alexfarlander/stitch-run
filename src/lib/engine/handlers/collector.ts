@@ -5,7 +5,8 @@
  */
 
 import { NodeConfig, NodeState } from '@/types/stitch';
-import { updateNodeState, getRun } from '@/lib/db/runs';
+import { updateNodeState, updateNodeStates, getRun } from '@/lib/db/runs';
+import { logCollectorWaiting, logCollectorFiring, logExecutionError } from '../logger';
 
 /**
  * Identifies all upstream parallel paths for a collector node
@@ -127,8 +128,18 @@ function extractIndexFromNodeId(nodeId: string): number {
 }
 
 /**
+ * Collector node state structure for tracking upstream completion
+ */
+interface CollectorNodeState extends NodeState {
+  upstream_completed_count?: number;
+  expected_upstream_count?: number;
+  upstream_outputs?: Record<string, any>;
+}
+
+/**
  * Fires a Collector node by merging parallel execution paths
- * Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.6
+ * Uses state tracking to prevent race conditions
+ * Validates: Requirements 1.7, 7.1, 7.2, 7.3, 7.4, 7.6, 9.4
  * 
  * @param runId - The run ID
  * @param nodeId - The node ID
@@ -152,59 +163,111 @@ export async function fireCollectorNode(
     // Identify all upstream parallel paths (Requirement 7.1)
     const parallelPaths = identifyUpstreamPaths(run.node_states, upstreamNodeIds);
     
-    // If no parallel paths found, this might be a regular (non-parallel) collector
-    // In that case, treat upstream nodes as-is
-    if (parallelPaths.length === 0) {
-      // Check if upstream nodes exist and are completed
-      const allCompleted = upstreamNodeIds.every(id => {
-        const state = run.node_states[id];
-        return state && state.status === 'completed';
-      });
+    // Determine which upstream nodes to track
+    // If parallel paths exist, track those; otherwise track regular upstream nodes
+    const upstreamToTrack = parallelPaths.length > 0 ? parallelPaths : upstreamNodeIds;
+    
+    // Get or initialize collector state
+    const collectorState = run.node_states[nodeId] as CollectorNodeState || {
+      status: 'pending',
+      upstream_completed_count: 0,
+      expected_upstream_count: upstreamToTrack.length,
+      upstream_outputs: {},
+    };
+    
+    // Initialize state if this is the first time we're seeing this collector
+    if (collectorState.expected_upstream_count === undefined) {
+      collectorState.expected_upstream_count = upstreamToTrack.length;
+      collectorState.upstream_completed_count = 0;
+      collectorState.upstream_outputs = {};
+    }
+    
+    // Count how many upstream nodes are completed
+    let completedCount = 0;
+    const upstreamOutputs: Record<string, any> = { ...collectorState.upstream_outputs };
+    
+    for (const upstreamId of upstreamToTrack) {
+      const upstreamState = run.node_states[upstreamId];
       
-      if (!allCompleted) {
-        // Not ready yet, remain pending
+      // Check for failures (Requirement 7.6)
+      if (upstreamState?.status === 'failed') {
+        await updateNodeState(runId, nodeId, {
+          status: 'failed',
+          error: `Upstream node ${upstreamId} failed`,
+        });
         return;
       }
       
-      // Merge outputs from regular upstream nodes
-      const outputs = upstreamNodeIds.map(id => run.node_states[id]?.output);
-      
-      await updateNodeState(runId, nodeId, {
-        status: 'completed',
-        output: outputs,
-      });
+      // Track completed upstream nodes
+      if (upstreamState?.status === 'completed') {
+        completedCount++;
+        // Store output if we haven't already
+        if (!(upstreamId in upstreamOutputs)) {
+          upstreamOutputs[upstreamId] = upstreamState.output;
+        }
+      }
+    }
+    
+    // Update the collector state with current progress
+    // Use updateNodeStates to preserve all fields including tracking fields
+    await updateNodeStates(runId, {
+      [nodeId]: {
+        status: 'pending',
+        upstream_completed_count: completedCount,
+        expected_upstream_count: collectorState.expected_upstream_count,
+        upstream_outputs: upstreamOutputs,
+      } as CollectorNodeState,
+    });
+    
+    // Wait until all paths are completed (Requirement 7.2, 9.4)
+    if (completedCount < collectorState.expected_upstream_count) {
+      // Not ready yet, remain pending - log waiting state
+      logCollectorWaiting(
+        runId,
+        nodeId,
+        completedCount,
+        collectorState.expected_upstream_count
+      );
       return;
     }
     
-    // Check for failures (Requirement 7.6)
-    if (hasAnyPathFailed(run.node_states, parallelPaths)) {
-      await updateNodeState(runId, nodeId, {
-        status: 'failed',
-        error: 'Upstream parallel path failed',
-      });
-      return;
+    // All upstream paths completed! Merge outputs
+    let mergedOutput: any;
+    
+    if (parallelPaths.length > 0) {
+      // Merge parallel outputs preserving order (Requirements 7.3, 7.4)
+      mergedOutput = mergeParallelOutputs(run.node_states, parallelPaths);
+    } else {
+      // Merge regular upstream outputs as array
+      mergedOutput = upstreamNodeIds.map(id => upstreamOutputs[id]);
     }
     
-    // Wait until all paths are completed (Requirement 7.2)
-    if (!areAllPathsCompleted(run.node_states, parallelPaths)) {
-      // Not ready yet, remain pending
-      return;
-    }
-    
-    // Merge outputs preserving order (Requirements 7.3, 7.4)
-    const mergedOutput = mergeParallelOutputs(run.node_states, parallelPaths);
+    // Log collector firing
+    logCollectorFiring(runId, nodeId, mergedOutput);
     
     // Mark collector as completed
-    await updateNodeState(runId, nodeId, {
-      status: 'completed',
-      output: mergedOutput,
+    // Use updateNodeStates to preserve all fields including tracking fields
+    await updateNodeStates(runId, {
+      [nodeId]: {
+        status: 'completed',
+        output: mergedOutput,
+        upstream_completed_count: completedCount,
+        expected_upstream_count: collectorState.expected_upstream_count,
+        upstream_outputs: upstreamOutputs,
+      } as CollectorNodeState,
     });
   } catch (error) {
-    // Handle errors
+    // Handle errors (Requirement 10.5)
     let errorMessage = 'Failed to process collector node';
     if (error instanceof Error) {
       errorMessage = error.message;
     }
+    
+    logExecutionError('Collector node processing failed', error, {
+      runId,
+      nodeId,
+      upstreamNodeIds,
+    });
     
     await updateNodeState(runId, nodeId, {
       status: 'failed',

@@ -15,16 +15,26 @@ import { createServerClient } from '@/lib/supabase/server';
  * Generates voice narration from text and uploads to Supabase Storage
  */
 export class ElevenLabsWorker implements IWorker {
-  private apiKey: string;
+  private apiKey: string | null = null;
+  private mockMode: boolean = false;
 
   constructor() {
     const config = getConfig();
     
     if (!config.workers.elevenlabsApiKey) {
-      throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs worker');
+      this.mockMode = true;
+      logWorker('warn', 'ElevenLabs worker initialized in MOCK MODE', {
+        worker: 'elevenlabs',
+        reason: 'ELEVENLABS_API_KEY environment variable is not set',
+        message: 'Worker will return mock audio URLs instead of calling the API',
+      });
+    } else {
+      this.apiKey = config.workers.elevenlabsApiKey;
+      logWorker('info', 'ElevenLabs worker initialized successfully', {
+        worker: 'elevenlabs',
+        apiKeyPresent: true,
+      });
     }
-
-    this.apiKey = config.workers.elevenlabsApiKey;
   }
 
   /**
@@ -53,6 +63,40 @@ export class ElevenLabsWorker implements IWorker {
         throw new Error('No voice_text provided in input');
       }
 
+      // Handle mock mode
+      if (this.mockMode) {
+        logWorker('info', 'ElevenLabs worker running in MOCK MODE', {
+          worker: 'elevenlabs',
+          runId,
+          nodeId,
+          message: 'Returning mock audio URL',
+        });
+
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        const mockAudioUrl = 'https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav';
+
+        const duration = Date.now() - startTime;
+        logWorker('info', 'ElevenLabs worker completed successfully (MOCK MODE)', {
+          worker: 'elevenlabs',
+          runId,
+          nodeId,
+          audioUrl: mockAudioUrl,
+          duration,
+        });
+
+        await triggerCallback(runId, nodeId, {
+          status: 'completed',
+          output: {
+            ...input,
+            audioUrl: mockAudioUrl,
+          },
+        });
+
+        return;
+      }
+
       // Extract configuration with defaults
       const voiceId = config.voiceId;
       if (!voiceId) {
@@ -77,7 +121,7 @@ export class ElevenLabsWorker implements IWorker {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'xi-api-key': this.apiKey,
+            'xi-api-key': this.apiKey!,
           },
           body: JSON.stringify({
             text: voiceText,
@@ -168,20 +212,39 @@ export class ElevenLabsWorker implements IWorker {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Import error utilities
+      const { extractErrorContext, categorizeError } = await import('./utils');
+      const errorContext = extractErrorContext(error);
+
       logWorker('error', 'ElevenLabs worker failed', {
         worker: 'elevenlabs',
         runId,
         nodeId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...errorContext,
         duration,
+        phase: 'execution',
       });
 
-      // Trigger failure callback
-      await triggerCallback(runId, nodeId, {
-        status: 'failed',
-        error: errorMessage,
-      });
+      // Trigger failure callback with detailed error information
+      try {
+        await triggerCallback(runId, nodeId, {
+          status: 'failed',
+          error: errorMessage,
+        });
+      } catch (callbackError) {
+        // Log callback failure but don't throw - we've already failed
+        const callbackErrorContext = extractErrorContext(callbackError);
+        logWorker('error', 'Failed to trigger failure callback for ElevenLabs worker', {
+          worker: 'elevenlabs',
+          runId,
+          nodeId,
+          originalError: errorMessage,
+          callbackError: callbackError instanceof Error ? callbackError.message : 'Unknown error',
+          ...callbackErrorContext,
+          phase: 'callback',
+        });
+      }
     }
   }
 }

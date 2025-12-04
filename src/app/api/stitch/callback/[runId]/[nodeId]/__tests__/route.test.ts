@@ -1,6 +1,6 @@
 /**
  * Unit tests for callback API endpoint
- * Tests: Requirements 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8
+ * Tests: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 10.3
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -23,10 +23,17 @@ describe('Callback API Endpoint', () => {
   const mockRun: StitchRun = {
     id: mockRunId,
     flow_id: 'flow-123',
+    entity_id: null,
     node_states: {
       'worker-1': {
         status: 'running',
       },
+    },
+    trigger: {
+      type: 'manual',
+      source: null,
+      event_id: null,
+      timestamp: new Date().toISOString(),
     },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -35,6 +42,8 @@ describe('Callback API Endpoint', () => {
   const mockFlow: StitchFlow = {
     id: 'flow-123',
     name: 'Test Flow',
+    canvas_type: 'workflow',
+    parent_id: null,
     graph: {
       nodes: [
         {
@@ -65,7 +74,7 @@ describe('Callback API Endpoint', () => {
   }
 
   describe('Validation', () => {
-    it('should reject invalid runId with 404 (Requirement 5.6)', async () => {
+    it('should reject invalid runId with 404 (Requirement 9.1)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(null);
 
       const request = createMockRequest({ status: 'completed', output: {} });
@@ -73,10 +82,10 @@ describe('Callback API Endpoint', () => {
 
       expect(response.status).toBe(404);
       const data = await response.json();
-      expect(data.error).toBe('Run not found');
+      expect(data.error).toBe('Run not found: invalid-run');
     });
 
-    it('should reject invalid nodeId with 404 (Requirement 5.6)', async () => {
+    it('should reject invalid nodeId with 404 (Requirement 9.1)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
 
       const request = createMockRequest({ status: 'completed', output: {} });
@@ -84,10 +93,10 @@ describe('Callback API Endpoint', () => {
 
       expect(response.status).toBe(404);
       const data = await response.json();
-      expect(data.error).toBe('Node not found in run');
+      expect(data.error).toBe('Node not found in run: invalid-node');
     });
 
-    it('should reject malformed payload with 400 (Requirement 5.7)', async () => {
+    it('should reject malformed JSON payload with 400 (Requirement 9.1)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
 
       const request = {
@@ -100,10 +109,10 @@ describe('Callback API Endpoint', () => {
 
       expect(response.status).toBe(400);
       const data = await response.json();
-      expect(data.error).toBe('Invalid callback payload');
+      expect(data.error).toBe('Invalid JSON in callback payload');
     });
 
-    it('should reject payload with invalid status with 400', async () => {
+    it('should reject payload with invalid status with 400 (Requirement 9.1)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
 
       const request = createMockRequest({ status: 'invalid-status', output: {} });
@@ -111,10 +120,10 @@ describe('Callback API Endpoint', () => {
 
       expect(response.status).toBe(400);
       const data = await response.json();
-      expect(data.error).toBe('Invalid callback payload');
+      expect(data.error).toBe('Invalid status value: "invalid-status". Must be "completed" or "failed"');
     });
 
-    it('should reject payload with missing status with 400', async () => {
+    it('should reject payload with missing status with 400 (Requirement 9.1)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
 
       const request = createMockRequest({ output: {} });
@@ -122,12 +131,45 @@ describe('Callback API Endpoint', () => {
 
       expect(response.status).toBe(400);
       const data = await response.json();
-      expect(data.error).toBe('Invalid callback payload');
+      expect(data.error).toBe('Missing required field: status');
+    });
+
+    it('should reject payload with non-object output for completed status (Requirement 9.3)', async () => {
+      vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
+
+      const request = createMockRequest({ status: 'completed', output: 'invalid-output' });
+      const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
+
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data.error).toBe('Output field must be an object when provided');
+    });
+
+    it('should reject payload with non-string error for failed status (Requirement 9.5)', async () => {
+      vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
+
+      const request = createMockRequest({ status: 'failed', error: 123 });
+      const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
+
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data.error).toBe('Error field must be a string when provided');
+    });
+
+    it('should accept payload that is not an object with 400', async () => {
+      vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
+
+      const request = createMockRequest('not-an-object');
+      const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
+
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data.error).toBe('Callback payload must be an object');
     });
   });
 
   describe('Completed Callback', () => {
-    it('should update state to completed and store output (Requirement 5.3)', async () => {
+    it('should update state to completed and store output (Requirements 9.2, 9.3)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
       vi.mocked(runs.updateNodeState).mockResolvedValue({
         ...mockRun,
@@ -168,7 +210,7 @@ describe('Callback API Endpoint', () => {
       expect(data.success).toBe(true);
     });
 
-    it('should trigger edge-walking after completed callback (Requirement 5.5)', async () => {
+    it('should trigger edge-walking after completed callback (Requirement 9.4)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
       vi.mocked(runs.updateNodeState).mockResolvedValue({
         ...mockRun,
@@ -209,7 +251,7 @@ describe('Callback API Endpoint', () => {
       );
     });
 
-    it('should return 200 on successful processing (Requirement 5.8)', async () => {
+    it('should return 200 on successful processing', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
       vi.mocked(runs.updateNodeState).mockResolvedValue({
         ...mockRun,
@@ -245,7 +287,7 @@ describe('Callback API Endpoint', () => {
   });
 
   describe('Failed Callback', () => {
-    it('should update state to failed and store error (Requirement 5.4)', async () => {
+    it('should update state to failed and store error (Requirement 9.5)', async () => {
       vi.mocked(runs.getRunAdmin).mockResolvedValue(mockRun);
       vi.mocked(runs.updateNodeState).mockResolvedValue({
         ...mockRun,

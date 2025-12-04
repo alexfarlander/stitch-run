@@ -127,22 +127,51 @@ export class WireframeGeneratorWorker implements IWorker {
     switch (adapterType.toLowerCase()) {
       case 'ideogram':
         if (!process.env.IDEOGRAM_API_KEY) {
-          throw new Error('IDEOGRAM_API_KEY environment variable is required for Ideogram adapter');
+          logWorker('warn', 'Wireframe Generator falling back to MOCK MODE', {
+            worker: 'wireframe-generator',
+            reason: 'IDEOGRAM_API_KEY environment variable is not set',
+            requestedAdapter: 'ideogram',
+            message: 'Using mock adapter instead',
+          });
+          this.adapter = new MockImageAdapter();
+        } else {
+          this.adapter = new IdeogramAdapter(process.env.IDEOGRAM_API_KEY);
+          logWorker('info', 'Wireframe Generator initialized with Ideogram adapter', {
+            worker: 'wireframe-generator',
+            adapter: 'ideogram',
+            apiKeyPresent: true,
+          });
         }
-        this.adapter = new IdeogramAdapter(process.env.IDEOGRAM_API_KEY);
         break;
       
       case 'dalle':
       case 'dall-e':
         if (!process.env.OPENAI_API_KEY) {
-          throw new Error('OPENAI_API_KEY environment variable is required for DALL-E adapter');
+          logWorker('warn', 'Wireframe Generator falling back to MOCK MODE', {
+            worker: 'wireframe-generator',
+            reason: 'OPENAI_API_KEY environment variable is not set',
+            requestedAdapter: 'dalle',
+            message: 'Using mock adapter instead',
+          });
+          this.adapter = new MockImageAdapter();
+        } else {
+          this.adapter = new DallEAdapter(process.env.OPENAI_API_KEY);
+          logWorker('info', 'Wireframe Generator initialized with DALL-E adapter', {
+            worker: 'wireframe-generator',
+            adapter: 'dalle',
+            apiKeyPresent: true,
+          });
         }
-        this.adapter = new DallEAdapter(process.env.OPENAI_API_KEY);
         break;
       
       case 'mock':
       default:
         this.adapter = new MockImageAdapter();
+        logWorker('info', 'Wireframe Generator initialized in MOCK MODE', {
+          worker: 'wireframe-generator',
+          adapter: 'mock',
+          message: 'Using placeholder images',
+        });
         break;
     }
   }
@@ -295,20 +324,39 @@ export class WireframeGeneratorWorker implements IWorker {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Import error utilities
+      const { extractErrorContext, categorizeError } = await import('./utils');
+      const errorContext = extractErrorContext(error);
+
       logWorker('error', 'Wireframe Generator worker failed', {
         worker: 'wireframe-generator',
         runId,
         nodeId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...errorContext,
         duration,
+        phase: 'execution',
       });
 
-      // Trigger failure callback
-      await triggerCallback(runId, nodeId, {
-        status: 'failed',
-        error: errorMessage,
-      });
+      // Trigger failure callback with detailed error information
+      try {
+        await triggerCallback(runId, nodeId, {
+          status: 'failed',
+          error: errorMessage,
+        });
+      } catch (callbackError) {
+        // Log callback failure but don't throw - we've already failed
+        const callbackErrorContext = extractErrorContext(callbackError);
+        logWorker('error', 'Failed to trigger failure callback for Wireframe Generator worker', {
+          worker: 'wireframe-generator',
+          runId,
+          nodeId,
+          originalError: errorMessage,
+          callbackError: callbackError instanceof Error ? callbackError.message : 'Unknown error',
+          ...callbackErrorContext,
+          phase: 'callback',
+        });
+      }
     }
   }
 }

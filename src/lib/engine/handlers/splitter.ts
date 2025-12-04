@@ -6,6 +6,7 @@
 
 import { NodeConfig, NodeState } from '@/types/stitch';
 import { updateNodeState, updateNodeStates } from '@/lib/db/runs';
+import { logParallelInstanceCreation, logExecutionError } from '../logger';
 
 /**
  * Extracts an array from input using a configured path
@@ -116,6 +117,10 @@ export async function fireSplitterNode(
     // Create parallel path states (Requirements 6.1, 6.4, 6.5)
     const parallelStates = createParallelPathStates(downstreamNodeIds, arrayElements);
 
+    // Log parallel instance creation
+    const parallelInstanceIds = Object.keys(parallelStates);
+    logParallelInstanceCreation(runId, nodeId, parallelInstanceIds);
+
     // Update all parallel path states and mark splitter as completed
     const updates: Record<string, NodeState> = {
       ...parallelStates,
@@ -127,11 +132,18 @@ export async function fireSplitterNode(
 
     await updateNodeStates(runId, updates);
   } catch (error) {
-    // Handle extraction errors
+    // Handle extraction errors (Requirement 10.5)
     let errorMessage = 'Failed to process splitter node';
     if (error instanceof Error) {
       errorMessage = error.message;
     }
+
+    logExecutionError('Splitter node processing failed', error, {
+      runId,
+      nodeId,
+      arrayPath: config.arrayPath,
+      downstreamNodeIds,
+    });
 
     await updateNodeState(runId, nodeId, {
       status: 'failed',

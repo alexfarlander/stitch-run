@@ -19,6 +19,12 @@ import { fireCollectorNode } from './handlers/collector';
 import { createRun } from '../db/runs';
 import { getFlow } from '../db/flows';
 import { moveEntityToSection } from '../db/entities';
+import { 
+  logEdgeWalking, 
+  logExecutionError, 
+  logNodeExecution,
+  logParallelInstanceCreation 
+} from './logger';
 
 /**
  * Starts a new workflow execution
@@ -104,7 +110,11 @@ export async function walkEdges(
       // Note: walkEdges is only called on success, so success=true
       await handleNodeCompletion(run, completedNodeId, output, true);
     } catch (error) {
-      console.error('Failed to handle entity movement:', error);
+      logExecutionError('Failed to handle entity movement', error, {
+        runId: run.id,
+        completedNodeId,
+        entityId: run.entity_id,
+      });
       // Continue execution - visual movement failure shouldn't stop workflow
     }
   }
@@ -121,6 +131,9 @@ export async function walkEdges(
 
   // Identify all target nodes (Requirement 9.2)
   const targetNodeIds = getTargetNodes(outboundEdges);
+
+  // Log edge-walking (Requirement 10.4)
+  logEdgeWalking(run.id, completedNodeId, targetNodeIds);
 
   // For each target node, check dependencies and fire if ready
   for (const targetNodeId of targetNodeIds) {
@@ -149,7 +162,11 @@ export async function fireNode(
   // Find the node in the flow
   const node = flow.graph.nodes.find(n => n.id === nodeId);
   if (!node) {
-    console.error(`Node not found in flow: ${nodeId}`);
+    logExecutionError('Node not found in flow', new Error(`Node not found: ${nodeId}`), {
+      runId: run.id,
+      nodeId,
+      flowId: flow.id,
+    });
     return;
   }
 
@@ -162,7 +179,7 @@ export async function fireNode(
 
   // If parallel instances exist, fire THEM instead of the static node
   if (parallelKeys.length > 0) {
-    console.log(`🔥 Firing ${parallelKeys.length} parallel instances for ${nodeId}`);
+    logParallelInstanceCreation(run.id, nodeId, parallelKeys);
     
     // Fire all parallel instances concurrently
     await Promise.all(
@@ -182,7 +199,15 @@ export async function fireNode(
             await fireUXNode(run.id, parallelId, node.data, input);
             break;
           default:
-            console.warn(`Parallel execution not implemented for node type: ${node.type}`);
+            logExecutionError(
+              'Parallel execution not implemented for node type',
+              new Error(`Unsupported parallel node type: ${node.type}`),
+              {
+                runId: run.id,
+                nodeId: parallelId,
+                nodeType: node.type,
+              }
+            );
         }
       })
     );
@@ -200,9 +225,11 @@ export async function fireNode(
       await fireWorkerNode(run.id, nodeId, node.data, input);
       break;
     case 'UX':
+      logNodeExecution(run.id, nodeId, 'UX', input);
       await fireUXNode(run.id, nodeId, node.data, input);
       break;
     case 'Splitter': {
+      logNodeExecution(run.id, nodeId, 'Splitter', input);
       // Get downstream node IDs for splitter
       const outboundEdges = getOutboundEdges(nodeId, flow);
       const downstreamNodeIds = getTargetNodes(outboundEdges);
@@ -210,6 +237,7 @@ export async function fireNode(
       break;
     }
     case 'Collector': {
+      logNodeExecution(run.id, nodeId, 'Collector', input);
       // Get upstream node IDs for collector
       const inboundEdges = flow.graph.edges.filter(e => e.target === nodeId);
       const upstreamNodeIds = inboundEdges.map(e => e.source);
@@ -217,6 +245,14 @@ export async function fireNode(
       break;
     }
     default:
-      console.error(`Unknown node type: ${node.type}`);
+      logExecutionError(
+        'Unknown node type',
+        new Error(`Unknown node type: ${node.type}`),
+        {
+          runId: run.id,
+          nodeId,
+          nodeType: node.type,
+        }
+      );
   }
 }

@@ -24,10 +24,14 @@ vi.mock('@/lib/media/media-service', () => ({
 }));
 
 // Mock the utils
-vi.mock('../utils', () => ({
-  triggerCallback: vi.fn(),
-  logWorker: vi.fn(),
-}));
+vi.mock('../utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../utils')>();
+  return {
+    ...actual,
+    triggerCallback: vi.fn(),
+    logWorker: vi.fn(),
+  };
+});
 
 describe('MediaLibraryWorker', () => {
   let worker: MediaLibraryWorker;

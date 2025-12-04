@@ -23,10 +23,12 @@ import { SplitterNode } from './nodes/SplitterNode';
 import { MediaSelectNode } from './nodes/MediaSelectNode';
 import { CostsSectionNode } from './nodes/CostsSectionNode';
 import { RevenueSectionNode } from './nodes/RevenueSectionNode';
+import { FallbackNode } from './nodes/FallbackNode';
 import { IntegrationItem, PersonItem, CodeItem, DataItem } from './items';
 import { JourneyEdge } from './edges/JourneyEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
+import { sortNodesForRendering, Z_INDEX_LAYERS } from './utils';
 
 interface BMCCanvasProps {
   flow: StitchFlow;
@@ -72,6 +74,9 @@ export function BMCCanvas({ flow }: BMCCanvasProps) {
     UX: UXNode,
     Splitter: SplitterNode,
     MediaSelect: MediaSelectNode,
+    
+    // Fallback for unknown node types
+    fallback: FallbackNode,
   }), []);
 
   const edgeTypes = useMemo<EdgeTypes>(() => ({
@@ -80,21 +85,67 @@ export function BMCCanvas({ flow }: BMCCanvasProps) {
 
   // Transform flow nodes to ReactFlow nodes
   const nodes: Node[] = useMemo(() => {
-    return flow.graph.nodes.map((node) => {
+    // Get list of registered node types
+    const registeredTypes = new Set([
+      'section',
+      'section-item',
+      'integration-item',
+      'person-item',
+      'code-item',
+      'data-item',
+      'costs-section',
+      'revenue-section',
+      'Worker',
+      'Collector',
+      'UX',
+      'Splitter',
+      'MediaSelect',
+    ]);
+    
+    const transformedNodes = flow.graph.nodes.map((node) => {
       const isSection = node.type === 'section';
       const isFinancialSection = node.type === 'costs-section' || node.type === 'revenue-section';
+      const isItem = node.type === 'section-item' || 
+                     node.type === 'integration-item' || 
+                     node.type === 'person-item' || 
+                     node.type === 'code-item' || 
+                     node.type === 'data-item';
+      
+      // Use fallback type if node type is not registered
+      const nodeType = registeredTypes.has(node.type) ? node.type : 'fallback';
+      
+      // Log warning for unknown node types
+      if (nodeType === 'fallback') {
+        console.warn(`Unknown node type encountered: "${node.type}" for node "${node.id}". Using fallback component.`);
+      }
+      
+      // Determine zIndex based on node type using constants
+      let zIndex: number;
+      if (isSection) {
+        zIndex = Z_INDEX_LAYERS.SECTION_BACKGROUND;
+      } else if (isFinancialSection) {
+        zIndex = Z_INDEX_LAYERS.FINANCIAL_SECTIONS;
+      } else if (isItem) {
+        zIndex = Z_INDEX_LAYERS.ITEMS;
+      } else {
+        // Default for workflow nodes and other types
+        zIndex = Z_INDEX_LAYERS.ITEMS;
+      }
       
       return {
         id: node.id,
-        type: node.type,
+        type: nodeType,
         position: node.position,
-        data: node.data,
-        parentNode: node.parentId,
+        data: {
+          ...node.data,
+          // Pass original type to fallback component for display
+          originalType: node.type,
+        },
+        parentId: node.parentId,
         extent: node.extent,
         style: {
           ...node.style,
-          // Sections render below items, financial sections render above background but below entity overlay
-          zIndex: isSection ? -1 : isFinancialSection ? 5 : 10,
+          zIndex,
         },
         width: node.width,
         height: node.height,
@@ -105,6 +156,10 @@ export function BMCCanvas({ flow }: BMCCanvasProps) {
         connectable: !isSection && !isFinancialSection,
       };
     });
+    
+    // CRITICAL: Sort nodes by zIndex to ensure correct DOM stacking order
+    // React Flow renders nodes in array order, which affects z-index stacking context
+    return sortNodesForRendering(transformedNodes);
   }, [flow.graph.nodes]);
 
   // Transform flow edges

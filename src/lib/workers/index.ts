@@ -16,6 +16,16 @@ export { WireframeGeneratorWorker } from './wireframe-generator';
 export { ImageToVideoWorker } from './image-to-video';
 export { MediaLibraryWorker } from './media-library';
 
+// Testing utilities
+export type { WorkerTestConfig, WorkerTestResult } from './testing';
+export { 
+  testWorker, 
+  testAllWorkers, 
+  createMockWorker, 
+  checkApiKey, 
+  getRequiredEnvVars 
+} from './testing';
+
 // Register all workers in the global registry
 // Validates: Requirement 6.1
 import { ClaudeWorker } from './claude';

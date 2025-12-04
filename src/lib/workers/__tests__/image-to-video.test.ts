@@ -13,10 +13,14 @@ vi.mock('@/lib/config', () => ({
   })),
 }));
 
-vi.mock('../utils', () => ({
-  triggerCallback: vi.fn(),
-  logWorker: vi.fn(),
-}));
+vi.mock('../utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../utils')>();
+  return {
+    ...actual,
+    triggerCallback: vi.fn(),
+    logWorker: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/media/media-service', () => ({
   uploadFromUrl: vi.fn(async (url, name, type) => ({
@@ -135,24 +139,27 @@ describe('ImageToVideoWorker', () => {
     );
   });
 
-  it('should throw error if Runway adapter is selected without API key', () => {
+  it('should enter mock mode if Runway adapter is selected without API key', () => {
     process.env.VIDEO_GENERATION_ADAPTER = 'runway';
     delete process.env.RUNWAY_API_KEY;
 
-    expect(() => new ImageToVideoWorker()).toThrow('RUNWAY_API_KEY');
+    const worker = new ImageToVideoWorker();
+    expect(worker.mockMode).toBe(true);
   });
 
-  it('should throw error if Pika adapter is selected without API key', () => {
+  it('should enter mock mode if Pika adapter is selected without API key', () => {
     process.env.VIDEO_GENERATION_ADAPTER = 'pika';
     delete process.env.PIKA_API_KEY;
 
-    expect(() => new ImageToVideoWorker()).toThrow('PIKA_API_KEY');
+    const worker = new ImageToVideoWorker();
+    expect(worker.mockMode).toBe(true);
   });
 
-  it('should throw error if Kling adapter is selected without API key', () => {
+  it('should enter mock mode if Kling adapter is selected without API key', () => {
     process.env.VIDEO_GENERATION_ADAPTER = 'kling';
     delete process.env.KLING_API_KEY;
 
-    expect(() => new ImageToVideoWorker()).toThrow('KLING_API_KEY');
+    const worker = new ImageToVideoWorker();
+    expect(worker.mockMode).toBe(true);
   });
 });

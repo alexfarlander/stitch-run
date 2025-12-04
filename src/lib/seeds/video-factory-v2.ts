@@ -5,12 +5,13 @@
  * 1. Selects wireframes from the Media Library
  * 2. Loads wireframe metadata
  * 3. Configures voice settings
- * 4. Processes each scene in parallel (video + voice + mix)
- * 5. Selects background music
- * 6. Assembles final video
- * 7. Reviews final output
+ * 4. Processes each scene in parallel (video + voice)
+ * 5. Collects completed scenes
+ * 6. Selects background music
+ * 7. Assembles final video
+ * 8. Reviews final output
  * 
- * Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5
+ * Validates: Requirements 1.6, 1.7 (Splitter/Collector topology)
  */
 
 import { getAdminClient } from '../supabase/client';
@@ -22,7 +23,7 @@ import { StitchNode, StitchEdge } from '@/types/stitch';
  * Workflow structure:
  * Select Wireframes (MediaSelect) → Load Wireframes (Worker) → 
  * Voice Settings (UX) → Scene Splitter → 
- * [Generate Video (Worker) + Generate Voice (Worker) + Mix Scene (Worker)] (parallel) → 
+ * [Generate Video (Worker) | Generate Voice (Worker)] (parallel) → 
  * Scene Collector → Music Selection (MediaSelect) → 
  * Final Assembly (Worker) → Final Review (UX)
  */
@@ -122,7 +123,7 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
       },
     },
     
-    // 5. Generate Video (Worker) - Parallel
+    // 5. Generate Video Path (Worker) - Parallel Path 1
     {
       id: 'generate-video',
       type: 'Worker',
@@ -134,11 +135,11 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
       },
     },
     
-    // 6. Generate Voice (Worker) - Parallel
+    // 6. Generate Voice Path (Worker) - Parallel Path 2
     {
       id: 'generate-voice',
       type: 'Worker',
-      position: { x: 200, y: 650 },
+      position: { x: 250, y: 650 },
       data: {
         label: 'Generate Voice',
         workerType: 'elevenlabs',
@@ -146,27 +147,13 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
       },
     },
     
-    // 7. Mix Scene (Worker) - Parallel
-    {
-      id: 'mix-scene',
-      type: 'Worker',
-      position: { x: 350, y: 650 },
-      data: {
-        label: 'Mix Scene',
-        workerType: 'shotstack',
-        description: 'Combines video and audio for single scene',
-        config: {
-          resolution: 'hd',
-          format: 'mp4',
-        },
-      },
-    },
-    
     // 8. Scene Collector
+    // Collects all mixed scenes from parallel processing
+    // Receives multiple inputs from the splitter's parallel paths
     {
       id: 'scene-collector',
       type: 'Collector',
-      position: { x: 100, y: 800 },
+      position: { x: 200, y: 800 },
       data: {
         label: 'Scene Collector',
         description: 'Waits for all scene processing to complete',
@@ -174,7 +161,7 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
       },
     },
     
-    // 9. Music Selection (MediaSelect)
+    // 7. Music Selection (MediaSelect)
     {
       id: 'music-selection',
       type: 'MediaSelect',
@@ -187,7 +174,7 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
       },
     },
     
-    // 10. Final Assembly (Worker)
+    // 8. Final Assembly (Worker)
     {
       id: 'final-assembly',
       type: 'Worker',
@@ -195,7 +182,7 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
       data: {
         label: 'Final Assembly',
         workerType: 'shotstack',
-        description: 'Concatenates all scene videos and adds background music',
+        description: 'Combines video and voice tracks, adds background music',
         config: {
           resolution: 'hd',
           format: 'mp4',
@@ -204,7 +191,7 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
       },
     },
     
-    // 11. Final Review (UX)
+    // 9. Final Review (UX)
     {
       id: 'final-review',
       type: 'UX',
@@ -238,16 +225,21 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
     { id: 'e3', source: 'voice-settings', target: 'scene-splitter' },
     
     // Parallel processing (M-shape)
+    // The splitter creates two parallel paths:
+    // Path 1: video generation
+    // Path 2: voice generation
     { id: 'e4', source: 'scene-splitter', target: 'generate-video' },
     { id: 'e5', source: 'scene-splitter', target: 'generate-voice' },
-    { id: 'e6', source: 'generate-video', target: 'mix-scene' },
-    { id: 'e7', source: 'generate-voice', target: 'mix-scene' },
-    { id: 'e8', source: 'mix-scene', target: 'scene-collector' },
     
-    // Final assembly
-    { id: 'e9', source: 'scene-collector', target: 'music-selection' },
-    { id: 'e10', source: 'music-selection', target: 'final-assembly' },
-    { id: 'e11', source: 'final-assembly', target: 'final-review' },
+    // Both paths converge at the collector
+    // The collector waits for both video and voice to complete
+    { id: 'e6', source: 'generate-video', target: 'scene-collector' },
+    { id: 'e7', source: 'generate-voice', target: 'scene-collector' },
+    
+    // After collection, proceed to music selection and final assembly
+    { id: 'e8', source: 'scene-collector', target: 'music-selection' },
+    { id: 'e9', source: 'music-selection', target: 'final-assembly' },
+    { id: 'e10', source: 'final-assembly', target: 'final-review' },
   ];
   
   // Insert workflow
@@ -301,14 +293,14 @@ export async function seedVideoFactoryV2() {
     console.log('🎉 Video Factory V2 workflow seeded successfully!');
     console.log('\n📊 Summary:');
     console.log('   - Video Factory V2 workflow created');
-    console.log('   - 11 nodes configured (MediaSelect, UX, Workers, Splitter, Collector)');
+    console.log('   - 10 nodes configured (MediaSelect, UX, Workers, Splitter, Collector)');
     console.log('   - Media Library integration for wireframes and music');
-    console.log('   - Parallel scene processing (video + voice + mix)');
+    console.log('   - Parallel scene processing (video + voice)');
     console.log('   - Final video assembly with background music');
     console.log('\n🚀 Workflow includes:');
     console.log('   1. Select Wireframes → Load Metadata');
     console.log('   2. Voice Settings → Scene Splitter');
-    console.log('   3. Parallel: Generate Video + Generate Voice → Mix Scene');
+    console.log('   3. Parallel: Generate Video | Generate Voice');
     console.log('   4. Scene Collector → Music Selection');
     console.log('   5. Final Assembly → Final Review');
     

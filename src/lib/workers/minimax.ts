@@ -13,22 +13,33 @@ import { buildCallbackUrl, logWorker } from './utils';
  * Generates video clips from visual prompts asynchronously
  */
 export class MiniMaxWorker implements IWorker {
-  private apiKey: string;
-  private groupId: string;
+  private apiKey: string | null = null;
+  private groupId: string | null = null;
+  private mockMode: boolean = false;
 
   constructor() {
     const config = getConfig();
     
-    if (!config.workers.minimaxApiKey) {
-      throw new Error('MINIMAX_API_KEY environment variable is required for MiniMax worker');
+    if (!config.workers.minimaxApiKey || !config.workers.minimaxGroupId) {
+      this.mockMode = true;
+      const missingVars = [];
+      if (!config.workers.minimaxApiKey) missingVars.push('MINIMAX_API_KEY');
+      if (!config.workers.minimaxGroupId) missingVars.push('MINIMAX_GROUP_ID');
+      
+      logWorker('warn', 'MiniMax worker initialized in MOCK MODE', {
+        worker: 'minimax',
+        reason: `Missing environment variables: ${missingVars.join(', ')}`,
+        message: 'Worker will return mock video URLs instead of calling the API',
+      });
+    } else {
+      this.apiKey = config.workers.minimaxApiKey;
+      this.groupId = config.workers.minimaxGroupId;
+      logWorker('info', 'MiniMax worker initialized successfully', {
+        worker: 'minimax',
+        apiKeyPresent: true,
+        groupIdPresent: true,
+      });
     }
-
-    if (!config.workers.minimaxGroupId) {
-      throw new Error('MINIMAX_GROUP_ID environment variable is required for MiniMax worker');
-    }
-
-    this.apiKey = config.workers.minimaxApiKey;
-    this.groupId = config.workers.minimaxGroupId;
   }
 
   /**
@@ -55,6 +66,48 @@ export class MiniMaxWorker implements IWorker {
 
       if (!visualPrompt) {
         throw new Error('No visual_prompt provided in input');
+      }
+
+      // Handle mock mode
+      if (this.mockMode) {
+        logWorker('info', 'MiniMax worker running in MOCK MODE', {
+          worker: 'minimax',
+          runId,
+          nodeId,
+          message: 'Returning mock video URL',
+        });
+
+        // Simulate async behavior with a delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Store the original input in the node state
+        const { updateNodeState } = await import('@/lib/db/runs');
+        await updateNodeState(runId, nodeId, {
+          status: 'running',
+          output: input,
+        });
+
+        // Simulate callback after a delay
+        setTimeout(async () => {
+          const { triggerCallback } = await import('./utils');
+          await triggerCallback(runId, nodeId, {
+            status: 'completed',
+            output: {
+              ...input,
+              videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            },
+          });
+        }, 3000);
+
+        const duration = Date.now() - startTime;
+        logWorker('info', 'MiniMax worker initiated successfully (MOCK MODE)', {
+          worker: 'minimax',
+          runId,
+          nodeId,
+          duration,
+        });
+
+        return;
       }
 
       // Build callback URL
@@ -84,7 +137,7 @@ export class MiniMaxWorker implements IWorker {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`,
-          'X-Group-Id': this.groupId,
+          'X-Group-Id': this.groupId!,
         },
         body: JSON.stringify(payload),
       });
@@ -121,22 +174,40 @@ export class MiniMaxWorker implements IWorker {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Import error utilities
+      const { triggerCallback, extractErrorContext, categorizeError } = await import('./utils');
+      const errorContext = extractErrorContext(error);
+
       logWorker('error', 'MiniMax worker failed', {
         worker: 'minimax',
         runId,
         nodeId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...errorContext,
         duration,
+        phase: 'execution',
       });
 
       // For async workers, we need to trigger a failed callback
       // since the external service won't call back if we never made the request
-      const { triggerCallback } = await import('./utils');
-      await triggerCallback(runId, nodeId, {
-        status: 'failed',
-        error: errorMessage,
-      });
+      try {
+        await triggerCallback(runId, nodeId, {
+          status: 'failed',
+          error: errorMessage,
+        });
+      } catch (callbackError) {
+        // Log callback failure but don't throw - we've already failed
+        const callbackErrorContext = extractErrorContext(callbackError);
+        logWorker('error', 'Failed to trigger failure callback for MiniMax worker', {
+          worker: 'minimax',
+          runId,
+          nodeId,
+          originalError: errorMessage,
+          callbackError: callbackError instanceof Error ? callbackError.message : 'Unknown error',
+          ...callbackErrorContext,
+          phase: 'callback',
+        });
+      }
     }
   }
 }

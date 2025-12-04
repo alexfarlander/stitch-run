@@ -107,7 +107,7 @@ export interface StitchNode {
   data: NodeConfig;
   
   // React Flow properties for BMC nesting and layout
-  parentId?: string;           // Links an item to its Section (for nested nodes)
+  parentId?: string;           // Links an item to its Section (for nested nodes) - React Flow v12+ uses parentId
   extent?: 'parent';           // Keeps item inside the Section when dragging
   style?: React.CSSProperties; // Needed for Section width/height/colors
   width?: number;              // Explicit width for Section boxes
@@ -165,6 +165,11 @@ export interface NodeState {
   status: NodeStatus;
   output?: any;
   error?: string;
+  
+  // Collector-specific state tracking (Requirements 1.7, 9.4)
+  upstream_completed_count?: number;
+  expected_upstream_count?: number;
+  upstream_outputs?: Record<string, any>;
 }
 
 /**

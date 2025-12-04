@@ -43,7 +43,7 @@ const edgeIdArb = fc.string({ minLength: 1, maxLength: 50 })
 /**
  * Generate a valid edge progress value (0.0 to 1.0)
  */
-const edgeProgressArb = fc.double({ min: 0.0, max: 1.0 });
+const edgeProgressArb = fc.float({ min: 0, max: 1, noNaN: true });
 
 /**
  * Generate an entity at a node (node position only)

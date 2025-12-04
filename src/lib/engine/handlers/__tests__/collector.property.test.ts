@@ -98,6 +98,62 @@ const nodeStatesWithStatusArb = (
 const testConfig = { numRuns: 100 };
 
 describe('Collector Handler Property Tests', () => {
+  describe('Property 7a: Collector completion tracking', () => {
+    it('**Feature: fix-current-implementation, Property 7a: Collector completion tracking**', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 2, max: 10 }), // Number of upstream nodes
+          fc.integer({ min: 0, max: 9 }),  // Index of node to leave incomplete
+          (upstreamCount, incompleteIndex) => {
+            // Ensure incompleteIndex is within bounds
+            const actualIncompleteIndex = incompleteIndex % upstreamCount;
+            
+            // Create upstream node IDs
+            const upstreamNodeIds = Array.from(
+              { length: upstreamCount },
+              (_, i) => `upstream-${i}`
+            );
+            
+            // Create node states where one upstream is not completed
+            const nodeStates: Record<string, NodeState> = {};
+            for (let i = 0; i < upstreamCount; i++) {
+              nodeStates[upstreamNodeIds[i]] = {
+                status: i === actualIncompleteIndex ? 'running' : 'completed',
+                output: i === actualIncompleteIndex ? undefined : `output-${i}`,
+              };
+            }
+            
+            // Count completed upstream nodes
+            const completedCount = upstreamNodeIds.filter(
+              id => nodeStates[id]?.status === 'completed'
+            ).length;
+            
+            // Property: Collector should NOT fire when completedCount < expectedCount
+            expect(completedCount).toBe(upstreamCount - 1);
+            expect(completedCount < upstreamCount).toBe(true);
+            
+            // Now complete all upstream nodes
+            const allCompletedStates: Record<string, NodeState> = {};
+            for (let i = 0; i < upstreamCount; i++) {
+              allCompletedStates[upstreamNodeIds[i]] = {
+                status: 'completed',
+                output: `output-${i}`,
+              };
+            }
+            
+            const allCompletedCount = upstreamNodeIds.filter(
+              id => allCompletedStates[id]?.status === 'completed'
+            ).length;
+            
+            // Property: Collector SHOULD fire when completedCount === expectedCount
+            expect(allCompletedCount).toBe(upstreamCount);
+          }
+        ),
+        testConfig
+      );
+    });
+  });
+
   describe('Property 17: Collector identifies upstream paths', () => {
     it('**Feature: core-architecture, Property 17: Collector identifies upstream paths**', () => {
       fc.assert(

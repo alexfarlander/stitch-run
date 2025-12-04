@@ -1,136 +1,128 @@
+#!/usr/bin/env tsx
 /**
- * Script to verify the BMC canvas structure
+ * Verify BMC Canvas
+ * 
+ * This script runs all verification checks on the BMC canvas to validate:
+ * - Foreign key relationships
+ * - Node type registration
+ * - Edge references
+ * - Parent node consistency
+ * - Splitter/Collector topology
+ * - Journey edge validity
+ * 
  * Run with: npx tsx scripts/verify-bmc.ts
+ * 
+ * Requirements: 2.1
  */
 
 import { config } from 'dotenv';
-import { join } from 'path';
+import { resolve } from 'path';
 
-// Load environment variables FIRST
-config({ path: join(__dirname, '../.env.local') });
+// Load environment variables BEFORE importing anything else
+const envPath = resolve(process.cwd(), '.env.local');
+config({ path: envPath });
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-const EXPECTED_SECTIONS = [
-  'Data', 'People', 'Offers', 'Sales', 'Marketing', 'Integrations',
-  'Code', 'Products', 'Support', 'Recommendations', 'Costs', 'Revenue'
-];
-
+/**
+ * Main verification function
+ */
 async function main() {
-  console.log('🔍 Verifying BMC database structure...\n');
+  // Import after environment variables are loaded
+  const { createServerClient } = await import('../src/lib/supabase/server');
+  const {
+    checkForeignKeys,
+    checkNodeTypes,
+    checkEdgeReferences,
+    checkParentNodes,
+    checkTopology,
+    checkJourneyEdges,
+  } = await import('../src/lib/verification/checks');
+  const { runChecks } = await import('../src/lib/verification/utils');
+  const { logResult, logInfo, logError, logSection } = await import('../src/lib/verification/logger');
   
   try {
-    // Query for BMC canvas
-    const { data: bmc, error } = await supabase
+    logSection('BMC Canvas Verification');
+    logInfo('Running all verification checks on BMC canvas...\n');
+
+    // Get the BMC canvas ID
+    const supabase = createServerClient();
+    
+    // First check if any BMC exists
+    const { data: bmcs, error: queryError } = await supabase
       .from('stitch_flows')
-      .select('*')
-      .eq('canvas_type', 'bmc')
-      .eq('name', 'Default Business Model Canvas')
-      .single();
-    
-    if (error) {
-      console.error('❌ Failed to query BMC:', error);
+      .select('id, name, canvas_type')
+      .eq('canvas_type', 'bmc');
+
+    if (queryError) {
+      logError('Failed to query for BMC canvases');
+      console.error('Error:', queryError.message);
       process.exit(1);
     }
-    
+
+    if (!bmcs || bmcs.length === 0) {
+      logError('No BMC canvas found in database');
+      logInfo('\nTo create a BMC, run: npx tsx scripts/seed-bmc.ts');
+      process.exit(1);
+    }
+
+    // Try to find the default BMC, or use the first one
+    let bmc = bmcs.find(b => b.name === 'Default Business Model Canvas');
     if (!bmc) {
-      console.error('❌ No BMC found in database');
-      process.exit(1);
+      bmc = bmcs[0];
+      logInfo(`Using BMC: ${bmc.name} (no "Default Business Model Canvas" found)`);
     }
-    
-    console.log('✅ BMC found in database\n');
-    console.log('📋 BMC Details:');
-    console.log(`   ID: ${bmc.id}`);
-    console.log(`   Name: ${bmc.name}`);
-    console.log(`   Canvas Type: ${bmc.canvas_type}`);
-    console.log(`   Parent ID: ${bmc.parent_id}`);
-    console.log(`   Created: ${bmc.created_at}`);
-    console.log(`   Updated: ${bmc.updated_at}`);
-    
-    // Verify graph structure
-    console.log('\n📊 Graph Structure:');
-    console.log(`   Nodes: ${bmc.graph.nodes.length}`);
-    console.log(`   Edges: ${bmc.graph.edges.length}`);
-    
-    // Extract section names
-    const sectionNames = bmc.graph.nodes.map((n: any) => n.data.label).sort();
-    
-    console.log('\n📝 Sections:');
-    sectionNames.forEach((name: string) => {
-      const node = bmc.graph.nodes.find((n: any) => n.data.label === name);
-      console.log(`   - ${name} (${node.data.category}) at (${node.position.x}, ${node.position.y})`);
-    });
-    
-    // Validation checks
-    console.log('\n✓ Validation Checks:');
-    
+
+    logInfo(`Found BMC: ${bmc.name} (ID: ${bmc.id})`);
+    logInfo(`Canvas Type: ${bmc.canvas_type}\n`);
+
+    // Define verification checks
     const checks = [
       {
-        name: 'Canvas type is "bmc"',
-        pass: bmc.canvas_type === 'bmc',
-        requirement: '1.1, 5.5'
+        name: 'Foreign Key Integrity',
+        description: 'Validates all foreign key relationships are correct',
+        run: () => checkForeignKeys(bmc.id),
       },
       {
-        name: 'Parent ID is null (top-level canvas)',
-        pass: bmc.parent_id === null,
-        requirement: '5.6'
+        name: 'Node Type Registration',
+        description: 'Ensures all node types are registered in React Flow',
+        run: () => checkNodeTypes(bmc.id),
       },
       {
-        name: 'Exactly 12 nodes',
-        pass: bmc.graph.nodes.length === 12,
-        requirement: '5.1'
+        name: 'Edge References',
+        description: 'Validates all edges reference existing nodes',
+        run: () => checkEdgeReferences(bmc.id),
       },
       {
-        name: 'All nodes are type "section"',
-        pass: bmc.graph.nodes.every((n: any) => n.type === 'section'),
-        requirement: '5.1'
+        name: 'Parent Node Consistency',
+        description: 'Checks parent node field usage is consistent',
+        run: () => checkParentNodes(bmc.id),
       },
       {
-        name: 'All 12 standard section names present',
-        pass: EXPECTED_SECTIONS.every(name => sectionNames.includes(name)),
-        requirement: '5.3'
+        name: 'Topology Rules',
+        description: 'Validates Splitter/Collector node configurations',
+        run: () => checkTopology(bmc.id),
       },
       {
-        name: 'Nodes have correct positioning',
-        pass: bmc.graph.nodes.every((n: any) => 
-          n.position && typeof n.position.x === 'number' && typeof n.position.y === 'number'
-        ),
-        requirement: '5.2'
-      },
-      {
-        name: 'Graph has edges connecting sections',
-        pass: bmc.graph.edges.length > 0,
-        requirement: '5.4'
-      },
-      {
-        name: 'Valid React Flow structure',
-        pass: bmc.graph.nodes && bmc.graph.edges && Array.isArray(bmc.graph.nodes) && Array.isArray(bmc.graph.edges),
-        requirement: '5.7'
+        name: 'Journey Edge Validity',
+        description: 'Ensures journey events reference valid edges',
+        run: () => checkJourneyEdges(bmc.id),
       },
     ];
-    
-    let allPassed = true;
-    checks.forEach(check => {
-      const icon = check.pass ? '✅' : '❌';
-      console.log(`   ${icon} ${check.name} (Req ${check.requirement})`);
-      if (!check.pass) allPassed = false;
-    });
-    
-    if (allPassed) {
-      console.log('\n🎉 All requirements validated successfully!');
-      console.log('\n✅ Task 4 Complete: Migration applied and BMC seeded with correct structure');
+
+    // Run all checks
+    const result = await runChecks(checks);
+
+    // Display results
+    logResult(result, 'BMC Canvas Verification Results');
+
+    // Exit with appropriate status code
+    if (result.passed) {
+      process.exit(0);
     } else {
-      console.log('\n⚠️  Some validation checks failed');
       process.exit(1);
     }
-    
   } catch (error) {
-    console.error('❌ Verification failed:', error);
+    logError('Unexpected error during verification');
+    console.error(error);
     process.exit(1);
   }
 }

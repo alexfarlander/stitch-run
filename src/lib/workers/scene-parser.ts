@@ -15,18 +15,28 @@ import { triggerCallback, logWorker } from './utils';
  * Takes a script as input and outputs an array of structured scenes
  */
 export class SceneParserWorker implements IWorker {
-  private client: Anthropic;
+  private client: Anthropic | null = null;
+  private mockMode: boolean = false;
 
   constructor() {
     const config = getConfig();
     
     if (!config.workers.anthropicApiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is required for Scene Parser worker');
+      this.mockMode = true;
+      logWorker('warn', 'Scene Parser worker initialized in MOCK MODE', {
+        worker: 'scene-parser',
+        reason: 'ANTHROPIC_API_KEY environment variable is not set',
+        message: 'Worker will return mock scene data instead of calling the API',
+      });
+    } else {
+      this.client = new Anthropic({
+        apiKey: config.workers.anthropicApiKey,
+      });
+      logWorker('info', 'Scene Parser worker initialized successfully', {
+        worker: 'scene-parser',
+        apiKeyPresent: true,
+      });
     }
-
-    this.client = new Anthropic({
-      apiKey: config.workers.anthropicApiKey,
-    });
   }
 
   /**
@@ -56,9 +66,61 @@ export class SceneParserWorker implements IWorker {
       }
 
       // Extract configuration with defaults
+      const targetSceneCount = config.target_scene_count || 4;
+
+      // Handle mock mode
+      if (this.mockMode) {
+        logWorker('info', 'Scene Parser worker running in MOCK MODE', {
+          worker: 'scene-parser',
+          runId,
+          nodeId,
+          message: 'Returning mock parsed scenes',
+        });
+
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const mockScenes = [
+          {
+            visual_description: "Opening shot of a bustling city street with people walking, cars passing, and tall buildings in the background",
+            voiceover_text: "In the heart of the city, life moves at its own pace"
+          },
+          {
+            visual_description: "Close-up of a person's face looking thoughtful, with soft natural lighting from a window",
+            voiceover_text: "Every person has a story waiting to be told"
+          },
+          {
+            visual_description: "Wide shot of a park with children playing, families picnicking, and trees swaying in the breeze",
+            voiceover_text: "Moments of joy are found in the simplest places"
+          },
+          {
+            visual_description: "Sunset over the city skyline, with warm orange and pink hues painting the sky",
+            voiceover_text: "And as the day ends, we're reminded of what truly matters"
+          }
+        ];
+
+        const duration = Date.now() - startTime;
+        logWorker('info', 'Scene Parser worker completed successfully (MOCK MODE)', {
+          worker: 'scene-parser',
+          runId,
+          nodeId,
+          sceneCount: mockScenes.length,
+          duration,
+        });
+
+        await triggerCallback(runId, nodeId, {
+          status: 'completed',
+          output: { 
+            scenes: mockScenes,
+            total_scenes: mockScenes.length,
+          },
+        });
+
+        return;
+      }
+
       const model = config.model || 'claude-3-5-sonnet-20241022';
       const maxTokens = config.maxTokens || 4096;
-      const targetSceneCount = config.target_scene_count || 4;
 
       // Define the System Prompt to enforce JSON output
       const systemPrompt = `You are a script parser for a video generation pipeline.
@@ -94,7 +156,7 @@ Guidelines:
       });
 
       // Call Claude API
-      const response = await this.client.messages.create({
+      const response = await this.client!.messages.create({
         model,
         max_tokens: maxTokens,
         system: systemPrompt,
@@ -189,20 +251,39 @@ Guidelines:
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Import error utilities
+      const { extractErrorContext, categorizeError } = await import('./utils');
+      const errorContext = extractErrorContext(error);
+
       logWorker('error', 'Scene Parser worker failed', {
         worker: 'scene-parser',
         runId,
         nodeId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...errorContext,
         duration,
+        phase: 'execution',
       });
 
-      // Trigger failure callback
-      await triggerCallback(runId, nodeId, {
-        status: 'failed',
-        error: errorMessage,
-      });
+      // Trigger failure callback with detailed error information
+      try {
+        await triggerCallback(runId, nodeId, {
+          status: 'failed',
+          error: errorMessage,
+        });
+      } catch (callbackError) {
+        // Log callback failure but don't throw - we've already failed
+        const callbackErrorContext = extractErrorContext(callbackError);
+        logWorker('error', 'Failed to trigger failure callback for Scene Parser worker', {
+          worker: 'scene-parser',
+          runId,
+          nodeId,
+          originalError: errorMessage,
+          callbackError: callbackError instanceof Error ? callbackError.message : 'Unknown error',
+          ...callbackErrorContext,
+          phase: 'callback',
+        });
+      }
     }
   }
 }

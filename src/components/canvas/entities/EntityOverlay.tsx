@@ -31,7 +31,7 @@ export function EntityOverlay({ canvasId }: Props) {
         const entitiesAtNode = entities.filter((e) => e.current_node_id === entity.current_node_id);
         const index = entitiesAtNode.findIndex((e) => e.id === entity.id);
 
-        return getEntityNodePosition(node, index, entitiesAtNode.length);
+        return getEntityNodePosition(node, index, entitiesAtNode.length, nodes);
       }
 
       if (entity.current_edge_id && entity.edge_progress !== undefined) {
@@ -43,7 +43,7 @@ export function EntityOverlay({ canvasId }: Props) {
         const targetNode = getNode(edge.target);
         if (!sourceNode || !targetNode) return null;
 
-        return getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress);
+        return getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
       }
 
       return null;

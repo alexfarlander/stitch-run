@@ -13,16 +13,26 @@ import { buildCallbackUrl, logWorker, triggerCallback } from './utils';
  * Assembles multiple video and audio clips into a final composed video
  */
 export class ShotstackWorker implements IWorker {
-  private apiKey: string;
+  private apiKey: string | null = null;
+  private mockMode: boolean = false;
 
   constructor() {
     const config = getConfig();
     
     if (!config.workers.shotstackApiKey) {
-      throw new Error('SHOTSTACK_API_KEY environment variable is required for Shotstack worker');
+      this.mockMode = true;
+      logWorker('warn', 'Shotstack worker initialized in MOCK MODE', {
+        worker: 'shotstack',
+        reason: 'SHOTSTACK_API_KEY environment variable is not set',
+        message: 'Worker will return mock video URLs instead of calling the API',
+      });
+    } else {
+      this.apiKey = config.workers.shotstackApiKey;
+      logWorker('info', 'Shotstack worker initialized successfully', {
+        worker: 'shotstack',
+        apiKeyPresent: true,
+      });
     }
-
-    this.apiKey = config.workers.shotstackApiKey;
   }
 
   /**
@@ -71,6 +81,41 @@ export class ShotstackWorker implements IWorker {
         }
       }
 
+      // Handle mock mode
+      if (this.mockMode) {
+        logWorker('info', 'Shotstack worker running in MOCK MODE', {
+          worker: 'shotstack',
+          runId,
+          nodeId,
+          sceneCount: scenes.length,
+          message: 'Returning mock final video URL',
+        });
+
+        // Simulate async behavior with a delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Simulate callback after a delay
+        setTimeout(async () => {
+          await triggerCallback(runId, nodeId, {
+            status: 'completed',
+            output: {
+              finalVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+              duration: scenes.length * 5,
+            },
+          });
+        }, 5000);
+
+        const duration = Date.now() - startTime;
+        logWorker('info', 'Shotstack worker initiated successfully (MOCK MODE)', {
+          worker: 'shotstack',
+          runId,
+          nodeId,
+          duration,
+        });
+
+        return;
+      }
+
       // Build callback URL
       const callbackUrl = buildCallbackUrl(runId, nodeId);
 
@@ -106,7 +151,7 @@ export class ShotstackWorker implements IWorker {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
+          'x-api-key': this.apiKey!,
         },
         body: JSON.stringify(payload),
       });
@@ -135,21 +180,40 @@ export class ShotstackWorker implements IWorker {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Import error utilities
+      const { extractErrorContext, categorizeError } = await import('./utils');
+      const errorContext = extractErrorContext(error);
+
       logWorker('error', 'Shotstack worker failed', {
         worker: 'shotstack',
         runId,
         nodeId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...errorContext,
         duration,
+        phase: 'execution',
       });
 
       // For async workers, we need to trigger a failed callback
       // since the external service won't call back if we never made the request
-      await triggerCallback(runId, nodeId, {
-        status: 'failed',
-        error: errorMessage,
-      });
+      try {
+        await triggerCallback(runId, nodeId, {
+          status: 'failed',
+          error: errorMessage,
+        });
+      } catch (callbackError) {
+        // Log callback failure but don't throw - we've already failed
+        const callbackErrorContext = extractErrorContext(callbackError);
+        logWorker('error', 'Failed to trigger failure callback for Shotstack worker', {
+          worker: 'shotstack',
+          runId,
+          nodeId,
+          originalError: errorMessage,
+          callbackError: callbackError instanceof Error ? callbackError.message : 'Unknown error',
+          ...callbackErrorContext,
+          phase: 'callback',
+        });
+      }
     }
   }
 

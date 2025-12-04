@@ -1,7 +1,7 @@
 /**
  * Callback API Endpoint
  * Receives completion callbacks from external workers
- * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8
+ * Validates: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 10.3
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,56 +9,147 @@ import { WorkerCallback } from '@/types/stitch';
 import { getRunAdmin, updateNodeState } from '@/lib/db/runs';
 import { getFlowAdmin } from '@/lib/db/flows';
 import { walkEdges } from '@/lib/engine/edge-walker';
+import { logCallbackReceived, logExecutionError } from '@/lib/engine/logger';
+
+/**
+ * Validates callback payload structure
+ * Requirements: 9.1, 9.2, 9.5
+ */
+function validateCallbackPayload(payload: any): { valid: boolean; error?: string } {
+  // Check if payload is an object
+  if (!payload || typeof payload !== 'object') {
+    return { valid: false, error: 'Callback payload must be an object' };
+  }
+
+  // Validate status field (required)
+  if (!payload.status) {
+    return { valid: false, error: 'Missing required field: status' };
+  }
+
+  if (!['completed', 'failed'].includes(payload.status)) {
+    return { 
+      valid: false, 
+      error: `Invalid status value: "${payload.status}". Must be "completed" or "failed"` 
+    };
+  }
+
+  // Validate output field for completed status (Requirement 9.3)
+  if (payload.status === 'completed') {
+    if (payload.output !== undefined && typeof payload.output !== 'object') {
+      return { 
+        valid: false, 
+        error: 'Output field must be an object when provided' 
+      };
+    }
+  }
+
+  // Validate error field for failed status (Requirement 9.5)
+  if (payload.status === 'failed') {
+    if (payload.error !== undefined && typeof payload.error !== 'string') {
+      return { 
+        valid: false, 
+        error: 'Error field must be a string when provided' 
+      };
+    }
+  }
+
+  return { valid: true };
+}
 
 /**
  * POST /api/stitch/callback/:runId/:nodeId
  * Receives completion callbacks from external workers
  * 
- * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8
+ * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 10.3
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string; nodeId: string }> }
 ) {
-  try {
-    const { runId, nodeId } = await params;
+  const startTime = Date.now();
+  let runId: string | undefined;
+  let nodeId: string | undefined;
 
-    // Validate that runId and nodeId exist (Requirement 5.6)
+  try {
+    const resolvedParams = await params;
+    runId = resolvedParams.runId;
+    nodeId = resolvedParams.nodeId;
+
+    // Validate that runId and nodeId exist (Requirement 9.1)
+    if (!runId || !nodeId) {
+      logExecutionError('Callback missing parameters', new Error('Missing runId or nodeId'), {
+        runId,
+        nodeId,
+      });
+      return NextResponse.json(
+        { error: 'Missing required parameters: runId and nodeId' },
+        { status: 400 }
+      );
+    }
+
     // Use admin client since webhooks have no cookies/auth
     const run = await getRunAdmin(runId);
     if (!run) {
+      logExecutionError('Run not found', new Error(`Run not found: ${runId}`), {
+        runId,
+        nodeId,
+      });
       return NextResponse.json(
-        { error: 'Run not found' },
+        { error: `Run not found: ${runId}` },
         { status: 404 }
       );
     }
 
-    // Check if node exists in the run
+    // Check if node exists in the run (Requirement 9.1)
     if (!run.node_states[nodeId]) {
+      logExecutionError('Node not found in run', new Error(`Node not found: ${nodeId}`), {
+        runId,
+        nodeId,
+        availableNodes: Object.keys(run.node_states),
+      });
       return NextResponse.json(
-        { error: 'Node not found in run' },
+        { error: `Node not found in run: ${nodeId}` },
         { status: 404 }
       );
     }
 
-    // Parse and validate callback payload (Requirement 5.2)
+    // Parse callback payload
     let callback: WorkerCallback;
     try {
       callback = await request.json();
-    } catch {
+    } catch (parseError) {
+      logExecutionError('Failed to parse callback JSON', parseError, {
+        runId,
+        nodeId,
+      });
       return NextResponse.json(
-        { error: 'Invalid callback payload' },
+        { error: 'Invalid JSON in callback payload' },
         { status: 400 }
       );
     }
 
-    // Validate callback structure
-    if (!callback.status || !['completed', 'failed'].includes(callback.status)) {
+    // Validate callback structure (Requirements 9.1, 9.2, 9.3, 9.5)
+    const validation = validateCallbackPayload(callback);
+    if (!validation.valid) {
+      logExecutionError('Invalid callback payload structure', new Error(validation.error), {
+        runId,
+        nodeId,
+        receivedPayload: callback,
+      });
       return NextResponse.json(
-        { error: 'Invalid callback payload' },
+        { error: validation.error },
         { status: 400 }
       );
     }
+
+    // Log callback receipt (Requirement 10.3)
+    logCallbackReceived(
+      runId,
+      nodeId,
+      callback.status,
+      callback.output,
+      callback.error
+    );
 
     // Update node state based on callback status
     if (callback.status === 'completed') {
@@ -74,20 +165,22 @@ export async function POST(
         ...callback.output,
       };
 
-      // Update to completed with merged output (Requirement 5.3)
+      // Update to completed with merged output (Requirement 9.2, 9.3)
       await updateNodeState(runId, nodeId, {
         status: 'completed',
         output: mergedOutput,
       });
     } else {
-      // Update to failed with error (Requirement 5.4)
+      // Update to failed with error (Requirement 9.5)
+      const errorMessage = callback.error || 'Worker reported failure';
+      
       await updateNodeState(runId, nodeId, {
         status: 'failed',
-        error: callback.error || 'Worker reported failure',
+        error: errorMessage,
       });
     }
 
-    // Apply entity movement if configured (Requirements 5.1, 5.2, 5.3, 5.4, 5.5)
+    // Apply entity movement if configured
     const flow = await getFlowAdmin(run.flow_id);
     if (flow) {
       const node = flow.graph.nodes.find(n => n.id === nodeId);
@@ -97,7 +190,7 @@ export async function POST(
       }
     }
 
-    // Trigger edge-walking if node completed successfully (Requirement 5.5)
+    // Trigger edge-walking if node completed successfully (Requirement 9.4)
     if (callback.status === 'completed') {
       // Get the flow to perform edge-walking (use admin client)
       if (flow) {
@@ -106,19 +199,38 @@ export async function POST(
         if (updatedRun) {
           // Walk edges from the completed node
           await walkEdges(nodeId, flow, updatedRun);
+        } else {
+          logExecutionError('Failed to get updated run for edge-walking', new Error('Run not found after update'), {
+            runId,
+            nodeId,
+          });
         }
+      } else {
+        logExecutionError('Flow not found for edge-walking', new Error(`Flow not found: ${run.flow_id}`), {
+          runId,
+          nodeId,
+          flowId: run.flow_id,
+        });
       }
     }
 
-    // Return success response (Requirement 5.8)
+    // Return success response
     return NextResponse.json(
       { success: true },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Callback processing error:', error);
+    // Enhanced error logging (Requirement 10.5)
+    logExecutionError('Callback processing error', error, {
+      runId,
+      nodeId,
+    });
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error processing callback',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

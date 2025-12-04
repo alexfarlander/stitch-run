@@ -8,9 +8,11 @@ import { WorkerPayload, NodeConfig, StitchRun } from '@/types/stitch';
 import { getConfig } from '@/lib/config';
 import { updateNodeState } from '@/lib/db/runs';
 import { workerRegistry } from '@/lib/workers';
+import { logWorkerCall, logExecutionError, logNodeExecution } from '../logger';
 
 /**
  * Constructs the callback URL for a worker
+ * CRITICAL: Always uses NEXT_PUBLIC_BASE_URL from environment
  * Validates: Requirements 4.3, 12.1, 12.2
  * 
  * @param runId - The run ID
@@ -19,7 +21,15 @@ import { workerRegistry } from '@/lib/workers';
  */
 export function constructCallbackUrl(runId: string, nodeId: string): string {
   const config = getConfig();
-  return `${config.baseUrl}/api/stitch/callback/${runId}/${nodeId}`;
+  
+  // Validate that baseUrl is set (getConfig already validates, but double-check)
+  if (!config.baseUrl) {
+    throw new Error('NEXT_PUBLIC_BASE_URL environment variable is not set. Cannot generate callback URL.');
+  }
+  
+  const callbackUrl = `${config.baseUrl}/api/stitch/callback/${runId}/${nodeId}`;
+  
+  return callbackUrl;
 }
 
 /**
@@ -107,7 +117,12 @@ export async function applyEntityMovement(
       movementAction.setEntityType  // Pass entity type conversion if specified
     );
   } catch (error) {
-    console.error('Failed to apply entity movement:', error);
+    logExecutionError('Failed to apply entity movement', error, {
+      runId,
+      nodeId,
+      entityId: run.entity_id,
+      targetSectionId: movementAction.targetSectionId,
+    });
     // Don't throw - entity movement failure shouldn't break the workflow
   }
 }
@@ -128,6 +143,9 @@ export async function fireWorkerNode(
   config: NodeConfig,
   input: any
 ): Promise<void> {
+  // Log node execution start (Requirement 10.1)
+  logNodeExecution(runId, nodeId, 'Worker', input);
+
   // Mark node as 'running' before firing (Requirement 9.6)
   await updateNodeState(runId, nodeId, {
     status: 'running',
@@ -137,15 +155,34 @@ export async function fireWorkerNode(
   if (config.workerType && workerRegistry.hasWorker(config.workerType)) {
     try {
       const worker = workerRegistry.getWorker(config.workerType);
+      
+      // Build payload for logging
+      const payload = buildWorkerPayload(runId, nodeId, config, input);
+      
+      // Log worker call (Requirement 10.2)
+      logWorkerCall(
+        runId,
+        nodeId,
+        config.workerType,
+        `integrated:${config.workerType}`,
+        payload
+      );
+      
       await worker.execute(runId, nodeId, config, input);
       // Integrated worker handles its own callbacks and state updates
       return;
     } catch (error) {
-      // Handle worker execution errors
+      // Handle worker execution errors (Requirement 10.5)
       let errorMessage = 'Integrated worker execution failed';
       if (error instanceof Error) {
         errorMessage = error.message;
       }
+      
+      logExecutionError('Integrated worker execution failed', error, {
+        runId,
+        nodeId,
+        workerType: config.workerType,
+      });
       
       await updateNodeState(runId, nodeId, {
         status: 'failed',
@@ -174,12 +211,28 @@ export async function fireWorkerNode(
     try {
       url = new URL(config.webhookUrl);
     } catch {
+      const errorMsg = 'Invalid webhook URL';
+      logExecutionError(errorMsg, new Error(errorMsg), {
+        runId,
+        nodeId,
+        webhookUrl: config.webhookUrl,
+      });
+      
       await updateNodeState(runId, nodeId, {
         status: 'failed',
-        error: 'Invalid webhook URL',
+        error: errorMsg,
       });
       return;
     }
+
+    // Log worker call (Requirement 10.2)
+    logWorkerCall(
+      runId,
+      nodeId,
+      'webhook',
+      url.toString(),
+      payload
+    );
 
     // Send HTTP POST to worker webhook (Requirement 4.1)
     const response = await fetch(url.toString(), {
@@ -194,9 +247,17 @@ export async function fireWorkerNode(
 
     // Check if the request was successful
     if (!response.ok) {
+      const errorMsg = `Worker webhook returned ${response.status}: ${response.statusText}`;
+      logExecutionError(errorMsg, new Error(errorMsg), {
+        runId,
+        nodeId,
+        webhookUrl: url.toString(),
+        statusCode: response.status,
+      });
+      
       await updateNodeState(runId, nodeId, {
         status: 'failed',
-        error: `Worker webhook returned ${response.status}: ${response.statusText}`,
+        error: errorMsg,
       });
       return;
     }
@@ -204,7 +265,7 @@ export async function fireWorkerNode(
     // Worker webhook fired successfully
     // Node remains in 'running' state until callback is received
   } catch (error) {
-    // Handle network errors, timeouts, unreachable URLs (Requirement 4.5)
+    // Handle network errors, timeouts, unreachable URLs (Requirement 4.5, 10.5)
     let errorMessage = 'Worker webhook unreachable';
     
     if (error instanceof Error) {
@@ -216,6 +277,12 @@ export async function fireWorkerNode(
         errorMessage = error.message;
       }
     }
+
+    logExecutionError(errorMessage, error, {
+      runId,
+      nodeId,
+      webhookUrl: config.webhookUrl,
+    });
 
     await updateNodeState(runId, nodeId, {
       status: 'failed',

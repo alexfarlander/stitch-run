@@ -153,7 +153,7 @@ function generateBMCGraph() {
       status: 'idle',
       itemType: item.type,
     },
-    parentId: slugifySection(item.section),
+    parentNode: slugifySection(item.section),
     extent: 'parent' as const,
   }));
 
@@ -361,7 +361,7 @@ async function main() {
     
     // Count node types
     const sectionNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section');
-    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'item');
+    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
     
     console.log(`   Section Nodes: ${sectionNodes.length}`);
     console.log(`   Item Nodes: ${itemNodes.length}`);

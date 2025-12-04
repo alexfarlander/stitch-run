@@ -14,18 +14,28 @@ import { triggerCallback, logWorker } from './utils';
  * Generates structured scene descriptions from text prompts
  */
 export class ClaudeWorker implements IWorker {
-  private client: Anthropic;
+  private client: Anthropic | null = null;
+  private mockMode: boolean = false;
 
   constructor() {
     const config = getConfig();
     
     if (!config.workers.anthropicApiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is required for Claude worker');
+      this.mockMode = true;
+      logWorker('warn', 'Claude worker initialized in MOCK MODE', {
+        worker: 'claude',
+        reason: 'ANTHROPIC_API_KEY environment variable is not set',
+        message: 'Worker will return mock data instead of calling the API',
+      });
+    } else {
+      this.client = new Anthropic({
+        apiKey: config.workers.anthropicApiKey,
+      });
+      logWorker('info', 'Claude worker initialized successfully', {
+        worker: 'claude',
+        apiKeyPresent: true,
+      });
     }
-
-    this.client = new Anthropic({
-      apiKey: config.workers.anthropicApiKey,
-    });
   }
 
   /**
@@ -48,12 +58,60 @@ export class ClaudeWorker implements IWorker {
 
     try {
       // Extract configuration with defaults
-      const model = config.model || 'claude-3-5-sonnet-20241022';
+      const model = config.model || 'claude-sonnet-4-20250514';
       const maxTokens = config.maxTokens || 4096;
       const prompt = input?.prompt || input;
 
       if (!prompt) {
         throw new Error('No prompt provided in input');
+      }
+
+      // Handle mock mode
+      if (this.mockMode) {
+        logWorker('info', 'Claude worker running in MOCK MODE', {
+          worker: 'claude',
+          runId,
+          nodeId,
+          message: 'Returning mock scene data',
+        });
+
+        // Return mock scenes after a short delay to simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const mockScenes = [
+          {
+            visual_prompt: "A stunning aerial view of a modern city skyline at golden hour, with glass buildings reflecting warm sunlight",
+            voice_text: "Welcome to the future of innovation and technology"
+          },
+          {
+            visual_prompt: "Close-up of hands typing on a sleek laptop, with code visible on the screen, in a minimalist workspace",
+            voice_text: "Where ideas transform into reality through the power of code"
+          },
+          {
+            visual_prompt: "A diverse team collaborating around a digital whiteboard, pointing at colorful diagrams and charts",
+            voice_text: "Teams working together to solve tomorrow's challenges today"
+          },
+          {
+            visual_prompt: "A rocket launching into a clear blue sky, leaving a trail of white smoke behind",
+            voice_text: "Taking your vision to new heights and beyond"
+          }
+        ];
+
+        const duration = Date.now() - startTime;
+        logWorker('info', 'Claude worker completed successfully (MOCK MODE)', {
+          worker: 'claude',
+          runId,
+          nodeId,
+          sceneCount: mockScenes.length,
+          duration,
+        });
+
+        await triggerCallback(runId, nodeId, {
+          status: 'completed',
+          output: { scenes: mockScenes },
+        });
+
+        return;
       }
 
       // Define the System Prompt to enforce JSON output
@@ -81,7 +139,7 @@ Create exactly 4 scenes that tell a cohesive story based on the user's topic.`;
       });
 
       // Call Claude API with System Prompt
-      const response = await this.client.messages.create({
+      const response = await this.client!.messages.create({
         model,
         max_tokens: maxTokens,
         system: systemPrompt,
@@ -158,20 +216,39 @@ Create exactly 4 scenes that tell a cohesive story based on the user's topic.`;
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Import error utilities
+      const { extractErrorContext, categorizeError } = await import('./utils');
+      const errorContext = extractErrorContext(error);
+
       logWorker('error', 'Claude worker failed', {
         worker: 'claude',
         runId,
         nodeId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...errorContext,
         duration,
+        phase: 'execution',
       });
 
-      // Trigger failure callback
-      await triggerCallback(runId, nodeId, {
-        status: 'failed',
-        error: errorMessage,
-      });
+      // Trigger failure callback with detailed error information
+      try {
+        await triggerCallback(runId, nodeId, {
+          status: 'failed',
+          error: errorMessage,
+        });
+      } catch (callbackError) {
+        // Log callback failure but don't throw - we've already failed
+        const callbackErrorContext = extractErrorContext(callbackError);
+        logWorker('error', 'Failed to trigger failure callback for Claude worker', {
+          worker: 'claude',
+          runId,
+          nodeId,
+          originalError: errorMessage,
+          callbackError: callbackError instanceof Error ? callbackError.message : 'Unknown error',
+          ...callbackErrorContext,
+          phase: 'callback',
+        });
+      }
     }
   }
 }

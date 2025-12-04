@@ -287,36 +287,95 @@ interface ExecutionNode {
 
 LLMs naturally think in Mermaid. Provide bidirectional conversion:
 
+**Mermaid Limitations:**
+
+Mermaid captures structure but NOT configuration:
+```mermaid
+flowchart LR
+  A[Topic Input] --> B[Claude Script]
+  B --> C[Splitter]
+```
+
+This doesn't capture:
+- What fields does "Topic Input" show?
+- What model does "Claude Script" use?
+- What's the split count in "Splitter"?
+- Entity movement configuration
+- Edge mappings (data flow)
+
+**Solution: Hybrid Approach**
+
+Mermaid for quick sketches, JSON configs for details:
+
+```typescript
+// src/types/workflow-creation.ts
+
+interface WorkflowCreationRequest {
+  // Structure (quick sketch)
+  mermaid?: string;
+  
+  // OR full graph (detailed)
+  graph?: VisualGraph;
+  
+  // Node configurations (optional, enhances Mermaid)
+  nodeConfigs?: {
+    [nodeId: string]: {
+      workerType?: string;
+      config?: Record<string, any>;
+      entityMovement?: EntityMovementConfig;
+    }
+  };
+  
+  // Edge mappings (optional, enhances Mermaid)
+  edgeMappings?: {
+    [edgeKey: string]: EdgeMapping;  // "A->B": { prompt: "output.text" }
+  };
+}
+```
+
+**Usage Patterns:**
+
+1. **Quick Sketch (Mermaid only):**
+   - AI Manager generates Mermaid
+   - System infers worker types from labels
+   - Default configs applied
+
+2. **Detailed (Mermaid + Configs):**
+   - Mermaid for structure
+   - nodeConfigs for worker settings
+   - edgeMappings for data flow
+
+3. **Full Control (JSON Graph):**
+   - Complete VisualGraph with all details
+   - Used for complex workflows
+
 **Mermaid to Canvas:**
 ```typescript
 // src/lib/canvas/mermaid-parser.ts
 
-function mermaidToCanvas(mermaid: string): CanvasSchema {
-  // Parse Mermaid flowchart syntax
-  // Extract nodes and edges
-  // Generate positions using auto-layout
-  // Return CanvasSchema
+function mermaidToCanvas(
+  mermaid: string, 
+  nodeConfigs?: Record<string, any>,
+  edgeMappings?: Record<string, EdgeMapping>
+): VisualGraph {
+  // 1. Parse Mermaid flowchart syntax
+  // 2. Extract nodes and edges
+  // 3. Infer worker types from labels (e.g., "Claude" → worker_type: "claude")
+  // 4. Apply nodeConfigs if provided
+  // 5. Apply edgeMappings if provided
+  // 6. Generate positions using auto-layout
+  // 7. Return VisualGraph
 }
-
-// Example input:
-// ```mermaid
-// flowchart LR
-//   A[Topic Input] --> B[Script Generator]
-//   B --> C[Scene Splitter]
-//   C --> D1[Video Gen 1]
-//   C --> D2[Video Gen 2]
-//   D1 --> E[Collector]
-//   D2 --> E
-// ```
 ```
 
 **Canvas to Mermaid:**
 ```typescript
 // src/lib/canvas/mermaid-generator.ts
 
-function canvasToMermaid(canvas: CanvasSchema): string {
+function canvasToMermaid(canvas: VisualGraph): string {
   // Convert nodes to Mermaid node definitions
   // Convert edges to Mermaid connections
+  // Note: Configs are lost in this conversion (structure only)
   // Return Mermaid string
 }
 ```
@@ -537,6 +596,32 @@ You are an AI that manages Stitch canvases. You can:
 
 ## Current Canvas State
 {current_canvas_json}
+
+## Entity Movement Rules (CRITICAL)
+
+Entities are moved BY workflow completion, not vice versa:
+
+1. **Real-world event** → External system detects it (Stripe, Typeform, Calendly)
+2. **Webhook fires** → Stitch receives the event
+3. **Workflow runs** → Business logic executes
+4. **Entity moves** → On workflow completion, entity moves to next node
+
+Worker nodes can have `entityMovement` config:
+```json
+{
+  "entityMovement": {
+    "onSuccess": "advance",      // Move to next node via edge
+    "onFailure": "stay",         // Stay at current node
+    "successNodeId": "node-xyz", // Optional: jump to specific node
+    "completeAs": "customer"     // Optional: convert entity type
+  }
+}
+```
+
+When building workflows, always consider:
+- "What webhook triggers this workflow?"
+- "When this workflow completes, where does the entity go?"
+- "What happens on failure?"
 
 ## Commands
 - CREATE_WORKFLOW: Generate a new workflow from description
@@ -762,7 +847,39 @@ curl -X POST ${STITCH_API_URL}/api/canvas \
 
 Make the canvas actually run and produce outputs.
 
-### 5.1 Execution Visualization
+**Key Differentiator:** This is NOT just workflow execution (n8n/Zapier do that). This is a **Business Model Canvas that executes itself, with customers visible traveling through it.**
+
+### 5.1 BMC View Priority (The Differentiator)
+
+The demo should prioritize the BMC view, not just workflow execution:
+
+**What Makes Stitch Different:**
+- n8n/Zapier: Workflow execution ✓
+- Stitch: Business Model Canvas that executes itself, with customers visible traveling through it
+
+**Demo Flow:**
+1. Show BMC canvas with 12 sections
+2. Show entities (Monica, Ross, Rachel) at various positions
+3. Drill into a section → see the workflow inside
+4. Workflow runs → entity moves on BMC
+5. Zoom back out → see entity in new position
+
+**Visual Hierarchy:**
+```
+BMC Canvas (Top Level)
+├── Marketing Section
+│   ├── LinkedIn Ads (item)
+│   ├── YouTube Channel (item)
+│   └── [Monica traveling on edge to Sales]
+├── Sales Section
+│   ├── Demo Call (item) ← [Ross waiting here]
+│   └── Email Sequence (item)
+├── ... other sections
+└── Revenue Section
+    └── [Shows MRR calculated from entities]
+```
+
+### 5.2 Execution Visualization
 
 Show workflow execution in real-time:
 
@@ -781,7 +898,7 @@ Show workflow execution in real-time:
    - Live updates as nodes complete
    - Preview for media (images, videos, audio)
 
-### 5.2 Entity Movement
+### 5.3 Entity Movement
 
 Entities move through the canvas as workflows execute:
 
@@ -795,7 +912,12 @@ Entities move through the canvas as workflows execute:
    - Entity dots with avatars
    - Trail effect showing path
 
-### 5.3 Demo Mode
+3. **BMC-Level Movement**
+   - Entity moves between sections (not just within workflows)
+   - Journey visible at BMC level
+   - Financial metrics update as entities convert
+
+### 5.4 Demo Mode
 
 One-click demo that shows the canvas in action:
 
@@ -806,8 +928,12 @@ async function runDemo(canvasId: string) {
   // 1. Reset canvas to initial state
   await resetCanvas(canvasId);
   
-  // 2. Spawn demo entities
+  // 2. Spawn demo entities at various positions
   await spawnDemoEntities(canvasId);
+  // Monica: at Paying Customers
+  // Ross: at Free Trial
+  // Rachel: traveling on edge
+  // Phoebe: just entered from YouTube
   
   // 3. Trigger workflows with delays
   for (const entity of demoEntities) {
@@ -817,6 +943,46 @@ async function runDemo(canvasId: string) {
   
   // 4. Let execution play out
   // Real-time updates via Supabase subscriptions
+}
+```
+
+### 5.5 The Meta-Demo Opportunity
+
+**"Watch Stitch build the demo video... using Stitch."**
+
+This is "Stitch by Stitch" — the system demonstrating itself:
+
+1. AI Manager creates the Video Factory workflow
+2. AI Manager runs it with topic: "Explain Stitch in 60 seconds"
+3. Video Factory produces the demo video
+4. The demo video shows Stitch creating itself
+
+**Why This Matters:**
+- Memorable for judges
+- Proves the system actually works
+- Meta-demonstration is impressive
+- Shows AI Manager + Workflow Execution together
+
+**Implementation:**
+```typescript
+// The meta-demo script
+async function metaDemo() {
+  // 1. AI Manager creates Video Factory
+  const workflow = await aiManager.processRequest(
+    "Create a workflow that generates a 60-second explainer video about Stitch"
+  );
+  
+  // 2. Run the workflow
+  const run = await startRun(workflow.id, {
+    input: { topic: "Stitch: The Living Business Model Canvas" }
+  });
+  
+  // 3. Wait for completion
+  await waitForCompletion(run.id);
+  
+  // 4. The output IS the demo video
+  const video = await getRunOutput(run.id);
+  return video.url;
 }
 ```
 
@@ -871,11 +1037,34 @@ async function runDemo(canvasId: string) {
 
 ## Key Design Decisions
 
+### Why BMC First, Workflows Second?
+The hackathon differentiator is NOT workflow execution (n8n/Zapier do that).
+
+**The differentiator is:**
+- A Business Model Canvas that executes itself
+- Customers visible traveling through the business
+- Real-time metrics calculated from entity positions
+- Drill-down from BMC → Workflow → Back to BMC
+
+**Demo Priority:**
+1. BMC canvas with entities
+2. Entity movement between sections
+3. Drill-down to see workflow
+4. Workflow execution
+5. Entity arrives at new position
+
 ### Why Mermaid?
 - LLMs naturally generate Mermaid
 - Human-readable and editable
 - Standard format, well-documented
 - Easy to convert to/from JSON
+- **Limitation:** Structure only, not config (use hybrid approach)
+
+### Why Hybrid Mermaid + JSON?
+- Mermaid for quick sketches (structure)
+- JSON configs for details (worker settings, entity movement)
+- Best of both worlds
+- AI Manager can use either based on complexity
 
 ### Why Simple JSON Schema?
 - LLMs are excellent at JSON
@@ -894,6 +1083,12 @@ async function runDemo(canvasId: string) {
 - REST is sufficient for CRUD
 - LLMs understand REST better
 - Simpler to implement
+
+### Why Versioning?
+- Runs reference specific versions (safe history)
+- Lightweight runs (no graph duplication)
+- AI can modify flows without breaking old runs
+- Auto-version on run keeps "one click" magic
 
 ---
 

@@ -28,6 +28,7 @@ const EXPECTED_SECTION_NAMES = [
   'Products',
   'Support',
   'Recommendations',
+  'Paying Customers',
   'Costs',
   'Revenue',
 ];
@@ -105,19 +106,22 @@ describe('BMC Seed Script Property Tests', () => {
             // Generate BMC graph
             const graph = generateBMCGraph();
             
-            // Should contain exactly 12 nodes
-            expect(graph.nodes.length).toBe(12);
+            // Filter for section nodes only
+            const sectionNodes = graph.nodes.filter(n => n.type === 'section');
             
-            // All nodes should have type 'section'
-            for (const node of graph.nodes) {
+            // Should contain exactly 13 section nodes
+            expect(sectionNodes.length).toBe(13);
+            
+            // All section nodes should have type 'section'
+            for (const node of sectionNodes) {
               expect(node.type).toBe('section');
             }
             
             // Should have valid React Flow structure
             expect(isValidReactFlowStructure(graph)).toBe(true);
             
-            // Each node should have required data properties
-            for (const node of graph.nodes as SectionNode[]) {
+            // Each section node should have required data properties
+            for (const node of sectionNodes as SectionNode[]) {
               expect(node.data.label).toBeDefined();
               expect(typeof node.data.label).toBe('string');
               expect(node.data.category).toBeDefined();
@@ -149,11 +153,14 @@ describe('BMC Seed Script Property Tests', () => {
             // Generate BMC graph
             const graph = generateBMCGraph();
             
-            // Extract all node labels
-            const nodeLabels = (graph.nodes as SectionNode[]).map(n => n.data.label);
+            // Filter for section nodes only
+            const sectionNodes = graph.nodes.filter(n => n.type === 'section');
             
-            // Should have exactly 12 labels
-            expect(nodeLabels.length).toBe(12);
+            // Extract labels only from section nodes
+            const nodeLabels = (sectionNodes as SectionNode[]).map(n => n.data.label);
+            
+            // Should have exactly 13 labels
+            expect(nodeLabels.length).toBe(13);
             
             // Labels should match expected section names exactly
             const labelSet = new Set(nodeLabels);

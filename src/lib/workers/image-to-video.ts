@@ -304,6 +304,7 @@ class KlingAdapter implements VideoGenerationAdapter {
  */
 export class ImageToVideoWorker implements IWorker {
   private adapter: VideoGenerationAdapter;
+  public mockMode: boolean = false;
 
   constructor() {
     // Determine which adapter to use based on configuration
@@ -312,28 +313,73 @@ export class ImageToVideoWorker implements IWorker {
     switch (adapterType.toLowerCase()) {
       case 'runway':
         if (!process.env.RUNWAY_API_KEY) {
-          throw new Error('RUNWAY_API_KEY environment variable is required for Runway adapter');
+          this.mockMode = true;
+          logWorker('warn', 'Image-to-Video falling back to MOCK MODE', {
+            worker: 'image-to-video',
+            reason: 'RUNWAY_API_KEY environment variable is not set',
+            requestedAdapter: 'runway',
+            message: 'Using mock adapter instead',
+          });
+          this.adapter = new MockVideoAdapter();
+        } else {
+          this.adapter = new RunwayAdapter(process.env.RUNWAY_API_KEY);
+          logWorker('info', 'Image-to-Video initialized with Runway adapter', {
+            worker: 'image-to-video',
+            adapter: 'runway',
+            apiKeyPresent: true,
+          });
         }
-        this.adapter = new RunwayAdapter(process.env.RUNWAY_API_KEY);
         break;
       
       case 'pika':
         if (!process.env.PIKA_API_KEY) {
-          throw new Error('PIKA_API_KEY environment variable is required for Pika adapter');
+          this.mockMode = true;
+          logWorker('warn', 'Image-to-Video falling back to MOCK MODE', {
+            worker: 'image-to-video',
+            reason: 'PIKA_API_KEY environment variable is not set',
+            requestedAdapter: 'pika',
+            message: 'Using mock adapter instead',
+          });
+          this.adapter = new MockVideoAdapter();
+        } else {
+          this.adapter = new PikaAdapter(process.env.PIKA_API_KEY);
+          logWorker('info', 'Image-to-Video initialized with Pika adapter', {
+            worker: 'image-to-video',
+            adapter: 'pika',
+            apiKeyPresent: true,
+          });
         }
-        this.adapter = new PikaAdapter(process.env.PIKA_API_KEY);
         break;
       
       case 'kling':
         if (!process.env.KLING_API_KEY) {
-          throw new Error('KLING_API_KEY environment variable is required for Kling adapter');
+          this.mockMode = true;
+          logWorker('warn', 'Image-to-Video falling back to MOCK MODE', {
+            worker: 'image-to-video',
+            reason: 'KLING_API_KEY environment variable is not set',
+            requestedAdapter: 'kling',
+            message: 'Using mock adapter instead',
+          });
+          this.adapter = new MockVideoAdapter();
+        } else {
+          this.adapter = new KlingAdapter(process.env.KLING_API_KEY);
+          logWorker('info', 'Image-to-Video initialized with Kling adapter', {
+            worker: 'image-to-video',
+            adapter: 'kling',
+            apiKeyPresent: true,
+          });
         }
-        this.adapter = new KlingAdapter(process.env.KLING_API_KEY);
         break;
       
       case 'mock':
       default:
+        this.mockMode = true;
         this.adapter = new MockVideoAdapter();
+        logWorker('info', 'Image-to-Video initialized in MOCK MODE', {
+          worker: 'image-to-video',
+          adapter: 'mock',
+          message: 'Using sample video URLs',
+        });
         break;
     }
   }
@@ -505,20 +551,39 @@ export class ImageToVideoWorker implements IWorker {
       const totalDuration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      // Import error utilities
+      const { extractErrorContext, categorizeError } = await import('./utils');
+      const errorContext = extractErrorContext(error);
+
       logWorker('error', 'Image-to-Video worker failed', {
         worker: 'image-to-video',
         runId,
         nodeId,
         error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        ...errorContext,
         duration: totalDuration,
+        phase: 'execution',
       });
 
-      // Trigger failure callback
-      await triggerCallback(runId, nodeId, {
-        status: 'failed',
-        error: errorMessage,
-      });
+      // Trigger failure callback with detailed error information
+      try {
+        await triggerCallback(runId, nodeId, {
+          status: 'failed',
+          error: errorMessage,
+        });
+      } catch (callbackError) {
+        // Log callback failure but don't throw - we've already failed
+        const callbackErrorContext = extractErrorContext(callbackError);
+        logWorker('error', 'Failed to trigger failure callback for Image-to-Video worker', {
+          worker: 'image-to-video',
+          runId,
+          nodeId,
+          originalError: errorMessage,
+          callbackError: callbackError instanceof Error ? callbackError.message : 'Unknown error',
+          ...callbackErrorContext,
+          phase: 'callback',
+        });
+      }
     }
   }
 }

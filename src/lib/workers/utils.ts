@@ -8,13 +8,30 @@ import { WorkerCallback } from '@/types/stitch';
 
 /**
  * Constructs a callback URL for a worker
+ * CRITICAL: Always uses NEXT_PUBLIC_BASE_URL from environment
  * @param runId - The run identifier
  * @param nodeId - The node identifier
  * @returns Fully qualified callback URL
  */
 export function buildCallbackUrl(runId: string, nodeId: string): string {
   const config = getConfig();
-  return `${config.baseUrl}/api/stitch/callback/${runId}/${nodeId}`;
+  
+  // Validate that baseUrl is set (getConfig already validates, but double-check)
+  if (!config.baseUrl) {
+    throw new Error('NEXT_PUBLIC_BASE_URL environment variable is not set. Cannot generate callback URL.');
+  }
+  
+  const callbackUrl = `${config.baseUrl}/api/stitch/callback/${runId}/${nodeId}`;
+  
+  // Log the generated callback URL for debugging
+  logWorker('info', 'Generated callback URL', {
+    runId,
+    nodeId,
+    callbackUrl,
+    baseUrl: config.baseUrl,
+  });
+  
+  return callbackUrl;
 }
 
 /**
@@ -116,6 +133,7 @@ export function logWorker(
     timestamp: new Date().toISOString(),
     level,
     message,
+    component: 'worker',
     ...sanitizedContext,
   };
 
@@ -129,4 +147,92 @@ export function logWorker(
     default:
       console.log(JSON.stringify(logData));
   }
+}
+
+/**
+ * Categorizes errors for better debugging and monitoring
+ * @param error - The error to categorize
+ * @returns Error category
+ */
+export function categorizeError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return 'unknown';
+  }
+
+  const message = error.message.toLowerCase();
+
+  // API-related errors
+  if (message.includes('api') || message.includes('request failed')) {
+    return 'api_error';
+  }
+
+  // Authentication/Authorization errors
+  if (message.includes('unauthorized') || message.includes('forbidden') || 
+      message.includes('api key') || message.includes('authentication')) {
+    return 'auth_error';
+  }
+
+  // Network errors
+  if (message.includes('network') || message.includes('timeout') || 
+      message.includes('connection') || message.includes('fetch')) {
+    return 'network_error';
+  }
+
+  // Validation errors
+  if (message.includes('invalid') || message.includes('missing') || 
+      message.includes('required') || message.includes('validation')) {
+    return 'validation_error';
+  }
+
+  // Configuration errors
+  if (message.includes('environment') || message.includes('config') || 
+      message.includes('not set')) {
+    return 'config_error';
+  }
+
+  // Parsing errors
+  if (message.includes('parse') || message.includes('json') || 
+      message.includes('syntax')) {
+    return 'parse_error';
+  }
+
+  // Storage errors
+  if (message.includes('storage') || message.includes('upload') || 
+      message.includes('download')) {
+    return 'storage_error';
+  }
+
+  return 'general_error';
+}
+
+/**
+ * Extracts detailed error context for logging
+ * @param error - The error to extract context from
+ * @returns Error context object
+ */
+export function extractErrorContext(error: unknown): Record<string, any> {
+  if (!(error instanceof Error)) {
+    return {
+      errorType: typeof error,
+      errorValue: String(error),
+    };
+  }
+
+  const context: Record<string, any> = {
+    errorName: error.name,
+    errorMessage: error.message,
+    errorCategory: categorizeError(error),
+  };
+
+  // Include stack trace if available
+  if (error.stack) {
+    context.stack = error.stack;
+  }
+
+  // Include cause if available (Error.cause is a newer feature)
+  if ('cause' in error && error.cause) {
+    context.cause = extractErrorContext(error.cause);
+  }
+
+  return context;
 }
