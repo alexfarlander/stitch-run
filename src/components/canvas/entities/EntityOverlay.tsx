@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { useReactFlow, useViewport } from '@xyflow/react';
 import { EntityDot } from './EntityDot';
+import { EntityDetailPanel } from '@/components/panels/EntityDetailPanel';
 import { StitchEntity } from '@/types/entity';
 import { getEntityNodePosition, getEntityEdgePosition } from '@/lib/entities/position';
 import { useEntities } from '@/hooks/useEntities';
@@ -17,6 +18,7 @@ export function EntityOverlay({ canvasId }: Props) {
   const { getNodes, getEdges, getNode } = useReactFlow();
   const viewport = useViewport();
 
+  // Memoize the position calculation function
   const calculatePosition = useCallback(
     (entity: StitchEntity) => {
       const nodes = getNodes();
@@ -51,25 +53,53 @@ export function EntityOverlay({ canvasId }: Props) {
     [getNodes, getEdges, getNode, entities]
   );
 
-  // Transform canvas coordinates to screen coordinates
-  const toScreenCoords = (pos: { x: number; y: number }) => ({
-    x: pos.x * viewport.zoom + viewport.x,
-    y: pos.y * viewport.zoom + viewport.y,
-  });
+  // Memoize screen coordinate transformation
+  const toScreenCoords = useCallback(
+    (pos: { x: number; y: number }) => ({
+      x: pos.x * viewport.zoom + viewport.x,
+      y: pos.y * viewport.zoom + viewport.y,
+    }),
+    [viewport.zoom, viewport.x, viewport.y]
+  );
+
+  // Memoize entity positions to prevent recalculation on every render
+  const entityPositions = useMemo(() => {
+    if (!entities) return [];
+    
+    return entities.map((entity) => {
+      const canvasPos = calculatePosition(entity);
+      if (!canvasPos) return null;
+      
+      const screenPos = toScreenCoords(canvasPos);
+      return { entity, screenPos };
+    }).filter((item): item is { entity: StitchEntity; screenPos: { x: number; y: number } } => item !== null);
+  }, [entities, calculatePosition, toScreenCoords]);
+
+  // Get the selected entity object
+  const selectedEntity = useMemo(() => {
+    if (!selectedEntityId || !entities) return null;
+    return entities.find((e) => e.id === selectedEntityId) || null;
+  }, [selectedEntityId, entities]);
+
+  // Handler to close the panel
+  const handleClosePanel = useCallback(() => {
+    setSelectedEntityId(undefined);
+  }, []);
+
+  // Placeholder for move entity handler (not implemented in this task)
+  const handleMoveEntity = useCallback((entityId: string, targetNodeId: string) => {
+    console.log('Move entity:', entityId, 'to', targetNodeId);
+    // TODO: Implement entity movement in future task
+  }, []);
 
   if (isLoading || !entities) {
     return null;
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {entities.map((entity) => {
-        const canvasPos = calculatePosition(entity);
-        if (!canvasPos) return null;
-
-        const screenPos = toScreenCoords(canvasPos);
-
-        return (
+    <>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {entityPositions.map(({ entity, screenPos }) => (
           <div key={entity.id} className="pointer-events-auto">
             <EntityDot
               entity={entity}
@@ -78,8 +108,15 @@ export function EntityOverlay({ canvasId }: Props) {
               onClick={() => setSelectedEntityId(entity.id)}
             />
           </div>
-        );
-      })}
-    </div>
+        ))}
+      </div>
+
+      {/* Entity Detail Panel */}
+      <EntityDetailPanel
+        entity={selectedEntity}
+        onClose={handleClosePanel}
+        onMoveEntity={handleMoveEntity}
+      />
+    </>
   );
 }

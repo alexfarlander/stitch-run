@@ -22,10 +22,10 @@ import { getVersion } from '@/lib/canvas/version-manager';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; vid: string } }
+  { params }: { params: Promise<{ id: string; vid: string }> }
 ) {
   try {
-    const versionId = params.vid;
+    const { id: flowId, vid: versionId } = await params;
     
     // Get version
     const version = await getVersion(versionId);
@@ -38,7 +38,7 @@ export async function GET(
     }
     
     // Verify version belongs to the specified flow
-    if (version.flow_id !== params.id) {
+    if (version.flow_id !== flowId) {
       return NextResponse.json(
         { error: 'Version does not belong to this flow' },
         { status: 404 }

@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { StitchEntity } from '@/types/entity';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { JourneyHistoryPanel } from '@/components/canvas/JourneyHistoryPanel';
 
 interface Props {
   entity: StitchEntity | null;
@@ -112,38 +113,13 @@ export function EntityDetailPanel({ entity, onClose, onMoveEntity }: Props) {
           </p>
         </div>
 
-        {/* Journey Timeline */}
-        <div>
-          <label className="text-xs text-gray-400 uppercase tracking-wide mb-3 block">
-            Journey Timeline
-          </label>
-          <div className="space-y-3">
-            {entity.journey.map((event, index) => (
-              <div key={index} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className="w-2 h-2 rounded-full bg-cyan-500" />
-                  {index < entity.journey.length - 1 && (
-                    <div className="w-px h-full bg-gray-700 mt-1" />
-                  )}
-                </div>
-                <div className="flex-1 pb-4">
-                  <p className="text-sm text-gray-200 font-medium capitalize">
-                    {event.type.replace(/_/g, ' ')}
-                  </p>
-                  {event.node_id && (
-                    <p className="text-xs text-gray-400 mt-1">{event.node_id}</p>
-                  )}
-                  {event.edge_id && (
-                    <p className="text-xs text-gray-400 mt-1">{event.edge_id}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">{formatDate(event.timestamp)}</p>
-                  {event.note && (
-                    <p className="text-xs text-gray-400 mt-1 italic">{event.note}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Journey History with Dwell Times */}
+        <div className="pt-4 border-t border-gray-800">
+          <JourneyHistoryPanel 
+            entityId={entity.id} 
+            entityName={entity.name}
+            fallbackJourney={entity.journey}
+          />
         </div>
 
         {/* Timestamps */}

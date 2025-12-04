@@ -98,6 +98,7 @@ const BMC_ITEM_EDGES = [
   // Marketing to Sales
   { id: 'e-linkedin-demo', source: 'item-linkedin-ads', target: 'item-demo-call' },
   { id: 'e-youtube-demo', source: 'item-youtube-channel', target: 'item-demo-call' },
+  { id: 'e-seo-demo', source: 'item-seo-content', target: 'item-demo-call' },
   
   // Sales to Offers
   { id: 'e-demo-trial', source: 'item-demo-call', target: 'item-free-trial' },
@@ -170,6 +171,7 @@ export function generateBMCGraph(): { nodes: any[]; edges: StitchEdge[] } {
 
 /**
  * Seeds demo entities for the BMC canvas
+ * Creates 3 test entities (Monica, Ross, Rachel) at different workflow nodes
  * 
  * @param canvasId - The BMC canvas ID to seed entities for
  * @throws Error if database operations fail
@@ -178,108 +180,57 @@ async function seedEntities(canvasId: string): Promise<void> {
   const supabase = createServerClient();
   
   const entities = [
-    // Monica - completed full journey, now paying customer
+    // Monica - at LinkedIn Ads (Marketing section)
     {
       canvas_id: canvasId,
-      name: 'Monica Geller',
+      name: 'Monica',
       email: 'monica@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=monica',
-      entity_type: 'customer',
-      current_node_id: 'item-active-subscribers',
+      entity_type: 'lead',
+      current_node_id: 'item-linkedin-ads',
       journey: [
-        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: '2024-11-01T10:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-linkedin-demo', timestamp: '2024-11-01T10:01:00Z' },
-        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-11-02T14:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-demo-trial', timestamp: '2024-11-02T15:00:00Z' },
-        { type: 'entered_node', node_id: 'item-free-trial', timestamp: '2024-11-02T15:01:00Z' },
-        { type: 'started_edge', edge_id: 'e-trial-pro', timestamp: '2024-11-10T09:00:00Z' },
-        { type: 'entered_node', node_id: 'item-pro-plan', timestamp: '2024-11-10T09:01:00Z' },
-        { type: 'converted', timestamp: '2024-11-10T09:01:00Z' }
+        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: new Date().toISOString() }
       ],
       metadata: {
         source: 'linkedin',
-        campaign: 'q4-2024',
-        cac: 14,
-        ltv: 340,
-        plan: 'pro'
+        campaign: 'demo-2024'
       }
     },
-    // Ross - in free trial
+    // Ross - at Demo Call (Sales section)
     {
       canvas_id: canvasId,
-      name: 'Ross Geller',
+      name: 'Ross',
       email: 'ross@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ross',
       entity_type: 'lead',
-      current_node_id: 'item-free-trial',
+      current_node_id: 'item-demo-call',
       journey: [
-        { type: 'entered_node', node_id: 'item-seo-content', timestamp: '2024-11-15T08:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-seo-demo', timestamp: '2024-11-15T08:30:00Z' },
-        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-11-16T11:00:00Z' },
-        { type: 'entered_node', node_id: 'item-free-trial', timestamp: '2024-11-16T12:00:00Z' }
+        { type: 'entered_node', node_id: 'item-seo-content', timestamp: '2024-12-01T08:00:00Z' },
+        { type: 'started_edge', edge_id: 'e-seo-demo', timestamp: '2024-12-01T08:30:00Z' },
+        { type: 'entered_node', node_id: 'item-demo-call', timestamp: new Date().toISOString() }
       ],
       metadata: {
-        source: 'seo',
-        cac: 8,
-        plan: 'trial'
+        source: 'seo'
       }
     },
-    // Rachel - currently traveling to demo call
+    // Rachel - at Free Trial (Offers section)
     {
       canvas_id: canvasId,
-      name: 'Rachel Green',
+      name: 'Rachel',
       email: 'rachel@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=rachel',
       entity_type: 'lead',
-      current_edge_id: 'e-linkedin-demo',
-      edge_progress: 0.4,
-      destination_node_id: 'item-demo-call',
+      current_node_id: 'item-free-trial',
       journey: [
-        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: '2024-11-20T09:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-linkedin-demo', timestamp: '2024-11-20T09:05:00Z' }
-      ],
-      metadata: {
-        source: 'linkedin',
-        campaign: 'q4-2024'
-      }
-    },
-    // Chandler - churned
-    {
-      canvas_id: canvasId,
-      name: 'Chandler Bing',
-      email: 'chandler@example.com',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chandler',
-      entity_type: 'churned',
-      current_node_id: 'item-basic-plan',
-      completed_at: '2024-10-15T00:00:00Z',
-      journey: [
-        { type: 'entered_node', node_id: 'item-youtube-channel', timestamp: '2024-09-01T10:00:00Z' },
-        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-09-03T14:00:00Z' },
-        { type: 'entered_node', node_id: 'item-free-trial', timestamp: '2024-09-03T15:00:00Z' },
-        { type: 'entered_node', node_id: 'item-basic-plan', timestamp: '2024-09-15T09:00:00Z' },
-        { type: 'churned', timestamp: '2024-10-15T00:00:00Z' }
+        { type: 'entered_node', node_id: 'item-youtube-channel', timestamp: '2024-12-02T09:00:00Z' },
+        { type: 'started_edge', edge_id: 'e-youtube-demo', timestamp: '2024-12-02T09:05:00Z' },
+        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-12-03T14:00:00Z' },
+        { type: 'started_edge', edge_id: 'e-demo-trial', timestamp: '2024-12-03T15:00:00Z' },
+        { type: 'entered_node', node_id: 'item-free-trial', timestamp: new Date().toISOString() }
       ],
       metadata: {
         source: 'youtube',
-        cac: 22,
-        ltv: 49,
-        plan: 'basic',
-        churn_reason: 'price'
-      }
-    },
-    // Phoebe - just entered from YouTube
-    {
-      canvas_id: canvasId,
-      name: 'Phoebe Buffay',
-      email: 'phoebe@example.com',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=phoebe',
-      entity_type: 'lead',
-      current_node_id: 'item-youtube-channel',
-      journey: [
-        { type: 'entered_node', node_id: 'item-youtube-channel', timestamp: new Date().toISOString() }
-      ],
-      metadata: {
-        source: 'youtube'
+        campaign: 'demo-2024'
       }
     }
   ];

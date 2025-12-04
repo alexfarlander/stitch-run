@@ -105,6 +105,7 @@ const BMC_ITEM_EDGES = [
   // Marketing to Sales
   { id: 'e-linkedin-demo', source: 'item-linkedin-ads', target: 'item-demo-call' },
   { id: 'e-youtube-demo', source: 'item-youtube-channel', target: 'item-demo-call' },
+  { id: 'e-seo-demo', source: 'item-seo-content', target: 'item-demo-call' },
   
   // Sales to Offers
   { id: 'e-demo-trial', source: 'item-demo-call', target: 'item-free-trial' },
@@ -153,7 +154,7 @@ function generateBMCGraph() {
       status: 'idle',
       itemType: item.type,
     },
-    parentNode: slugifySection(item.section),
+    parentId: slugifySection(item.section),
     extent: 'parent' as const,
   }));
 
@@ -218,108 +219,124 @@ async function seedBMC() {
 
 async function seedEntities(canvasId: string) {
   const entities = [
-    // Monica - completed full journey, now paying customer
+    // Monica - at LinkedIn Ads (Marketing section)
     {
       canvas_id: canvasId,
-      name: 'Monica Geller',
+      name: 'Monica',
       email: 'monica@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=monica',
-      entity_type: 'customer',
-      current_node_id: 'item-active-subscribers',
+      entity_type: 'lead',
+      current_node_id: 'item-linkedin-ads',
       journey: [
-        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: '2024-11-01T10:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-linkedin-demo', timestamp: '2024-11-01T10:01:00Z' },
-        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-11-02T14:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-demo-trial', timestamp: '2024-11-02T15:00:00Z' },
-        { type: 'entered_node', node_id: 'item-free-trial', timestamp: '2024-11-02T15:01:00Z' },
-        { type: 'started_edge', edge_id: 'e-trial-pro', timestamp: '2024-11-10T09:00:00Z' },
-        { type: 'entered_node', node_id: 'item-pro-plan', timestamp: '2024-11-10T09:01:00Z' },
-        { type: 'converted', timestamp: '2024-11-10T09:01:00Z' }
+        { 
+          type: 'entered_node', 
+          node_id: 'item-linkedin-ads', 
+          timestamp: new Date().toISOString(),
+          metadata: {
+            source: 'linkedin',
+            campaign: 'demo-2024',
+            ad_set: 'Enterprise SaaS',
+            note: 'Clicked on "See Demo" CTA'
+          }
+        }
       ],
       metadata: {
         source: 'linkedin',
-        campaign: 'q4-2024',
-        cac: 14,
-        ltv: 340,
-        plan: 'pro'
+        campaign: 'demo-2024'
       }
     },
-    // Ross - in free trial
+    // Ross - at Demo Call (Sales section)
     {
       canvas_id: canvasId,
-      name: 'Ross Geller',
+      name: 'Ross',
       email: 'ross@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ross',
       entity_type: 'lead',
-      current_node_id: 'item-free-trial',
+      current_node_id: 'item-demo-call',
       journey: [
-        { type: 'entered_node', node_id: 'item-seo-content', timestamp: '2024-11-15T08:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-seo-demo', timestamp: '2024-11-15T08:30:00Z' },
-        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-11-16T11:00:00Z' },
-        { type: 'entered_node', node_id: 'item-free-trial', timestamp: '2024-11-16T12:00:00Z' }
+        { 
+          type: 'entered_node', 
+          node_id: 'item-seo-content', 
+          timestamp: '2024-12-01T08:00:00Z',
+          metadata: {
+            source: 'seo',
+            landing_page: '/features',
+            note: 'Read documentation for 15 minutes'
+          }
+        },
+        { 
+          type: 'started_edge', 
+          edge_id: 'e-seo-demo', 
+          timestamp: '2024-12-01T08:30:00Z' 
+        },
+        { 
+          type: 'entered_node', 
+          node_id: 'item-demo-call', 
+          timestamp: new Date().toISOString(),
+          metadata: {
+            scheduled_date: '2024-12-06T15:00:00Z',
+            account_manager: 'Sarah',
+            note: 'Interested in enterprise features'
+          }
+        }
       ],
       metadata: {
-        source: 'seo',
-        cac: 8,
-        plan: 'trial'
+        source: 'seo'
       }
     },
-    // Rachel - currently traveling to demo call
+    // Rachel - at Free Trial (Offers section)
     {
       canvas_id: canvasId,
-      name: 'Rachel Green',
+      name: 'Rachel',
       email: 'rachel@example.com',
       avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=rachel',
       entity_type: 'lead',
-      current_edge_id: 'e-linkedin-demo',
-      edge_progress: 0.4,
-      destination_node_id: 'item-demo-call',
+      current_node_id: 'item-free-trial',
       journey: [
-        { type: 'entered_node', node_id: 'item-linkedin-ads', timestamp: '2024-11-20T09:00:00Z' },
-        { type: 'started_edge', edge_id: 'e-linkedin-demo', timestamp: '2024-11-20T09:05:00Z' }
-      ],
-      metadata: {
-        source: 'linkedin',
-        campaign: 'q4-2024'
-      }
-    },
-    // Chandler - churned
-    {
-      canvas_id: canvasId,
-      name: 'Chandler Bing',
-      email: 'chandler@example.com',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chandler',
-      entity_type: 'churned',
-      current_node_id: 'item-basic-plan',
-      completed_at: '2024-10-15T00:00:00Z',
-      journey: [
-        { type: 'entered_node', node_id: 'item-youtube-channel', timestamp: '2024-09-01T10:00:00Z' },
-        { type: 'entered_node', node_id: 'item-demo-call', timestamp: '2024-09-03T14:00:00Z' },
-        { type: 'entered_node', node_id: 'item-free-trial', timestamp: '2024-09-03T15:00:00Z' },
-        { type: 'entered_node', node_id: 'item-basic-plan', timestamp: '2024-09-15T09:00:00Z' },
-        { type: 'churned', timestamp: '2024-10-15T00:00:00Z' }
+        { 
+          type: 'entered_node', 
+          node_id: 'item-youtube-channel', 
+          timestamp: '2024-12-02T09:00:00Z',
+          metadata: {
+            source: 'youtube',
+            campaign: 'demo-2024'
+          }
+        },
+        { 
+          type: 'started_edge', 
+          edge_id: 'e-youtube-demo', 
+          timestamp: '2024-12-02T09:05:00Z' 
+        },
+        { 
+          type: 'entered_node', 
+          node_id: 'item-demo-call', 
+          timestamp: '2024-12-03T14:00:00Z',
+          metadata: {
+            scheduled_date: '2024-12-05T12:00:00Z',
+            account_manager: 'Alex',
+            note: 'Product demo scheduled'
+          }
+        },
+        { 
+          type: 'started_edge', 
+          edge_id: 'e-demo-trial', 
+          timestamp: '2024-12-03T15:00:00Z' 
+        },
+        { 
+          type: 'entered_node', 
+          node_id: 'item-free-trial', 
+          timestamp: new Date().toISOString(),
+          metadata: {
+            started_date: '2024-12-03T00:00:00Z',
+            ends_date: '2025-01-03T00:00:00Z',
+            account_manager: 'Alex',
+            plan: 'Pro Trial'
+          }
+        }
       ],
       metadata: {
         source: 'youtube',
-        cac: 22,
-        ltv: 49,
-        plan: 'basic',
-        churn_reason: 'price'
-      }
-    },
-    // Phoebe - just entered from YouTube
-    {
-      canvas_id: canvasId,
-      name: 'Phoebe Buffay',
-      email: 'phoebe@example.com',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=phoebe',
-      entity_type: 'lead',
-      current_node_id: 'item-youtube-channel',
-      journey: [
-        { type: 'entered_node', node_id: 'item-youtube-channel', timestamp: new Date().toISOString() }
-      ],
-      metadata: {
-        source: 'youtube'
+        campaign: 'demo-2024'
       }
     }
   ];
@@ -327,7 +344,7 @@ async function seedEntities(canvasId: string) {
   const { error } = await supabase.from('stitch_entities').insert(entities);
   if (error) throw error;
 
-  console.log(`✅ Seeded ${entities.length} demo entities`);
+  console.log(`✅ Seeded ${entities.length} demo entities (Monica, Ross, Rachel)`);
 }
 
 async function main() {
@@ -381,10 +398,10 @@ async function main() {
     const checks = [
       { name: 'Section count is 13', pass: sectionNodes.length === 13 },
       { name: 'Item count is 21', pass: itemNodes.length === 21 },
-      { name: 'Edge count is 9', pass: bmc.graph.edges.length === 9 },
+      { name: 'Edge count is 10', pass: bmc.graph.edges.length === 10 },
       { name: 'Canvas type is "bmc"', pass: bmc.canvas_type === 'bmc' },
       { name: 'Parent ID is null', pass: bmc.parent_id === null },
-      { name: 'All items have parentNode', pass: itemNodes.every((n: any) => n.parentNode) },
+      { name: 'All items have parentId', pass: itemNodes.every((n: any) => n.parentId) },
     ];
     
     console.log('\n   Validation:');

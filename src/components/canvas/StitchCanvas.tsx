@@ -48,9 +48,10 @@ import { UXNode } from './nodes/UXNode';
 import { SplitterNode } from './nodes/SplitterNode';
 import { MediaSelectNode } from './nodes/MediaSelectNode';
 import { JourneyEdge } from './edges/JourneyEdge';
+import { RunStatusOverlay } from './RunStatusOverlay';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { VersionHistory } from './VersionHistory';
-import { createVersion, FlowVersion } from '@/lib/canvas/version-manager';
+import { FlowVersion } from '@/lib/canvas/version-manager';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
@@ -215,7 +216,18 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
         })),
       };
       
-      await createVersion(flow.id, currentGraph, 'Manual save');
+      const response = await fetch(`/api/flows/${flow.id}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visualGraph: currentGraph,
+          commitMessage: 'Manual save'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save version');
+      }
       
       // Update original graph to new saved state
       setOriginalGraph(currentGraph);
@@ -469,6 +481,9 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
           maskColor="rgba(15, 23, 42, 0.8)"
         />
         <EntityOverlay canvasId={flow.id} />
+        
+        {/* Run Status Indicators */}
+        {run && <RunStatusOverlay runId={run.id} />}
       </ReactFlow>
     </div>
   );

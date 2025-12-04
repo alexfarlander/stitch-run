@@ -11,6 +11,61 @@ Every canvas in Stitch is versioned. When you save changes, a new immutable vers
 - **Audit trail**: Track who changed what and when
 - **Rollback capability**: Revert to previous versions easily
 
+## Architecture
+
+### Client-Server Separation
+
+Version management follows a strict client-server architecture to protect sensitive environment variables:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Client Components                          │
+│  (VersionHistory.tsx, StitchCanvas.tsx)                     │
+│                                                              │
+│  - Display version history                                   │
+│  - Handle user interactions                                  │
+│  - Detect unsaved changes                                    │
+│  - Make API calls                                            │
+└──────────────────┬───────────────────────────────────────────┘
+                   │ HTTP/JSON
+                   │
+┌──────────────────▼───────────────────────────────────────────┐
+│                   API Routes                                 │
+│  (/api/flows/[id]/versions/*)                               │
+│                                                              │
+│  - Validate requests                                         │
+│  - Call version manager functions                            │
+│  - Handle errors                                             │
+│  - Return formatted responses                                │
+└──────────────────┬───────────────────────────────────────────┘
+                   │
+┌──────────────────▼───────────────────────────────────────────┐
+│                Version Manager                               │
+│  (src/lib/canvas/version-manager.ts)                        │
+│                                                              │
+│  - Create versions                                           │
+│  - List versions                                             │
+│  - Get specific versions                                     │
+│  - Auto-version on run                                       │
+└──────────────────┬───────────────────────────────────────────┘
+                   │
+┌──────────────────▼───────────────────────────────────────────┐
+│              Supabase Server Client                          │
+│  (src/lib/supabase/server.ts)                               │
+│                                                              │
+│  - Uses SUPABASE_SERVICE_ROLE_KEY                           │
+│  - Bypasses Row Level Security                              │
+│  - Server-side only                                          │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Key Points:**
+
+- Client components NEVER import `version-manager.ts` directly
+- All database operations go through API routes
+- Server-only environment variables stay server-side
+- API routes use Next.js 16 async params pattern
+
 ## Version Lifecycle
 
 ```
@@ -37,6 +92,8 @@ Every canvas in Stitch is versioned. When you save changes, a new immutable vers
 
 Explicitly create a version with a commit message:
 
+**Server-side (API routes, server components):**
+
 ```typescript
 import { createVersion } from '@/lib/canvas/version-manager';
 
@@ -45,6 +102,25 @@ const { versionId, executionGraph } = await createVersion(
   visualGraph,
   'Added error handling for API failures'
 );
+```
+
+**Client-side (React components):**
+
+```typescript
+const response = await fetch(`/api/flows/${flowId}/versions`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    visualGraph: currentGraph,
+    commitMessage: 'Added error handling for API failures'
+  })
+});
+
+if (!response.ok) {
+  throw new Error('Failed to save version');
+}
+
+const { versionId, executionGraph } = await response.json();
 ```
 
 ### Auto-Versioning on Run
@@ -178,7 +254,9 @@ try {
 
 Get all versions for a flow, ordered by creation date (newest first):
 
-**Note:** The API endpoint `GET /api/flows/[id]/versions` returns metadata only (no graph blobs) to avoid bandwidth issues. Use `getVersion(versionId)` to fetch full version data.
+**Note:** The API endpoint `GET /api/flows/[id]/versions` returns metadata only (no graph blobs) to avoid bandwidth issues.
+
+**Server-side (API routes, server components):**
 
 ```typescript
 import { listVersions } from '@/lib/canvas/version-manager';
@@ -195,12 +273,47 @@ const fullVersion = await getVersion(versions[0].id);
 console.log('Visual graph:', fullVersion.visual_graph);
 ```
 
+**Client-side (React components):**
+
+```typescript
+// Fetch version list (metadata only)
+const response = await fetch(`/api/flows/${flowId}/versions`);
+const { versions } = await response.json();
+
+versions.forEach(version => {
+  console.log(`${version.created_at}: ${version.commit_message || 'No message'}`);
+});
+
+// To get full version data with graphs:
+const versionResponse = await fetch(`/api/flows/${flowId}/versions/${versionId}`);
+const { version } = await versionResponse.json();
+console.log('Visual graph:', version.visual_graph);
+```
+
 ### Retrieving Specific Version
+
+**Server-side (API routes, server components):**
 
 ```typescript
 import { getVersion } from '@/lib/canvas/version-manager';
 
 const version = await getVersion(versionId);
+
+if (version) {
+  // Render historical canvas
+  renderCanvas(version.visual_graph);
+}
+```
+
+**Client-side (React components):**
+
+```typescript
+const response = await fetch(`/api/flows/${flowId}/versions/${versionId}`);
+if (!response.ok) {
+  throw new Error('Version not found');
+}
+
+const { version } = await response.json();
 
 if (version) {
   // Render historical canvas
@@ -338,6 +451,8 @@ await createVersion(flowId, updatedGraph, 'Added new node');
 
 To rollback to a previous version:
 
+**Server-side (API routes, server components):**
+
 ```typescript
 // Get the old version
 const oldVersion = await getVersion(oldVersionId);
@@ -350,7 +465,27 @@ await createVersion(
 );
 ```
 
+**Client-side (React components):**
+
+```typescript
+// Get the old version
+const versionResponse = await fetch(`/api/flows/${flowId}/versions/${oldVersionId}`);
+const { version: oldVersion } = await versionResponse.json();
+
+// Create a new version with the old graph
+const response = await fetch(`/api/flows/${flowId}/versions`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    visualGraph: oldVersion.visual_graph,
+    commitMessage: `Rolled back to version from ${oldVersion.created_at}`
+  })
+});
+```
+
 **Note**: This creates a new version with the old content. The history is preserved.
+
+**UI Implementation**: The `VersionHistory` component handles rollback automatically. When the user clicks "Revert", it fetches the old version, creates a new version with that content, and refreshes the UI.
 
 ## Best Practices
 
@@ -431,16 +566,28 @@ import { VersionHistory } from '@/components/canvas/VersionHistory';
 
 <VersionHistory
   flowId={flowId}
-  onVersionSelect={(version) => {
+  currentVersionId={flow.current_version_id}
+  onViewVersion={(version) => {
     // Load and display historical version
     renderCanvas(version.visual_graph);
   }}
-  onRevert={(version) => {
-    // Create new version with old content
-    createVersion(flowId, version.visual_graph, `Reverted to ${version.created_at}`);
+  onRevertVersion={(version) => {
+    // Callback after revert completes
+    // Component handles creating new version internally via API
+    router.refresh();
   }}
 />
 ```
+
+**Implementation Details:**
+
+The `VersionHistory` component is a client component that communicates with the server via API routes:
+
+- **Fetches version list**: `GET /api/flows/[id]/versions` (returns metadata only)
+- **Fetches full version**: `GET /api/flows/[id]/versions/[vid]` (includes graphs)
+- **Creates new version**: `POST /api/flows/[id]/versions` (for revert operation)
+
+This architecture ensures that server-only environment variables (like `SUPABASE_SERVICE_ROLE_KEY`) are never exposed to the client. All database operations happen server-side through API routes.
 
 ### Unsaved Changes Indicator
 
@@ -477,23 +624,39 @@ return (
 <Button
   onClick={async () => {
     try {
-      await createVersion(
-        flowId,
-        currentGraph,
-        commitMessage
-      );
-      toast.success('Version saved');
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        toast.error('Validation failed');
-        showValidationErrors(error.errors);
+      const response = await fetch(`/api/flows/${flowId}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visualGraph: currentGraph,
+          commitMessage: commitMessage
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        if (error.validationErrors) {
+          toast.error('Validation failed');
+          showValidationErrors(error.validationErrors);
+        } else {
+          throw new Error(error.error || 'Failed to save version');
+        }
+        return;
       }
+
+      toast.success('Version saved');
+      router.refresh(); // Refresh to show new version
+    } catch (error) {
+      toast.error('Failed to save version');
+      console.error(error);
     }
   }}
 >
   Save Version
 </Button>
 ```
+
+**Implementation Note**: The `StitchCanvas` component includes a complete implementation of version saving with unsaved changes detection, error handling, and UI feedback.
 
 ## Troubleshooting
 

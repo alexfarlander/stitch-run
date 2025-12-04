@@ -14,7 +14,7 @@
 
 import { useState, useEffect } from 'react';
 import { Clock, GitBranch, Check, Eye, RotateCcw, Loader2 } from 'lucide-react';
-import { FlowVersion, FlowVersionMetadata, listVersions, createVersion, getVersion } from '@/lib/canvas/version-manager';
+import { FlowVersion, FlowVersionMetadata } from '@/lib/canvas/version-manager';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -188,8 +188,12 @@ export function VersionHistory({
       try {
         setLoading(true);
         setError(null);
-        const data = await listVersions(flowId);
-        setVersions(data);
+        const response = await fetch(`/api/flows/${flowId}/versions`);
+        if (!response.ok) {
+          throw new Error('Failed to load versions');
+        }
+        const data = await response.json();
+        setVersions(data.versions || []);
       } catch (err) {
         console.error('Failed to load versions:', err);
         setError(err instanceof Error ? err.message : 'Failed to load versions');
@@ -206,9 +210,13 @@ export function VersionHistory({
     if (!onViewVersion) return;
     
     try {
-      const fullVersion = await getVersion(versionMetadata.id);
-      if (fullVersion && onViewVersion) {
-        onViewVersion(fullVersion);
+      const response = await fetch(`/api/flows/${flowId}/versions/${versionMetadata.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load version');
+      }
+      const data = await response.json();
+      if (data.version && onViewVersion) {
+        onViewVersion(data.version);
       }
     } catch (err) {
       console.error('Failed to load version:', err);
@@ -219,9 +227,13 @@ export function VersionHistory({
   // Handle revert version - fetch full version data and show confirmation dialog
   const handleRevertClick = async (versionMetadata: FlowVersionMetadata) => {
     try {
-      const fullVersion = await getVersion(versionMetadata.id);
-      if (fullVersion) {
-        setSelectedVersion(fullVersion);
+      const response = await fetch(`/api/flows/${flowId}/versions/${versionMetadata.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load version');
+      }
+      const data = await response.json();
+      if (data.version) {
+        setSelectedVersion(data.version);
         setRevertDialogOpen(true);
       }
     } catch (err) {
@@ -241,15 +253,26 @@ export function VersionHistory({
       // It was fetched in handleRevertClick before opening the dialog
       
       // Create a new version with the historical visual graph
-      await createVersion(
-        flowId,
-        selectedVersion.visual_graph,
-        `Reverted to version ${selectedVersion.id.slice(0, 8)}`
-      );
+      const response = await fetch(`/api/flows/${flowId}/versions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visualGraph: selectedVersion.visual_graph,
+          commitMessage: `Reverted to version ${selectedVersion.id.slice(0, 8)}`
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create version');
+      }
 
       // Reload versions
-      const data = await listVersions(flowId);
-      setVersions(data);
+      const versionsResponse = await fetch(`/api/flows/${flowId}/versions`);
+      if (!versionsResponse.ok) {
+        throw new Error('Failed to reload versions');
+      }
+      const data = await versionsResponse.json();
+      setVersions(data.versions || []);
 
       // Call callback if provided
       if (onRevertVersion) {

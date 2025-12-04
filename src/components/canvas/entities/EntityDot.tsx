@@ -20,13 +20,25 @@ export function EntityDot({ entity, position, isSelected, onClick }: EntityDotPr
   const isMoving = !!entity.current_edge_id;
   const opacity = entity.entity_type === 'churned' ? 0.6 : 1;
 
+  // Calculate animation duration based on whether entity is moving
+  // When moving along an edge, use slower animation (2s default)
+  // When jumping between nodes, use faster animation (0.5s)
+  const animationDuration = isMoving ? 2 : 0.5;
+
   return (
     <motion.div
       className="absolute cursor-pointer group"
-      style={{ left: position.x, top: position.y }}
-      animate={{ x: 0, y: 0 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-      whileHover={{ scale: 1.2 }}
+      style={{ 
+        zIndex: 40 // Below EntityDetailPanel (z-50) but above canvas elements
+      }}
+      animate={{
+        left: position.x,
+        top: position.y,
+      }}
+      transition={{
+        duration: animationDuration,
+        ease: isMoving ? 'linear' : 'easeInOut',
+      }}
       onClick={onClick}
     >
       {/* Pulse animation when moving */}
@@ -52,12 +64,13 @@ export function EntityDot({ entity, position, isSelected, onClick }: EntityDotPr
 
       {/* Avatar dot */}
       <div
-        className="w-7 h-7 rounded-full border-2 flex items-center justify-center relative z-10"
+        className="w-7 h-7 rounded-full border-2 flex items-center justify-center relative z-10 transition-transform hover:scale-110"
         style={{
           borderColor: glowColor,
-          boxShadow: `0 0 12px ${glowColor}`,
+          boxShadow: isSelected ? `0 0 20px ${glowColor}` : `0 0 12px ${glowColor}`,
           backgroundColor: '#1a1a2e',
           opacity,
+          transform: isSelected ? 'scale(1.15)' : 'scale(1)',
         }}
       >
         {entity.avatar_url ? (
@@ -74,7 +87,7 @@ export function EntityDot({ entity, position, isSelected, onClick }: EntityDotPr
       </div>
 
       {/* Name label (shows on hover) */}
-      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/90 text-white text-xs rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black/90 text-white text-xs rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         {entity.name}
       </div>
     </motion.div>

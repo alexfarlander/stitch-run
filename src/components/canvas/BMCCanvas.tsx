@@ -27,12 +27,15 @@ import { FallbackNode } from './nodes/FallbackNode';
 import { IntegrationItem, PersonItem, CodeItem, DataItem } from './items';
 import { JourneyEdge } from './edges/JourneyEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
+import { RunStatusOverlay } from './RunStatusOverlay';
+import { DemoModeButton } from './DemoModeButton';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 import { sortNodesForRendering, Z_INDEX_LAYERS } from './utils';
 
 interface BMCCanvasProps {
   flow: StitchFlow;
   initialEntities?: StitchEntity[];
+  runId?: string; // Optional run ID for showing execution status
 }
 
 interface SectionNodeData {
@@ -47,7 +50,7 @@ interface ItemNodeData {
   linked_canvas_id?: string;
 }
 
-export function BMCCanvas({ flow }: BMCCanvasProps) {
+export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
   const { drillInto } = useCanvasNavigation();
   
   // Memoize nodeTypes so React Flow doesn't re-render constantly
@@ -198,7 +201,12 @@ export function BMCCanvas({ flow }: BMCCanvasProps) {
   }, [drillInto]);
 
   return (
-    <div className="w-full h-full bg-[#0a0f1a] text-white">
+    <div className="w-full h-full bg-[#0a0f1a] text-white relative">
+      {/* Demo Mode Button - Floating in top-right */}
+      <div className="absolute top-4 right-4 z-50">
+        <DemoModeButton canvasId={flow.id} />
+      </div>
+      
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -232,6 +240,9 @@ export function BMCCanvas({ flow }: BMCCanvasProps) {
         
         {/* The Magic Layer */}
         <EntityOverlay canvasId={flow.id} />
+        
+        {/* Run Status Indicators */}
+        {runId && <RunStatusOverlay runId={runId} />}
       </ReactFlow>
     </div>
   );
