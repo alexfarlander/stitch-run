@@ -11,7 +11,36 @@
  */
 
 import { VisualGraph, VisualNode } from '@/types/canvas-schema';
-import { workerRegistry, isValidWorkerType, getAvailableWorkerTypes } from '@/lib/workers/registry';
+import { isValidWorkerType, getAvailableWorkerTypes } from '@/lib/workers/registry';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+/**
+ * Valid node types
+ */
+export const NodeType = {
+  WORKER: 'worker',
+  UX: 'ux',
+  SPLITTER: 'splitter',
+  COLLECTOR: 'collector',
+  SECTION: 'section',
+} as const;
+
+export type NodeTypeValue = typeof NodeType[keyof typeof NodeType];
+
+/**
+ * Valid values for entity movement completeAs field
+ */
+export const VALID_COMPLETE_AS_VALUES = ['success', 'failure', 'neutral'] as const;
+export type CompleteAsValue = typeof VALID_COMPLETE_AS_VALUES[number];
+
+/**
+ * Valid entity types
+ */
+export const VALID_ENTITY_TYPES = ['customer', 'churned', 'lead'] as const;
+export type EntityType = typeof VALID_ENTITY_TYPES[number];
 
 // ============================================================================
 // Validation Error Types
@@ -22,7 +51,7 @@ import { workerRegistry, isValidWorkerType, getAvailableWorkerTypes } from '@/li
  * Provides detailed information about what went wrong during validation
  */
 export interface ValidationError {
-  type: 'cycle' | 'missing_input' | 'invalid_worker' | 'invalid_mapping';
+  type: 'cycle' | 'missing_input' | 'invalid_worker' | 'invalid_mapping' | 'splitter_collector_mismatch' | 'invalid_entity_movement';
   node?: string;
   edge?: string;
   field?: string;
@@ -58,6 +87,14 @@ export function validateGraph(graph: VisualGraph): ValidationError[] {
   // 4. Check edge mappings (Requirement 4.5)
   const mappingErrors = validateEdgeMappings(graph);
   errors.push(...mappingErrors);
+
+  // 5. Check splitter/collector pairs (Requirement 4.3)
+  const splitterCollectorErrors = validateSplitterCollectorPairs(graph);
+  errors.push(...splitterCollectorErrors);
+
+  // 6. Check entity movement configuration (Requirements 10.4, 10.5)
+  const entityMovementErrors = validateEntityMovement(graph);
+  errors.push(...entityMovementErrors);
 
   return errors;
 }
@@ -333,6 +370,385 @@ function buildAdjacencyList(graph: VisualGraph): Map<string, string[]> {
   }
 
   return adjacency;
+}
+
+// ============================================================================
+// Splitter/Collector Validation (Requirement 4.3)
+// ============================================================================
+
+/**
+ * Validate splitter/collector pairs
+ * Ensures that splitter nodes connect to collector nodes properly
+ * 
+ * This validation is designed to catch common mistakes in parallel workflow patterns:
+ * - Splitters that don't fan out to multiple paths
+ * - Collectors that don't fan in from multiple paths
+ * - Splitters without corresponding collectors
+ * - Collectors without corresponding splitters
+ * 
+ * @param graph - The visual graph to check
+ * @returns Array of splitter/collector errors (empty if valid)
+ */
+export function validateSplitterCollectorPairs(graph: VisualGraph): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  // Build adjacency list for traversal
+  const adjacency = buildAdjacencyList(graph);
+  
+  // Build reverse adjacency list (for finding upstream nodes)
+  const reverseAdjacency = new Map<string, string[]>();
+  for (const node of graph.nodes) {
+    reverseAdjacency.set(node.id, []);
+  }
+  for (const edge of graph.edges) {
+    const sources = reverseAdjacency.get(edge.target) || [];
+    sources.push(edge.source);
+    reverseAdjacency.set(edge.target, sources);
+  }
+
+  // Find all splitter and collector nodes
+  const splitters = graph.nodes.filter(n => 
+    n.type.toLowerCase() === NodeType.SPLITTER
+  );
+  const collectors = graph.nodes.filter(n => 
+    n.type.toLowerCase() === NodeType.COLLECTOR
+  );
+
+  // Only validate if there are both splitters and collectors in the graph
+  // This allows for graphs that don't use parallel patterns at all
+  if (splitters.length === 0 && collectors.length === 0) {
+    return errors;
+  }
+
+  // Validate each splitter
+  for (const splitter of splitters) {
+    const downstreamNodes = adjacency.get(splitter.id) || [];
+    
+    // Check that splitter has at least 2 downstream nodes (for parallel fanout)
+    if (downstreamNodes.length === 0) {
+      errors.push({
+        type: 'splitter_collector_mismatch',
+        node: splitter.id,
+        message: `Splitter node "${splitter.id}" has no downstream connections. Splitters must connect to at least one node.`,
+      });
+      continue;
+    }
+
+    if (downstreamNodes.length === 1) {
+      errors.push({
+        type: 'splitter_collector_mismatch',
+        node: splitter.id,
+        message: `Splitter node "${splitter.id}" only connects to one downstream node. Splitters should fan out to multiple parallel paths.`,
+      });
+    }
+
+    // Find collectors reachable from this splitter
+    const reachableCollectors = findReachableCollectors(
+      splitter.id,
+      adjacency,
+      collectors.map(c => c.id)
+    );
+
+    // Check that splitter connects to at least one collector
+    if (reachableCollectors.length === 0) {
+      errors.push({
+        type: 'splitter_collector_mismatch',
+        node: splitter.id,
+        message: `Splitter node "${splitter.id}" does not connect to any Collector node. Splitters must eventually connect to a Collector to merge parallel paths.`,
+      });
+    }
+  }
+
+  // Validate each collector
+  for (const collector of collectors) {
+    const upstreamNodes = reverseAdjacency.get(collector.id) || [];
+    
+    // Check that collector has at least 2 upstream nodes (for parallel fanin)
+    if (upstreamNodes.length === 0) {
+      errors.push({
+        type: 'splitter_collector_mismatch',
+        node: collector.id,
+        message: `Collector node "${collector.id}" has no upstream connections. Collectors must have at least one upstream node.`,
+      });
+      continue;
+    }
+
+    if (upstreamNodes.length === 1) {
+      errors.push({
+        type: 'splitter_collector_mismatch',
+        node: collector.id,
+        message: `Collector node "${collector.id}" only has one upstream connection. Collectors should fan in from multiple parallel paths.`,
+      });
+    }
+
+    // Find splitters that can reach this collector
+    const reachableSplitters = findUpstreamSplitters(
+      collector.id,
+      reverseAdjacency,
+      splitters.map(s => s.id)
+    );
+
+    // Check that collector has at least one upstream splitter
+    if (reachableSplitters.length === 0) {
+      errors.push({
+        type: 'splitter_collector_mismatch',
+        node: collector.id,
+        message: `Collector node "${collector.id}" has no upstream Splitter node. Collectors should be paired with Splitters to merge parallel paths.`,
+      });
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Find all collector nodes reachable from a splitter node
+ * Uses BFS to traverse the graph
+ * 
+ * @param splitterId - The splitter node ID
+ * @param adjacency - Adjacency list of the graph
+ * @param collectorIds - Set of collector node IDs
+ * @returns Array of reachable collector IDs
+ */
+function findReachableCollectors(
+  splitterId: string,
+  adjacency: Map<string, string[]>,
+  collectorIds: string[]
+): string[] {
+  const reachable: string[] = [];
+  const visited = new Set<string>();
+  const queue: string[] = [splitterId];
+  const collectorSet = new Set(collectorIds);
+
+  // Use index-based iteration for O(1) dequeue instead of O(N) shift()
+  let queueIndex = 0;
+  while (queueIndex < queue.length) {
+    const current = queue[queueIndex++];
+    
+    if (visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+
+    // Check if this is a collector
+    if (collectorSet.has(current) && current !== splitterId) {
+      reachable.push(current);
+      // Don't traverse beyond collectors
+      continue;
+    }
+
+    // Add downstream nodes to queue
+    const downstream = adjacency.get(current) || [];
+    for (const nodeId of downstream) {
+      if (!visited.has(nodeId)) {
+        queue.push(nodeId);
+      }
+    }
+  }
+
+  return reachable;
+}
+
+/**
+ * Find all splitter nodes that can reach a collector node
+ * Uses BFS to traverse the graph backwards
+ * 
+ * @param collectorId - The collector node ID
+ * @param reverseAdjacency - Reverse adjacency list of the graph
+ * @param splitterIds - Set of splitter node IDs
+ * @returns Array of upstream splitter IDs
+ */
+function findUpstreamSplitters(
+  collectorId: string,
+  reverseAdjacency: Map<string, string[]>,
+  splitterIds: string[]
+): string[] {
+  const upstream: string[] = [];
+  const visited = new Set<string>();
+  const queue: string[] = [collectorId];
+  const splitterSet = new Set(splitterIds);
+
+  // Use index-based iteration for O(1) dequeue instead of O(N) shift()
+  let queueIndex = 0;
+  while (queueIndex < queue.length) {
+    const current = queue[queueIndex++];
+    
+    if (visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+
+    // Check if this is a splitter
+    if (splitterSet.has(current) && current !== collectorId) {
+      upstream.push(current);
+      // Don't traverse beyond splitters
+      continue;
+    }
+
+    // Add upstream nodes to queue
+    const upstreamNodes = reverseAdjacency.get(current) || [];
+    for (const nodeId of upstreamNodes) {
+      if (!visited.has(nodeId)) {
+        queue.push(nodeId);
+      }
+    }
+  }
+
+  return upstream;
+}
+
+// ============================================================================
+// Entity Movement Validation (Requirements 10.4, 10.5)
+// ============================================================================
+
+/**
+ * Validate entity movement configuration on worker nodes
+ * 
+ * Entity movement determines how entities (customers/leads) move through
+ * the canvas when workflows complete. This validation ensures:
+ * - targetSectionId references an existing node
+ * - completeAs has a valid value (success, failure, neutral)
+ * - setEntityType (if present) has a valid entity type (customer, lead, churned)
+ * 
+ * @param graph - The visual graph to check
+ * @returns Array of entity movement errors (empty if valid)
+ */
+export function validateEntityMovement(graph: VisualGraph): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  // Build node ID set for quick lookup
+  const nodeIds = new Set(graph.nodes.map(n => n.id));
+
+  // Check each node for entity movement configuration
+  for (const node of graph.nodes) {
+    // Only worker nodes can have entity movement
+    if (node.type !== NodeType.WORKER) {
+      continue;
+    }
+
+    const entityMovement = node.data.entityMovement;
+    if (!entityMovement) {
+      continue; // Entity movement is optional
+    }
+
+    // Validate entityMovement is an object
+    if (typeof entityMovement !== 'object' || entityMovement === null) {
+      errors.push({
+        type: 'invalid_entity_movement',
+        node: node.id,
+        message: `Worker node "${node.id}" has invalid "entityMovement" property (must be object)`,
+      });
+      continue;
+    }
+
+    // Validate onSuccess if present
+    if (entityMovement.onSuccess) {
+      const onSuccessErrors = validateEntityMovementAction(
+        node.id,
+        'onSuccess',
+        entityMovement.onSuccess,
+        nodeIds
+      );
+      errors.push(...onSuccessErrors);
+    }
+
+    // Validate onFailure if present
+    if (entityMovement.onFailure) {
+      const onFailureErrors = validateEntityMovementAction(
+        node.id,
+        'onFailure',
+        entityMovement.onFailure,
+        nodeIds
+      );
+      errors.push(...onFailureErrors);
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Validate a single entity movement action (onSuccess or onFailure)
+ * 
+ * @param nodeId - The node ID being validated
+ * @param actionType - The action type ('onSuccess' or 'onFailure')
+ * @param action - The action configuration
+ * @param nodeIds - Set of all node IDs in the graph
+ * @returns Array of validation errors
+ */
+function validateEntityMovementAction(
+  nodeId: string,
+  actionType: string,
+  action: any,
+  nodeIds: Set<string>
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  // Validate action is an object
+  if (typeof action !== 'object' || action === null) {
+    errors.push({
+      type: 'invalid_entity_movement',
+      node: nodeId,
+      field: actionType,
+      message: `Worker node "${nodeId}" has invalid entityMovement.${actionType} (must be object)`,
+    });
+    return errors;
+  }
+
+  // Requirement 10.4: Validate targetSectionId references existing node
+  if (!action.targetSectionId || typeof action.targetSectionId !== 'string') {
+    errors.push({
+      type: 'invalid_entity_movement',
+      node: nodeId,
+      field: `${actionType}.targetSectionId`,
+      message: `Worker node "${nodeId}" entityMovement.${actionType} missing required "targetSectionId"`,
+    });
+  } else if (!nodeIds.has(action.targetSectionId)) {
+    errors.push({
+      type: 'invalid_entity_movement',
+      node: nodeId,
+      field: `${actionType}.targetSectionId`,
+      message: `Worker node "${nodeId}" entityMovement.${actionType}.targetSectionId references non-existent node: "${action.targetSectionId}"`,
+    });
+  }
+
+  // Requirement 10.5: Validate completeAs has valid value
+  if (!action.completeAs || typeof action.completeAs !== 'string') {
+    errors.push({
+      type: 'invalid_entity_movement',
+      node: nodeId,
+      field: `${actionType}.completeAs`,
+      message: `Worker node "${nodeId}" entityMovement.${actionType} missing required "completeAs"`,
+    });
+  } else if (!VALID_COMPLETE_AS_VALUES.includes(action.completeAs as any)) {
+    errors.push({
+      type: 'invalid_entity_movement',
+      node: nodeId,
+      field: `${actionType}.completeAs`,
+      message: `Worker node "${nodeId}" entityMovement.${actionType}.completeAs has invalid value: "${action.completeAs}" (must be one of: ${VALID_COMPLETE_AS_VALUES.join(', ')})`,
+    });
+  }
+
+  // Requirement 10.5: Validate setEntityType if present
+  if (action.setEntityType !== undefined) {
+    if (typeof action.setEntityType !== 'string') {
+      errors.push({
+        type: 'invalid_entity_movement',
+        node: nodeId,
+        field: `${actionType}.setEntityType`,
+        message: `Worker node "${nodeId}" entityMovement.${actionType}.setEntityType must be a string`,
+      });
+    } else if (!VALID_ENTITY_TYPES.includes(action.setEntityType as any)) {
+      errors.push({
+        type: 'invalid_entity_movement',
+        node: nodeId,
+        field: `${actionType}.setEntityType`,
+        message: `Worker node "${nodeId}" entityMovement.${actionType}.setEntityType has invalid value: "${action.setEntityType}" (must be one of: ${VALID_ENTITY_TYPES.join(', ')})`,
+      });
+    }
+  }
+
+  return errors;
 }
 
 

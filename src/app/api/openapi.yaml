@@ -1,0 +1,984 @@
+openapi: 3.0.3
+info:
+  title: Stitch AI Manager API
+  description: |
+    REST API for programmatic control of Stitch workflows through natural language.
+    
+    The AI Manager API enables developers, CLI tools, and AI agents to create, modify, 
+    and execute workflows without manual canvas editing.
+    
+    ## Features
+    - Canvas CRUD operations (JSON and Mermaid formats)
+    - Workflow execution and status monitoring
+    - AI-powered natural language interface
+    - Automatic version snapshots
+    - Entity movement tracking
+    
+    ## Authentication
+    All endpoints require authentication (implementation-specific).
+    
+  version: 1.0.0
+  contact:
+    name: Stitch API Support
+  license:
+    name: MIT
+
+servers:
+  - url: https://your-domain.com/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+tags:
+  - name: Canvas
+    description: Canvas CRUD operations
+  - name: Workflow
+    description: Workflow execution and status
+  - name: AI Manager
+    description: Natural language workflow management
+
+paths:
+  /canvas:
+    get:
+      tags:
+        - Canvas
+      summary: List all canvases
+      description: Retrieve a list of all canvases with metadata
+      operationId: listCanvases
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListCanvasesResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Canvas
+      summary: Create a new canvas
+      description: Create a canvas from JSON or Mermaid format
+      operationId: createCanvas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCanvasRequest'
+            examples:
+              json:
+                summary: Create from JSON
+                value:
+                  name: "My Workflow"
+                  format: "json"
+                  content:
+                    nodes:
+                      - id: "node-1"
+                        type: "ux"
+                        position: { x: 0, y: 0 }
+                        data:
+                          label: "Start"
+                    edges: []
+              mermaid:
+                summary: Create from Mermaid
+                value:
+                  name: "My Workflow"
+                  format: "mermaid"
+                  content: "flowchart LR\n    A[Start] --> B[End]"
+      responses:
+        '201':
+          description: Canvas created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCanvasResponse'
+        '400':
+          description: Bad request (invalid JSON, validation error, parse error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /canvas/{id}:
+    get:
+      tags:
+        - Canvas
+      summary: Get canvas by ID
+      description: Retrieve a canvas with its complete structure
+      operationId: getCanvas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Canvas UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCanvasResponse'
+        '404':
+          description: Canvas not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags:
+        - Canvas
+      summary: Update canvas
+      description: Update an existing canvas structure or metadata
+      operationId: updateCanvas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Canvas UUID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCanvasRequest'
+      responses:
+        '200':
+          description: Canvas updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateCanvasResponse'
+        '400':
+          description: Bad request (invalid canvas structure)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Canvas not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - Canvas
+      summary: Delete canvas
+      description: Delete a canvas by ID
+      operationId: deleteCanvas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Canvas UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Canvas deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteCanvasResponse'
+        '404':
+          description: Canvas not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /canvas/{id}/run:
+    post:
+      tags:
+        - Workflow
+      summary: Run workflow
+      description: |
+        Start workflow execution for a canvas. Automatically creates a version snapshot.
+        
+        Process:
+        1. Loads canvas by ID
+        2. Creates version snapshot
+        3. Compiles to execution graph
+        4. Creates run record
+        5. Starts execution
+        6. Returns run ID and status URL
+      operationId: runWorkflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Canvas UUID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunWorkflowRequest'
+            examples:
+              basic:
+                summary: Basic execution
+                value:
+                  input:
+                    prompt: "Generate a video about AI"
+              withEntity:
+                summary: With entity tracking
+                value:
+                  input:
+                    prompt: "Generate a video about AI"
+                  entityId: "customer-123"
+      responses:
+        '200':
+          description: Workflow started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunWorkflowResponse'
+        '400':
+          description: Bad request (invalid input)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Canvas not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /canvas/{id}/status:
+    get:
+      tags:
+        - Workflow
+      summary: Get workflow status
+      description: |
+        Query the status of a workflow execution.
+        
+        Returns:
+        - Overall workflow status
+        - Individual node states
+        - Node outputs (for completed nodes)
+        - Error details (for failed nodes)
+        - Final outputs (for completed workflows)
+      operationId: getWorkflowStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Canvas UUID
+          schema:
+            type: string
+            format: uuid
+        - name: runId
+          in: query
+          required: true
+          description: Run UUID from run response
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetStatusResponse'
+              examples:
+                running:
+                  summary: Workflow running
+                  value:
+                    runId: "660e8400-e29b-41d4-a716-446655440000"
+                    status: "running"
+                    nodes:
+                      node-1:
+                        status: "completed"
+                        output: { prompt: "Generate video" }
+                      node-2:
+                        status: "running"
+                    statusUrl: "https://your-domain.com/api/canvas/550e8400/status?runId=660e8400"
+                completed:
+                  summary: Workflow completed
+                  value:
+                    runId: "660e8400-e29b-41d4-a716-446655440000"
+                    status: "completed"
+                    nodes:
+                      node-1:
+                        status: "completed"
+                        output: { prompt: "Generate video" }
+                      node-2:
+                        status: "completed"
+                        output: { video_url: "https://..." }
+                    finalOutputs:
+                      node-2:
+                        video_url: "https://..."
+                    statusUrl: "https://your-domain.com/api/canvas/550e8400/status?runId=660e8400"
+                failed:
+                  summary: Workflow failed
+                  value:
+                    runId: "660e8400-e29b-41d4-a716-446655440000"
+                    status: "failed"
+                    nodes:
+                      node-1:
+                        status: "completed"
+                        output: { prompt: "Generate video" }
+                      node-2:
+                        status: "failed"
+                        error: "API rate limit exceeded"
+                    statusUrl: "https://your-domain.com/api/canvas/550e8400/status?runId=660e8400"
+        '400':
+          description: Bad request (missing runId or run doesn't belong to canvas)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Canvas or run not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai-manager:
+    post:
+      tags:
+        - AI Manager
+      summary: Process natural language request
+      description: |
+        Send a natural language request to create, modify, or execute workflows.
+        
+        The AI Manager interprets the request and executes the appropriate action:
+        - CREATE_WORKFLOW: Generate a new workflow
+        - MODIFY_WORKFLOW: Update an existing workflow
+        - RUN_WORKFLOW: Execute a workflow
+        - GET_STATUS: Check workflow status
+        
+        ## Available Workers
+        - claude: Text generation, analysis
+        - minimax: Video generation
+        - elevenlabs: Voice synthesis
+        - shotstack: Video editing
+        - scene-parser: Scene extraction
+        - wireframe-generator: UI mockups
+        - image-to-video: Image animation
+        - media-library: Media asset retrieval
+      operationId: processAIRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIManagerRequest'
+            examples:
+              create:
+                summary: Create workflow
+                value:
+                  request: "Create a workflow that generates a video from text using Claude and Minimax"
+              modify:
+                summary: Modify workflow
+                value:
+                  request: "Add a voice generation step using ElevenLabs"
+                  canvasId: "550e8400-e29b-41d4-a716-446655440000"
+              run:
+                summary: Run workflow
+                value:
+                  request: "Run the workflow with input: 'Generate a video about space exploration'"
+                  canvasId: "550e8400-e29b-41d4-a716-446655440000"
+              status:
+                summary: Check status
+                value:
+                  request: "What's the status of run 660e8400-e29b-41d4-a716-446655440000?"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIManagerResponse'
+              examples:
+                createWorkflow:
+                  summary: CREATE_WORKFLOW response
+                  value:
+                    action: "CREATE_WORKFLOW"
+                    result:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      canvas:
+                        nodes: []
+                        edges: []
+                modifyWorkflow:
+                  summary: MODIFY_WORKFLOW response
+                  value:
+                    action: "MODIFY_WORKFLOW"
+                    result:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      canvas:
+                        nodes: []
+                        edges: []
+                      changes:
+                        - "Added voice generation node"
+                runWorkflow:
+                  summary: RUN_WORKFLOW response
+                  value:
+                    action: "RUN_WORKFLOW"
+                    result:
+                      runId: "660e8400-e29b-41d4-a716-446655440000"
+                      versionId: "770e8400-e29b-41d4-a716-446655440000"
+                      status: "running"
+                      statusUrl: "https://your-domain.com/api/canvas/550e8400/status?runId=660e8400"
+                getStatus:
+                  summary: GET_STATUS response
+                  value:
+                    action: "GET_STATUS"
+                    result:
+                      runId: "660e8400-e29b-41d4-a716-446655440000"
+                      status: "completed"
+                      nodes:
+                        worker-1:
+                          status: "completed"
+                          output: { text: "..." }
+                      finalOutputs:
+                        worker-1:
+                          text: "..."
+        '400':
+          description: Bad request (invalid request, parsing error, validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized (missing or invalid LLM API key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Canvas not found (for modification requests)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error (LLM error, database error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    # Error Response
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        details:
+          type: array
+          items:
+            type: string
+          description: Additional error details
+        code:
+          type: string
+          enum:
+            - BAD_REQUEST
+            - NOT_FOUND
+            - INTERNAL_ERROR
+            - VALIDATION_ERROR
+            - PARSE_ERROR
+            - LLM_ERROR
+          description: Error code for programmatic handling
+
+    # Canvas Metadata
+    CanvasMetadata:
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+        - node_count
+        - edge_count
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Canvas unique identifier
+        name:
+          type: string
+          description: Canvas name
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        node_count:
+          type: integer
+          description: Number of nodes in canvas
+        edge_count:
+          type: integer
+          description: Number of edges in canvas
+
+    # List Canvases Response
+    ListCanvasesResponse:
+      type: object
+      required:
+        - canvases
+      properties:
+        canvases:
+          type: array
+          items:
+            $ref: '#/components/schemas/CanvasMetadata'
+
+    # Visual Graph
+    VisualGraph:
+      type: object
+      required:
+        - nodes
+        - edges
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisualNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisualEdge'
+
+    # Visual Node
+    VisualNode:
+      type: object
+      required:
+        - id
+        - type
+        - position
+        - data
+      properties:
+        id:
+          type: string
+          description: Unique node identifier
+        type:
+          type: string
+          enum:
+            - ux
+            - worker
+            - splitter
+            - collector
+          description: Node type
+        position:
+          type: object
+          required:
+            - x
+            - y
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+        data:
+          type: object
+          required:
+            - label
+          properties:
+            label:
+              type: string
+              description: Node label
+            worker_type:
+              type: string
+              description: Worker type (for worker nodes)
+            config:
+              type: object
+              description: Worker configuration
+            entityMovement:
+              $ref: '#/components/schemas/EntityMovement'
+        parentNode:
+          type: string
+          description: Parent node ID (for nested nodes)
+        extent:
+          type: string
+          description: Extent constraint
+        style:
+          type: object
+          description: Node styling
+        width:
+          type: number
+          description: Node width
+        height:
+          type: number
+          description: Node height
+
+    # Visual Edge
+    VisualEdge:
+      type: object
+      required:
+        - id
+        - source
+        - target
+      properties:
+        id:
+          type: string
+          description: Unique edge identifier
+        source:
+          type: string
+          description: Source node ID
+        target:
+          type: string
+          description: Target node ID
+        sourceHandle:
+          type: string
+          description: Source handle ID
+        targetHandle:
+          type: string
+          description: Target handle ID
+        type:
+          type: string
+          description: Edge type
+        animated:
+          type: boolean
+          description: Whether edge is animated
+        style:
+          type: object
+          description: Edge styling
+        data:
+          type: object
+          description: Edge data (e.g., mapping)
+
+    # Entity Movement
+    EntityMovement:
+      type: object
+      properties:
+        onSuccess:
+          type: object
+          required:
+            - targetSectionId
+            - completeAs
+          properties:
+            targetSectionId:
+              type: string
+              description: Target node ID on success
+            completeAs:
+              type: string
+              enum:
+                - success
+                - failure
+                - pending
+              description: Completion status
+        onFailure:
+          type: object
+          required:
+            - targetSectionId
+            - completeAs
+          properties:
+            targetSectionId:
+              type: string
+              description: Target node ID on failure
+            completeAs:
+              type: string
+              enum:
+                - success
+                - failure
+                - pending
+              description: Completion status
+
+    # Create Canvas Request
+    CreateCanvasRequest:
+      type: object
+      required:
+        - name
+        - format
+        - content
+      properties:
+        name:
+          type: string
+          description: Canvas name
+        format:
+          type: string
+          enum:
+            - json
+            - mermaid
+          description: Content format
+        content:
+          oneOf:
+            - type: string
+              description: Mermaid flowchart string or JSON string
+            - $ref: '#/components/schemas/VisualGraph'
+
+    # Create Canvas Response
+    CreateCanvasResponse:
+      type: object
+      required:
+        - id
+        - canvas
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Created canvas ID
+        canvas:
+          $ref: '#/components/schemas/VisualGraph'
+
+    # Get Canvas Response
+    GetCanvasResponse:
+      type: object
+      required:
+        - id
+        - name
+        - canvas
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        canvas:
+          $ref: '#/components/schemas/VisualGraph'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # Update Canvas Request
+    UpdateCanvasRequest:
+      type: object
+      required:
+        - canvas
+      properties:
+        name:
+          type: string
+          description: New canvas name (optional)
+        canvas:
+          $ref: '#/components/schemas/VisualGraph'
+
+    # Update Canvas Response
+    UpdateCanvasResponse:
+      type: object
+      required:
+        - id
+        - canvas
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        canvas:
+          $ref: '#/components/schemas/VisualGraph'
+        updated_at:
+          type: string
+          format: date-time
+
+    # Delete Canvas Response
+    DeleteCanvasResponse:
+      type: object
+      required:
+        - success
+        - id
+      properties:
+        success:
+          type: boolean
+          description: Always true on success
+        id:
+          type: string
+          format: uuid
+          description: Deleted canvas ID
+
+    # Run Workflow Request
+    RunWorkflowRequest:
+      type: object
+      required:
+        - input
+      properties:
+        input:
+          type: object
+          description: Input data for workflow
+        entityId:
+          type: string
+          description: Entity ID to track through workflow
+
+    # Run Workflow Response
+    RunWorkflowResponse:
+      type: object
+      required:
+        - runId
+        - versionId
+        - status
+        - statusUrl
+      properties:
+        runId:
+          type: string
+          format: uuid
+          description: Run identifier
+        versionId:
+          type: string
+          format: uuid
+          description: Auto-created version snapshot ID
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+          description: Initial status
+        statusUrl:
+          type: string
+          format: uri
+          description: URL to poll for status updates
+
+    # Node State Response
+    NodeStateResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+            - waiting_for_user
+          description: Node status
+        output:
+          type: object
+          description: Node output (for completed nodes)
+        error:
+          type: string
+          description: Error message (for failed nodes)
+
+    # Get Status Response
+    GetStatusResponse:
+      type: object
+      required:
+        - runId
+        - status
+        - nodes
+        - statusUrl
+      properties:
+        runId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+          description: Overall workflow status
+        nodes:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/NodeStateResponse'
+          description: Map of node IDs to their states
+        finalOutputs:
+          type: object
+          description: Outputs from terminal nodes (for completed workflows)
+        statusUrl:
+          type: string
+          format: uri
+          description: URL to continue polling
+
+    # AI Manager Request
+    AIManagerRequest:
+      type: object
+      required:
+        - request
+      properties:
+        request:
+          type: string
+          description: Natural language description of desired action
+        canvasId:
+          type: string
+          format: uuid
+          description: Canvas ID (for modification requests)
+
+    # AI Manager Response
+    AIManagerResponse:
+      type: object
+      required:
+        - action
+        - result
+      properties:
+        action:
+          type: string
+          enum:
+            - CREATE_WORKFLOW
+            - MODIFY_WORKFLOW
+            - RUN_WORKFLOW
+            - GET_STATUS
+          description: Action type determined by AI
+        result:
+          type: object
+          description: Action-specific result (varies by action type)
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []

@@ -109,6 +109,12 @@ describe('OEG Compilation', () => {
             worker_type: 'minimax',
           },
         },
+        {
+          id: 'collector',
+          type: 'collector',
+          position: { x: 600, y: 0 },
+          data: { label: 'Collector' },
+        },
       ],
       edges: [
         {
@@ -125,6 +131,16 @@ describe('OEG Compilation', () => {
           id: 'e3',
           source: 'split',
           target: 'path2',
+        },
+        {
+          id: 'e4',
+          source: 'path1',
+          target: 'collector',
+        },
+        {
+          id: 'e5',
+          source: 'path2',
+          target: 'collector',
         },
       ],
     };
@@ -144,7 +160,7 @@ describe('OEG Compilation', () => {
 
     // Check entry and terminal nodes
     expect(executionGraph.entryNodes).toEqual(['start']);
-    expect(executionGraph.terminalNodes.sort()).toEqual(['path1', 'path2'].sort());
+    expect(executionGraph.terminalNodes).toEqual(['collector']);
   });
 
   it('should index edge data by source->target', () => {

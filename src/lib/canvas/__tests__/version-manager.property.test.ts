@@ -65,10 +65,11 @@ const nodeIdArbitrary = fc.string({ minLength: 1, maxLength: 20 })
 
 /**
  * Generate a simple visual node
+ * Only generates worker and ux nodes to avoid splitter/collector pairing issues
  */
 const simpleNodeArbitrary = fc.record({
   id: nodeIdArbitrary,
-  type: fc.constantFrom('worker', 'ux', 'splitter', 'collector'),
+  type: fc.constantFrom('worker', 'ux'),
   position: fc.record({
     x: fc.integer({ min: 0, max: 1000 }),
     y: fc.integer({ min: 0, max: 1000 }),

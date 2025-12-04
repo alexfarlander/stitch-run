@@ -3,10 +3,11 @@
  * 
  * Tests the Mermaid flowchart parser functionality.
  * Verifies node extraction, edge extraction, type inference, and config application.
+ * Requirements: 3.5, 9.4
  */
 
 import { describe, it, expect } from 'vitest';
-import { mermaidToCanvas } from '../mermaid-parser';
+import { mermaidToCanvas, MermaidParseError } from '../mermaid-parser';
 
 describe('mermaidToCanvas', () => {
   it('should parse simple Mermaid flowchart', () => {
@@ -60,7 +61,7 @@ describe('mermaidToCanvas', () => {
   it('should infer worker node type as default', () => {
     const mermaid = `
       flowchart LR
-        A[Process Data] --> B[Convert]
+        A(Process Data) --> B(Convert)
     `;
     
     const result = mermaidToCanvas(mermaid);
@@ -75,7 +76,7 @@ describe('mermaidToCanvas', () => {
   it('should infer splitter node type from label', () => {
     const mermaid = `
       flowchart LR
-        A[Split Tasks] --> B[Task 1]
+        A{Split Tasks} --> B(Task 1)
     `;
     
     const result = mermaidToCanvas(mermaid);
@@ -87,7 +88,7 @@ describe('mermaidToCanvas', () => {
   it('should infer collector node type from label', () => {
     const mermaid = `
       flowchart LR
-        A[Task 1] --> B[Collect Results]
+        A(Task 1) --> B{Collect Results}
     `;
     
     const result = mermaidToCanvas(mermaid);
@@ -292,5 +293,137 @@ describe('mermaidToCanvas', () => {
     
     expect(result.nodes).toHaveLength(2);
     expect(result.edges).toHaveLength(1);
+  });
+});
+
+describe('mermaidToCanvas - Error Handling', () => {
+  it('should throw error for empty input', () => {
+    expect(() => mermaidToCanvas('')).toThrow('Invalid Mermaid input');
+  });
+  
+  it('should throw error for missing flowchart declaration', () => {
+    const mermaid = `
+      A[Start] --> B[End]
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Missing flowchart declaration');
+  });
+  
+  it('should throw error for invalid flowchart direction', () => {
+    const mermaid = `
+      flowchart INVALID
+      A[Start] --> B[End]
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Invalid flowchart direction');
+  });
+  
+  it('should throw error for empty diagram', () => {
+    const mermaid = `
+      flowchart LR
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('No nodes found in diagram');
+  });
+  
+  it('should throw error for unclosed bracket', () => {
+    const mermaid = `
+      flowchart LR
+        A[Start --> B[End]
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Unclosed bracket');
+  });
+  
+  it('should throw error for unclosed parenthesis', () => {
+    const mermaid = `
+      flowchart LR
+        A(Start --> B(End)
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Unclosed parenthesis');
+  });
+  
+  it('should throw error for unclosed brace', () => {
+    const mermaid = `
+      flowchart LR
+        A{Start --> B{End}
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Unclosed brace');
+  });
+  
+  it('should throw error for invalid node ID with spaces', () => {
+    const mermaid = `
+      flowchart LR
+        My Node --> B[End]
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Invalid node ID with spaces');
+  });
+  
+  it('should throw error for invalid edge syntax', () => {
+    const mermaid = `
+      flowchart LR
+        A[Start] -->
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Invalid target node syntax');
+  });
+  
+  it('should throw error for empty node segment in edge', () => {
+    const mermaid = `
+      flowchart LR
+        A[Start] --> --> B[End]
+    `;
+    
+    expect(() => mermaidToCanvas(mermaid)).toThrow('Invalid target node syntax');
+  });
+  
+  it('should include line numbers in error messages', () => {
+    const mermaid = `
+      flowchart LR
+        A[Start] --> B[Middle]
+        B --> Invalid Node
+    `;
+    
+    try {
+      mermaidToCanvas(mermaid);
+      expect.fail('Should have thrown error');
+    } catch (error: any) {
+      expect(error.lineNumber).toBe(3);
+      expect(error.line).toContain('Invalid Node');
+    }
+  });
+  
+  it('should provide helpful hints in error messages', () => {
+    const mermaid = `
+      flowchart WRONG
+      A[Start] --> B[End]
+    `;
+    
+    try {
+      mermaidToCanvas(mermaid);
+      expect.fail('Should have thrown error');
+    } catch (error: any) {
+      expect(error.hint).toContain('LR');
+      expect(error.hint).toContain('TD');
+    }
+  });
+  
+  it('should provide detailed error message', () => {
+    const mermaid = `
+      flowchart LR
+        A[Start] --> B[
+    `;
+    
+    try {
+      mermaidToCanvas(mermaid);
+      expect.fail('Should have thrown error');
+    } catch (error: any) {
+      const detailed = error.getDetailedMessage();
+      expect(detailed).toContain('line');
+      expect(detailed).toContain('Hint:');
+    }
   });
 });

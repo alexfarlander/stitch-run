@@ -200,14 +200,32 @@ export async function getFlowAdmin(
 
 /**
  * Get all flows
+ * 
+ * @param includeCurrentVersion - If true, includes the current version data
+ * @returns Array of flows
  */
-export async function getAllFlows(): Promise<StitchFlow[]> {
+export async function getAllFlows(
+  includeCurrentVersion: boolean = false
+): Promise<StitchFlow[]> {
   const supabase = createServerClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('stitch_flows')
     .select('*')
     .order('created_at', { ascending: false });
+
+  // Optionally include current version data
+  if (includeCurrentVersion) {
+    query = supabase
+      .from('stitch_flows')
+      .select(`
+        *,
+        current_version:stitch_flow_versions!current_version_id(*)
+      `)
+      .order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(`Failed to get flows: ${error.message}`);
@@ -217,16 +235,46 @@ export async function getAllFlows(): Promise<StitchFlow[]> {
 }
 
 /**
- * Update a flow's graph
+ * Update a flow's metadata (name only)
+ * 
+ * @deprecated DO NOT use this function to update canvas graph data!
+ * This function bypasses the versioning system and OEG compiler.
+ * 
+ * ⚠️ CRITICAL: Only use this for updating flow metadata (name).
+ * To update canvas structure, use createVersion() from version-manager.ts
+ * 
+ * The Risk: Updating the 'graph' field directly will:
+ * - Bypass the OEG compiler
+ * - Leave current_version_id pointing to stale data
+ * - Cause the Run button to execute the old version
+ * - Break the versioning system
+ * 
+ * Correct approach for canvas updates:
+ * 1. Call createVersion(flowId, visualGraph, commitMessage)
+ * 2. This automatically updates current_version_id
+ * 3. The new version is compiled and ready for execution
+ * 
+ * @param flowId - Flow ID to update
+ * @param updates - Only name should be updated here
+ * @returns Updated flow
  */
 export async function updateFlow(
   flowId: string,
   updates: {
     name?: string;
+    /** @deprecated DO NOT UPDATE GRAPH - Use createVersion() instead */
     graph?: { nodes: StitchNode[]; edges: StitchEdge[] };
   }
 ): Promise<StitchFlow> {
   const supabase = createServerClient();
+
+  // Warn if trying to update graph
+  if (updates.graph) {
+    console.warn(
+      '⚠️ WARNING: updateFlow() called with graph data. ' +
+      'This bypasses versioning! Use createVersion() instead.'
+    );
+  }
 
   const { data, error } = await supabase
     .from('stitch_flows')
