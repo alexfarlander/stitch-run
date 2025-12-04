@@ -21,6 +21,8 @@ import { CollectorNode } from './nodes/CollectorNode';
 import { UXNode } from './nodes/UXNode';
 import { SplitterNode } from './nodes/SplitterNode';
 import { MediaSelectNode } from './nodes/MediaSelectNode';
+import { CostsSectionNode } from './nodes/CostsSectionNode';
+import { RevenueSectionNode } from './nodes/RevenueSectionNode';
 import { IntegrationItem, PersonItem, CodeItem, DataItem } from './items';
 import { JourneyEdge } from './edges/JourneyEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
@@ -43,7 +45,7 @@ interface ItemNodeData {
   linked_canvas_id?: string;
 }
 
-export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
+export function BMCCanvas({ flow }: BMCCanvasProps) {
   const { drillInto } = useCanvasNavigation();
   
   // Memoize nodeTypes so React Flow doesn't re-render constantly
@@ -59,6 +61,10 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
     'person-item': PersonItem,
     'code-item': CodeItem,
     'data-item': DataItem,
+    
+    // Financial sections
+    'costs-section': CostsSectionNode,
+    'revenue-section': RevenueSectionNode,
     
     // Workflow nodes (for drill-down views)
     Worker: WorkerNode,
@@ -76,6 +82,7 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
   const nodes: Node[] = useMemo(() => {
     return flow.graph.nodes.map((node) => {
       const isSection = node.type === 'section';
+      const isFinancialSection = node.type === 'costs-section' || node.type === 'revenue-section';
       
       return {
         id: node.id,
@@ -86,16 +93,16 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
         extent: node.extent,
         style: {
           ...node.style,
-          // Sections render below items
-          zIndex: isSection ? -1 : 10,
+          // Sections render below items, financial sections render above background but below entity overlay
+          zIndex: isSection ? -1 : isFinancialSection ? 5 : 10,
         },
         width: node.width,
         height: node.height,
         // Lock sections in place so you don't accidentally drag the background
-        draggable: !isSection,
-        selectable: !isSection,
+        draggable: !isSection && !isFinancialSection,
+        selectable: !isSection && !isFinancialSection,
         // Items connect, sections don't (usually)
-        connectable: !isSection,
+        connectable: !isSection && !isFinancialSection,
       };
     });
   }, [flow.graph.nodes]);
@@ -114,7 +121,7 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
   }, [flow.graph.edges]);
 
   // Handle section double-clicks for drill-down
-  const handleNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const handleNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
     if (node.type === 'section') {
       const data = node.data as unknown as SectionNodeData;
       if (data.child_canvas_id) {
@@ -124,7 +131,7 @@ export function BMCCanvas({ flow, initialEntities = [] }: BMCCanvasProps) {
   }, [drillInto]);
 
   // Handle item single clicks for drill-down
-  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     if (node.type === 'section-item') {
       const data = node.data as unknown as ItemNodeData;
       if (data.linked_workflow_id) {

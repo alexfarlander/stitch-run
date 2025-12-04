@@ -28,7 +28,7 @@ const IntegrationItemComponent = memo(({ id, data }: NodeProps) => {
   const PlugIcon = LucideIcons.Plug;
   
   return (
-    <div className="relative">
+    <div className="relative" data-node-id={id}>
       {/* Connection Handles */}
       <Handle 
         type="target" 

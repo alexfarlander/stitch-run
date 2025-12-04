@@ -4,7 +4,7 @@
  * Tests: Property 3 (Health check API key validation), Property 9 (Health check completeness)
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { GET } from '../route';
 

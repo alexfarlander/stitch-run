@@ -12,7 +12,20 @@ import React from 'react';
 /**
  * Node types supported by the Stitch engine
  */
-export type NodeType = 'Worker' | 'UX' | 'Splitter' | 'Collector' | 'MediaSelect' | 'section' | 'section-item';
+export type NodeType = 
+  | 'Worker' 
+  | 'UX' 
+  | 'Splitter' 
+  | 'Collector' 
+  | 'MediaSelect' 
+  | 'section' 
+  | 'section-item'
+  | 'integration-item'
+  | 'person-item'
+  | 'code-item'
+  | 'data-item'
+  | 'costs-section'
+  | 'revenue-section';
 
 /**
  * Node execution status

@@ -29,7 +29,7 @@ const CodeItemComponent = memo(({ id, data }: NodeProps) => {
   const ExternalLinkIcon = LucideIcons.ExternalLink;
   
   return (
-    <div className="relative">
+    <div className="relative" data-node-id={id}>
       {/* Connection Handles */}
       <Handle 
         type="target" 

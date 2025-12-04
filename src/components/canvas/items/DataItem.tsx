@@ -44,7 +44,7 @@ const DataItemComponent = memo(({ id, data }: NodeProps) => {
   const TypeIcon = getTypeIcon();
   
   return (
-    <div className="relative">
+    <div className="relative" data-node-id={id}>
       {/* Connection Handles */}
       <Handle 
         type="target" 

@@ -34,7 +34,7 @@ const PersonItemComponent = memo(({ id, data }: NodeProps) => {
   };
   
   return (
-    <div className="relative">
+    <div className="relative" data-node-id={id}>
       {/* Connection Handles */}
       <Handle 
         type="target" 
