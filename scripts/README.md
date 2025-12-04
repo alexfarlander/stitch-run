@@ -186,6 +186,90 @@ Applies entity tracking migrations.
 npx tsx scripts/apply-entity-migrations.ts
 ```
 
+### apply-versioning-migration.ts
+Applies the canvas versioning migration (creates stitch_flow_versions table).
+
+```bash
+npx tsx scripts/apply-versioning-migration.ts
+```
+
+### migrate-to-versions.ts
+Migrates existing flows and runs to the new versioning system.
+
+**⚠️ Important:** Run `apply-versioning-migration.ts` first to create the required tables.
+
+```bash
+npx tsx scripts/migrate-to-versions.ts
+```
+
+**What it does:**
+1. **For each existing flow:**
+   - Converts legacy graph format to visual graph format
+   - Attempts to compile graph to OEG (Optimized Execution Graph)
+   - If successful: creates initial version, updates current_version_id
+   - If failed: sets current_version_id to NULL, logs error details
+2. **For each existing run:**
+   - Links to flow's current_version_id if available
+   - Otherwise marks for manual review
+3. **Logs all migration results** with detailed statistics
+
+**Migration statistics include:**
+- Total flows processed
+- Successful migrations
+- Failed migrations (with error details)
+- Skipped flows (already have versions)
+- Total runs processed
+- Runs successfully linked to versions
+- Runs needing manual review
+
+**Requirements validated:**
+- 9.1: Creates stitch_flows table with current_version_id
+- 9.2: Creates stitch_flow_versions table with visual and execution graphs
+- 9.3: Modifies stitch_runs to reference flow_version_id
+
+**Prerequisites:**
+- Run `npx tsx scripts/apply-versioning-migration.ts` first
+- Backup your database before running (recommended)
+
+**Example output:**
+```
+╔════════════════════════════════════════════════════════════╗
+║  Stitch Canvas Versioning Migration                       ║
+╚════════════════════════════════════════════════════════════╝
+
+🔄 Starting flow migration...
+Found 5 flows to migrate
+
+📦 Migrating flow: Video Factory V2 (abc-123)
+   ↳ Compiling graph to OEG...
+   ↳ Creating initial version...
+   ↳ Updating current_version_id...
+   ✅ Successfully migrated
+
+📦 Migrating flow: Simple Test Flow (def-456)
+   ↳ Already has version, skipping
+
+🔄 Starting run migration...
+Found 10 runs to migrate
+
+╔════════════════════════════════════════════════════════════╗
+║  Migration Summary                                         ║
+╚════════════════════════════════════════════════════════════╝
+
+📊 Flows:
+   Total:      5
+   ✅ Success:  3
+   ⏭️  Skipped:  1
+   ❌ Failed:   1
+
+📊 Runs:
+   Total:      10
+   ✅ Linked:   9
+   ⚠️  Review:   1
+
+✅ Migration completed successfully!
+```
+
 ## Environment Variables
 
 All scripts require proper environment configuration. See `.env.example` for required variables:

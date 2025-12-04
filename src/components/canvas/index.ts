@@ -16,3 +16,5 @@ export { useNodeStatus } from './hooks/useNodeStatus';
 export { JourneyEdge } from './edges/JourneyEdge';
 export { EntityDot } from './entities/EntityDot';
 export { EntityOverlay } from './entities/EntityOverlay';
+export { VersionHistory } from './VersionHistory';
+export { MermaidImportExport } from './MermaidImportExport';

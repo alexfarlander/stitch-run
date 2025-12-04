@@ -4,8 +4,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createFlow, getFlow, updateFlow, deleteFlow } from '../flows';
+import { createFlow, createFlowWithVersion, getFlow, updateFlow, deleteFlow } from '../flows';
 import { StitchNode, StitchEdge } from '@/types/stitch';
+import { VisualGraph } from '@/types/canvas-schema';
 
 describe('Flow Database Operations', () => {
   let testFlowId: string;
@@ -153,6 +154,112 @@ describe('Flow Database Operations', () => {
 
       const retrieved = await getFlow(flowId);
       expect(retrieved).toBeNull();
+    });
+  });
+
+  describe('createFlow with canvas_type and parent_id', () => {
+    it('should create a flow with canvas_type', async () => {
+      const flow = await createFlow(
+        'BMC Canvas',
+        { nodes: [], edges: [] },
+        'bmc'
+      );
+      testFlowId = flow.id;
+
+      expect(flow.canvas_type).toBe('bmc');
+      expect(flow.parent_id).toBeNull();
+
+      await cleanup();
+    });
+
+    it('should create a flow with parent_id', async () => {
+      const parent = await createFlow('Parent Flow', { nodes: [], edges: [] });
+      const child = await createFlow(
+        'Child Flow',
+        { nodes: [], edges: [] },
+        'detail',
+        parent.id
+      );
+      testFlowId = child.id;
+
+      expect(child.canvas_type).toBe('detail');
+      expect(child.parent_id).toBe(parent.id);
+
+      await cleanup();
+      await deleteFlow(parent.id);
+    });
+  });
+
+  describe('createFlowWithVersion', () => {
+    it('should create a flow with initial version', async () => {
+      const visualGraph: VisualGraph = {
+        nodes: [
+          {
+            id: 'node-1',
+            type: 'worker',
+            position: { x: 100, y: 100 },
+            data: {
+              label: 'Test Worker',
+              worker_type: 'claude',
+              config: {},
+            },
+          },
+        ],
+        edges: [],
+      };
+
+      const result = await createFlowWithVersion(
+        'Versioned Flow',
+        visualGraph,
+        'workflow',
+        undefined,
+        'Initial commit'
+      );
+      testFlowId = result.flow.id;
+
+      // Validate flow was created
+      expect(result.flow.id).toBeDefined();
+      expect(result.flow.name).toBe('Versioned Flow');
+      expect(result.flow.canvas_type).toBe('workflow');
+      expect(result.flow.current_version_id).toBeDefined();
+
+      // Validate version was created
+      expect(result.versionId).toBeDefined();
+      expect(result.versionId).toBe(result.flow.current_version_id);
+
+      await cleanup();
+    });
+
+    it('should create a flow with version and retrieve with current version', async () => {
+      const visualGraph: VisualGraph = {
+        nodes: [
+          {
+            id: 'node-1',
+            type: 'ux',
+            position: { x: 0, y: 0 },
+            data: { label: 'UX Node' },
+          },
+        ],
+        edges: [],
+      };
+
+      const result = await createFlowWithVersion(
+        'Flow with Version',
+        visualGraph
+      );
+      testFlowId = result.flow.id;
+
+      // Retrieve flow with current version included
+      const retrieved = await getFlow(result.flow.id, true);
+
+      expect(retrieved).not.toBeNull();
+      expect(retrieved?.current_version_id).toBe(result.versionId);
+      // @ts-ignore - current_version is added by the join
+      expect(retrieved?.current_version).toBeDefined();
+      // @ts-ignore
+      expect(retrieved?.current_version.visual_graph).toBeDefined();
+
+      await cleanup();
     });
   });
 });

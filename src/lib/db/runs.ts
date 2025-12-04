@@ -7,32 +7,59 @@ import { createServerClient } from '../supabase/server';
 import { getAdminClient } from '../supabase/client';
 import { StitchRun, NodeState, StitchFlow, TriggerMetadata } from '@/types/stitch';
 import { getFlow, getFlowAdmin } from './flows';
+import { getVersion, getVersionAdmin } from '../canvas/version-manager';
+import { ExecutionGraph } from '@/types/execution-graph';
 
 /**
  * Create a new run for a flow
- * Initializes all nodes to 'pending' status
+ * Initializes all nodes to 'pending' status from execution graph
  * Supports optional entity_id and trigger metadata for webhook-triggered runs
- * Validates: Requirements 2.6, 3.1, 3.2, 3.3
+ * Requirements: 1.3, 5.2
  */
 export async function createRun(
   flowId: string,
   options?: {
+    flow_version_id?: string;
     entity_id?: string | null;
     trigger?: TriggerMetadata;
   }
 ): Promise<StitchRun> {
   const supabase = createServerClient();
 
-  // Get the flow to initialize node states
-  const flow = await getFlow(flowId);
-  if (!flow) {
-    throw new Error(`Flow not found: ${flowId}`);
+  let executionGraph: ExecutionGraph;
+  let versionId: string;
+
+  // If flow_version_id is provided, use it directly
+  if (options?.flow_version_id) {
+    versionId = options.flow_version_id;
+    const version = await getVersion(versionId);
+    if (!version) {
+      throw new Error(`Flow version not found: ${versionId}`);
+    }
+    executionGraph = version.execution_graph;
+  } else {
+    // Otherwise, get the current version from the flow
+    const flow = await getFlow(flowId);
+    if (!flow) {
+      throw new Error(`Flow not found: ${flowId}`);
+    }
+
+    if (!flow.current_version_id) {
+      throw new Error(`Flow has no current version: ${flowId}`);
+    }
+
+    versionId = flow.current_version_id;
+    const version = await getVersion(versionId);
+    if (!version) {
+      throw new Error(`Current version not found: ${versionId}`);
+    }
+    executionGraph = version.execution_graph;
   }
 
-  // Initialize all nodes to 'pending' status
+  // Initialize all nodes to 'pending' status from execution graph
   const nodeStates: Record<string, NodeState> = {};
-  for (const node of flow.graph.nodes) {
-    nodeStates[node.id] = {
+  for (const nodeId of Object.keys(executionGraph.nodes)) {
+    nodeStates[nodeId] = {
       status: 'pending',
     };
   }
@@ -40,6 +67,7 @@ export async function createRun(
   // Build insert payload with optional fields
   const insertPayload: any = {
     flow_id: flowId,
+    flow_version_id: versionId,
     node_states: nodeStates,
   };
 
@@ -75,30 +103,55 @@ export async function createRun(
 
 /**
  * Create a new run for a flow using admin client (for webhooks without auth)
- * Initializes all nodes to 'pending' status
+ * Initializes all nodes to 'pending' status from execution graph
  * Supports optional entity_id and trigger metadata for webhook-triggered runs
  * Use this in webhook endpoints where there are no cookies/session
- * Validates: Requirements 2.6, 3.1, 3.2, 3.3
+ * Requirements: 1.3, 5.2
  */
 export async function createRunAdmin(
   flowId: string,
   options?: {
+    flow_version_id?: string;
     entity_id?: string | null;
     trigger?: TriggerMetadata;
   }
 ): Promise<StitchRun> {
   const supabase = getAdminClient();
 
-  // Get the flow to initialize node states
-  const flow = await getFlowAdmin(flowId);
-  if (!flow) {
-    throw new Error(`Flow not found: ${flowId}`);
+  let executionGraph: ExecutionGraph;
+  let versionId: string;
+
+  // If flow_version_id is provided, use it directly
+  if (options?.flow_version_id) {
+    versionId = options.flow_version_id;
+    const version = await getVersionAdmin(versionId);
+    if (!version) {
+      throw new Error(`Flow version not found: ${versionId}`);
+    }
+    executionGraph = version.execution_graph;
+  } else {
+    // Otherwise, get the current version from the flow
+    const flow = await getFlowAdmin(flowId);
+    if (!flow) {
+      throw new Error(`Flow not found: ${flowId}`);
+    }
+
+    if (!flow.current_version_id) {
+      throw new Error(`Flow has no current version: ${flowId}`);
+    }
+
+    versionId = flow.current_version_id;
+    const version = await getVersionAdmin(versionId);
+    if (!version) {
+      throw new Error(`Current version not found: ${versionId}`);
+    }
+    executionGraph = version.execution_graph;
   }
 
-  // Initialize all nodes to 'pending' status
+  // Initialize all nodes to 'pending' status from execution graph
   const nodeStates: Record<string, NodeState> = {};
-  for (const node of flow.graph.nodes) {
-    nodeStates[node.id] = {
+  for (const nodeId of Object.keys(executionGraph.nodes)) {
+    nodeStates[nodeId] = {
       status: 'pending',
     };
   }
@@ -106,6 +159,7 @@ export async function createRunAdmin(
   // Build insert payload with optional fields
   const insertPayload: any = {
     flow_id: flowId,
+    flow_version_id: versionId,
     node_states: nodeStates,
   };
 

@@ -5,22 +5,55 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRun, getRun, updateNodeState, updateNodeStates, deleteRun } from '../runs';
-import { createFlow, deleteFlow } from '../flows';
+import { createFlowWithVersion, deleteFlow } from '../flows';
 import { StitchNode, NodeState } from '@/types/stitch';
+import { VisualGraph, VisualNode, VisualEdge } from '@/types/canvas-schema';
 
 describe('Run Database Operations', () => {
   let testFlowId: string;
   let testRunId: string;
 
   beforeEach(async () => {
-    // Create a test flow with multiple nodes
-    const nodes: StitchNode[] = [
-      { id: 'node-1', type: 'Worker', position: { x: 0, y: 0 }, data: {} },
-      { id: 'node-2', type: 'UX', position: { x: 100, y: 0 }, data: {} },
-      { id: 'node-3', type: 'Collector', position: { x: 200, y: 0 }, data: {} },
+    // Create a test flow with multiple nodes using the new versioning system
+    const nodes: VisualNode[] = [
+      { 
+        id: 'node-1', 
+        type: 'worker', 
+        position: { x: 0, y: 0 }, 
+        data: { 
+          label: 'Worker 1',
+          worker_type: 'claude',
+          inputs: {},
+          outputs: { result: { type: 'string', description: 'Result' } }
+        } 
+      },
+      { 
+        id: 'node-2', 
+        type: 'ux', 
+        position: { x: 100, y: 0 }, 
+        data: { 
+          label: 'UX Node',
+          inputs: {},
+          outputs: { data: { type: 'object', description: 'User data' } }
+        } 
+      },
+      { 
+        id: 'node-3', 
+        type: 'collector', 
+        position: { x: 200, y: 0 }, 
+        data: { 
+          label: 'Collector',
+          inputs: {},
+          outputs: { combined: { type: 'array', description: 'Combined results' } }
+        } 
+      },
     ];
 
-    const flow = await createFlow('Test Flow for Runs', { nodes, edges: [] });
+    const edges: VisualEdge[] = [];
+
+    const visualGraph: VisualGraph = { nodes, edges };
+
+    const { flow } = await createFlowWithVersion('Test Flow for Runs', visualGraph);
     testFlowId = flow.id;
   });
 

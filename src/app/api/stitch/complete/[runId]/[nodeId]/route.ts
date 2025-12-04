@@ -95,7 +95,7 @@ export async function POST(
     // Trigger edge-walking after state update (Requirement 8.5)
     const updatedRun = await getRunAdmin(runId);
     if (updatedRun) {
-      await walkEdges(nodeId, flow, updatedRun);
+      await walkEdges(nodeId, updatedRun);
     }
 
     // Return success response

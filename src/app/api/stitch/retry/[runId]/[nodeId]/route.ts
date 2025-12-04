@@ -6,9 +6,24 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getRunAdmin, updateNodeState } from '@/lib/db/runs';
-import { getFlowAdmin } from '@/lib/db/flows';
-import { areUpstreamDependenciesCompleted } from '@/lib/engine';
+import { getVersion } from '@/lib/canvas/version-manager';
 import { fireNode } from '@/lib/engine/edge-walker';
+
+/**
+ * Helper function to get upstream node IDs from ExecutionGraph
+ */
+function getUpstreamNodeIds(nodeId: string, executionGraph: any): string[] {
+  const upstreamIds: string[] = [];
+  
+  // Check adjacency map to find nodes that point to this node
+  for (const [sourceId, targetIds] of Object.entries(executionGraph.adjacency)) {
+    if ((targetIds as string[]).includes(nodeId)) {
+      upstreamIds.push(sourceId);
+    }
+  }
+  
+  return upstreamIds;
+}
 
 /**
  * POST /api/stitch/retry/:runId/:nodeId
@@ -54,14 +69,23 @@ export async function POST(
       status: 'pending',
     });
 
-    // Get the flow to re-evaluate dependencies
-    const flow = await getFlowAdmin(run.flow_id);
-    if (!flow) {
+    // Load execution graph from run's flow_version_id
+    if (!run.flow_version_id) {
       return NextResponse.json(
-        { error: 'Flow not found' },
+        { error: 'Run has no flow_version_id' },
+        { status: 400 }
+      );
+    }
+    
+    const version = await getVersion(run.flow_version_id);
+    if (!version) {
+      return NextResponse.json(
+        { error: 'Flow version not found' },
         { status: 404 }
       );
     }
+
+    const executionGraph = version.execution_graph;
 
     // Get updated run state after reset
     const updatedRun = await getRunAdmin(runId);
@@ -73,10 +97,17 @@ export async function POST(
     }
 
     // Re-evaluate upstream dependencies and fire node if satisfied (Requirement 10.3)
-    if (areUpstreamDependenciesCompleted(nodeId, flow, updatedRun)) {
-      // Fire this specific node directly
-      // Do not use walkEdges, which would fire downstream nodes or risk re-firing siblings
-      await fireNode(nodeId, flow, updatedRun);
+    // Check dependencies using execution graph
+    const upstreamNodeIds = getUpstreamNodeIds(nodeId, executionGraph);
+    const allUpstreamCompleted = upstreamNodeIds.every(upstreamId => {
+      const upstreamState = updatedRun.node_states[upstreamId];
+      return upstreamState && upstreamState.status === 'completed';
+    });
+
+    if (allUpstreamCompleted) {
+      // Fire this specific node directly using execution graph
+      const { fireNodeWithGraph } = await import('@/lib/engine/edge-walker');
+      await fireNodeWithGraph(nodeId, executionGraph, updatedRun);
     }
 
     // Return success response

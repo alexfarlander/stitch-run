@@ -150,6 +150,7 @@ export interface StitchFlow {
   };
   canvas_type: 'bmc' | 'workflow' | 'detail';
   parent_id: string | null;
+  current_version_id: string | null;  // Points to latest version
   created_at: string;
   updated_at: string;
 }
@@ -190,6 +191,7 @@ export interface TriggerMetadata {
 export interface StitchRun {
   id: string;
   flow_id: string;
+  flow_version_id: string | null;  // Link to specific version (Requirement 1.3, 5.2)
   entity_id: string | null;  // Link to entity
   node_states: Record<string, NodeState>;
   trigger: TriggerMetadata;  // Trigger information

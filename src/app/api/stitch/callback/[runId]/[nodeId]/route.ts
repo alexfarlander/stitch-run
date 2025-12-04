@@ -192,24 +192,15 @@ export async function POST(
 
     // Trigger edge-walking if node completed successfully (Requirement 9.4)
     if (callback.status === 'completed') {
-      // Get the flow to perform edge-walking (use admin client)
-      if (flow) {
-        // Get updated run state after the update (use admin client)
-        const updatedRun = await getRunAdmin(runId);
-        if (updatedRun) {
-          // Walk edges from the completed node
-          await walkEdges(nodeId, flow, updatedRun);
-        } else {
-          logExecutionError('Failed to get updated run for edge-walking', new Error('Run not found after update'), {
-            runId,
-            nodeId,
-          });
-        }
+      // Get updated run state after the update (use admin client)
+      const updatedRun = await getRunAdmin(runId);
+      if (updatedRun) {
+        // Walk edges from the completed node (execution graph loaded inside walkEdges)
+        await walkEdges(nodeId, updatedRun);
       } else {
-        logExecutionError('Flow not found for edge-walking', new Error(`Flow not found: ${run.flow_id}`), {
+        logExecutionError('Failed to get updated run for edge-walking', new Error('Run not found after update'), {
           runId,
           nodeId,
-          flowId: run.flow_id,
         });
       }
     }

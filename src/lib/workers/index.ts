@@ -5,7 +5,14 @@
 
 export type { IWorker } from './base';
 export type { IWorkerRegistry } from './registry';
-export { WorkerRegistry, workerRegistry } from './registry';
+export { 
+  WorkerRegistry, 
+  workerRegistry, 
+  WORKER_DEFINITIONS, 
+  getWorkerDefinition, 
+  isValidWorkerType, 
+  getAvailableWorkerTypes 
+} from './registry';
 export { buildCallbackUrl, triggerCallback, sanitizeForLogging, logWorker } from './utils';
 export { ClaudeWorker } from './claude';
 export { MiniMaxWorker } from './minimax';

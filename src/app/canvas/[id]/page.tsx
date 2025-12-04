@@ -64,7 +64,7 @@ export default function CanvasPage() {
         {canvas.canvas_type === 'bmc' ? (
           <BMCCanvas flow={canvas} />
         ) : (
-          <StitchCanvas flow={canvas} />
+          <StitchCanvas flow={canvas} editable={true} />
         )}
       </div>
     </div>
