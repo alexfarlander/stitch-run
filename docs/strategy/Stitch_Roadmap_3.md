@@ -114,35 +114,172 @@ npx tsx scripts/verify-all.ts
 
 The key insight: **A canvas is just JSON. LLMs are excellent at generating and modifying JSON.**
 
-### 2.1 Canvas JSON Schema
+### 2.1 Database Schema (Normalized with Versioning)
 
-Define a clear, simple schema that both humans and LLMs can understand:
+We normalize flow definitions to save storage and track history.
+
+```sql
+-- The Container (Metadata)
+CREATE TABLE stitch_flows (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  user_id uuid REFERENCES auth.users(id),
+  current_version_id uuid,  -- Points to the latest draft/published version
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- The Data (Immutable Versions)
+CREATE TABLE stitch_flow_versions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  flow_id uuid REFERENCES stitch_flows(id),
+  
+  -- Visual graph (for UI rendering)
+  visual_graph jsonb NOT NULL,  -- Full React Flow JSON with positions
+  
+  -- Execution graph (optimized for runtime)
+  execution_graph jsonb NOT NULL,  -- OEG: stripped, validated, with adjacency map
+  
+  commit_message text,  -- Optional: "Added Claude node"
+  created_at timestamptz DEFAULT now()
+);
+
+-- The Execution (Lightweight Reference)
+CREATE TABLE stitch_runs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  flow_version_id uuid REFERENCES stitch_flow_versions(id),  -- Reference specific snapshot
+  user_id uuid REFERENCES auth.users(id),
+  status text DEFAULT 'running',
+  node_states jsonb DEFAULT '{}',  -- Only stores execution state, not the graph
+  created_at timestamptz DEFAULT now()
+);
+```
+
+**Benefits:**
+- `stitch_runs` is lightweight (no graph duplication)
+- Old runs reference old versions (safe history)
+- Visual and execution graphs separated (UI vs Runtime)
+
+### 2.1.1 Canvas JSON Schema (Visual Graph)
+
+The visual graph is what React Flow renders and what LLMs generate:
 
 ```typescript
 // src/types/canvas-schema.ts
 
-interface CanvasSchema {
-  name: string;
-  canvas_type: 'bmc' | 'workflow' | 'detail';
-  graph: {
-    nodes: CanvasNode[];
-    edges: CanvasEdge[];
+interface VisualGraph {
+  nodes: VisualNode[];
+  edges: VisualEdge[];
+}
+
+interface VisualNode {
+  id: string;
+  type: string;  // worker, ux, splitter, collector, section, item
+  position: { x: number; y: number };
+  data: {
+    label: string;
+    worker_type?: string;  // For worker nodes: claude, minimax, etc.
+    config?: Record<string, any>;  // Worker-specific config
+    
+    // Input/Output schema (for validation and mapping)
+    inputs?: Record<string, { type: string; required: boolean }>;
+    outputs?: Record<string, { type: string }>;
+  };
+  parentNode?: string;
+  style?: Record<string, any>;  // UI styling
+}
+
+interface VisualEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;  // For nodes with multiple outputs
+  targetHandle?: string;  // For nodes with multiple inputs
+  type?: string;  // default, journey, etc.
+  
+  // THE CRUCIAL PART: Data mapping between nodes
+  data?: {
+    mapping?: EdgeMapping;  // How to wire outputs to inputs
   };
 }
 
-interface CanvasNode {
-  id: string;           // Unique identifier
-  type: string;         // Node type (section, item, worker, ux, etc.)
-  position: { x: number; y: number };
-  data: Record<string, any>;  // Type-specific data
-  parentNode?: string;  // For nested nodes
+// Edge Logic Map - How data flows between nodes
+interface EdgeMapping {
+  // Maps target node input params to source node output params
+  // { targetInputName: sourceOutputPath }
+  [targetInput: string]: string;  // JSONPath or simple key
+}
+```
+
+**Example - Script to Video Edge:**
+```typescript
+const edge: VisualEdge = {
+  id: 'e-script-video',
+  source: 'script-generator',
+  target: 'video-gen-1',
+  data: {
+    mapping: {
+      // Video Gen needs "prompt", Script outputs "script.scenes[0].visual_prompt"
+      'prompt': 'script.scenes[0].visual_prompt',
+      'duration': 'script.scenes[0].duration_seconds'
+    }
+  }
+};
+```
+
+### 2.1.2 Execution Graph (Optimized for Runtime)
+
+The execution graph is what the Runner uses - stripped of UI, optimized for lookup:
+
+```typescript
+// src/types/execution-graph.ts
+
+interface ExecutionGraph {
+  // Nodes indexed by ID for O(1) lookup
+  nodes: Record<string, ExecutionNode>;
+  
+  // Adjacency map for instant edge traversal
+  adjacency: Record<string, string[]>;  // { sourceId: [targetId1, targetId2] }
+  
+  // Edge data indexed by "source->target" for mapping lookup
+  edgeData: Record<string, EdgeMapping>;  // { "nodeA->nodeB": { mapping } }
+  
+  // Entry points (nodes with no incoming edges)
+  entryNodes: string[];
+  
+  // Terminal nodes (nodes with no outgoing edges)
+  terminalNodes: string[];
 }
 
-interface CanvasEdge {
+interface ExecutionNode {
   id: string;
-  source: string;       // Source node ID
-  target: string;       // Target node ID
-  type?: string;        // Edge type (default, journey, etc.)
+  type: string;
+  worker_type?: string;
+  config?: Record<string, any>;
+  inputs?: Record<string, { type: string; required: boolean }>;
+  outputs?: Record<string, { type: string }>;
+}
+```
+
+**Example Execution Graph:**
+```json
+{
+  "nodes": {
+    "input": { "id": "input", "type": "ux" },
+    "script": { "id": "script", "type": "worker", "worker_type": "claude" },
+    "video": { "id": "video", "type": "worker", "worker_type": "minimax" }
+  },
+  "adjacency": {
+    "input": ["script"],
+    "script": ["video"],
+    "video": []
+  },
+  "edgeData": {
+    "input->script": { "topic": "value" },
+    "script->video": { "prompt": "script.scenes[0].visual_prompt" }
+  },
+  "entryNodes": ["input"],
+  "terminalNodes": ["video"]
 }
 ```
 
@@ -240,6 +377,124 @@ interface WorkerDefinition {
   }
 }
 ```
+
+### 2.4 Flow Versioning Strategy
+
+**The "Save & Run" Lifecycle:**
+
+1. **On Save:**
+   - Frontend sends graph JSON to `POST /api/flows/[id]/versions`
+   - Backend validates and compiles to OEG (see 2.4.1)
+   - Backend inserts new row in `stitch_flow_versions`
+   - Backend updates `stitch_flows.current_version_id`
+
+2. **On Run:**
+   - Backend creates a run linked to `flow_version_id`
+   - **Benefit:** `stitch_runs` is lightweight - no graph duplication
+   - **Safety:** Old runs reference old versions. If the AI changes the flow today, yesterday's run visualization remains accurate
+
+3. **Auto-Version on Run:**
+   - When user clicks "Run", if there are unsaved changes, automatically create a new version first
+   - Then execute that version
+   - Ensures the run always matches what was on screen
+   - Keeps the "One Click" magic alive
+
+### 2.4.1 The Sanitization Step (Lite Compilation to OEG)
+
+We don't compile to code. We compile to an **Optimized Execution Graph (OEG)**.
+
+**When Creating a Version:**
+
+```typescript
+// src/lib/canvas/compile-oeg.ts
+
+interface CompileResult {
+  success: boolean;
+  executionGraph?: ExecutionGraph;
+  errors?: ValidationError[];
+}
+
+function compileToOEG(visualGraph: VisualGraph): CompileResult {
+  // 1. VALIDATION
+  const errors = [];
+  
+  // Check for cycles (would cause infinite loops)
+  if (hasCycles(visualGraph)) {
+    errors.push({ type: 'cycle', message: 'Graph contains cycles' });
+  }
+  
+  // Check all required inputs have connections
+  for (const node of visualGraph.nodes) {
+    const incomingEdges = getIncomingEdges(node.id, visualGraph.edges);
+    for (const [inputName, inputDef] of Object.entries(node.data.inputs || {})) {
+      if (inputDef.required && !hasMapping(inputName, incomingEdges)) {
+        errors.push({ 
+          type: 'missing_input', 
+          node: node.id, 
+          input: inputName,
+          message: `Required input "${inputName}" has no connection`
+        });
+      }
+    }
+  }
+  
+  if (errors.length > 0) {
+    return { success: false, errors };
+  }
+  
+  // 2. OPTIMIZATION - Convert to adjacency map for O(1) lookup
+  const adjacency: Record<string, string[]> = {};
+  const edgeData: Record<string, EdgeMapping> = {};
+  
+  for (const edge of visualGraph.edges) {
+    if (!adjacency[edge.source]) adjacency[edge.source] = [];
+    adjacency[edge.source].push(edge.target);
+    
+    if (edge.data?.mapping) {
+      edgeData[`${edge.source}->${edge.target}`] = edge.data.mapping;
+    }
+  }
+  
+  // 3. STRIPPING - Remove UI properties to save DB space
+  const nodes: Record<string, ExecutionNode> = {};
+  for (const node of visualGraph.nodes) {
+    nodes[node.id] = {
+      id: node.id,
+      type: node.type,
+      worker_type: node.data.worker_type,
+      config: node.data.config,
+      inputs: node.data.inputs,
+      outputs: node.data.outputs
+      // NO position, style, label, parentNode
+    };
+  }
+  
+  // 4. COMPUTE entry and terminal nodes
+  const hasIncoming = new Set(visualGraph.edges.map(e => e.target));
+  const hasOutgoing = new Set(visualGraph.edges.map(e => e.source));
+  
+  const entryNodes = Object.keys(nodes).filter(id => !hasIncoming.has(id));
+  const terminalNodes = Object.keys(nodes).filter(id => !hasOutgoing.has(id));
+  
+  return {
+    success: true,
+    executionGraph: {
+      nodes,
+      adjacency,
+      edgeData,
+      entryNodes,
+      terminalNodes
+    }
+  };
+}
+```
+
+**Why OEG?**
+- **Fast Runtime:** Adjacency map = O(1) edge lookup vs O(n) array scan
+- **Logic-Focused:** No UI cruft in execution path
+- **Storage Efficient:** Stripped graph is ~60% smaller
+- **AI-Friendly:** Clean JSON that AI Manager can read/write
+- **Validated:** Errors caught at save time, not run time
 
 ---
 
@@ -575,31 +830,38 @@ async function runDemo(canvasId: string) {
 3. Test each worker individually
 4. Make one simple workflow run end-to-end
 
-### Phase B: Canvas as Data (Priority 2)
-1. Define and document CanvasSchema
-2. Implement Mermaid parser
-3. Implement Mermaid generator
-4. Create worker definition format
+### Phase B: Schema & Versioning (Priority 2)
+1. Define VisualGraph and ExecutionGraph types
+2. Implement EdgeMapping for data flow
+3. Implement OEG compiler (validate, optimize, strip)
+4. Add stitch_flow_versions table
+5. Implement version manager (auto-version on run)
 
-### Phase C: Canvas Management API (Priority 3)
-1. Implement REST API for canvas CRUD
-2. Add Mermaid input support
-3. Add workflow execution endpoints
-4. Add status/monitoring endpoints
+### Phase C: Mermaid & Worker Definitions (Priority 3)
+1. Implement Mermaid parser with edge mapping support
+2. Implement Mermaid generator
+3. Create worker definition format
+4. Document all workers with input/output schemas
 
-### Phase D: AI Manager (Priority 4)
+### Phase D: Canvas Management API (Priority 4)
+1. Implement REST API for flow CRUD
+2. Add version endpoints
+3. Add Mermaid input support
+4. Add workflow execution endpoints (uses OEG)
+
+### Phase E: AI Manager (Priority 5)
 1. Create AI Manager prompt template
 2. Implement AIManager class
 3. Test with simple workflow creation
 4. Add to API as `/api/ai-manager`
 
-### Phase E: CLI (Priority 5)
+### Phase F: CLI (Priority 6)
 1. Create stitch-cli package
 2. Implement basic commands
 3. Add `ai` command for natural language
 4. Publish to npm
 
-### Phase F: Living Canvas (Priority 6)
+### Phase G: Living Canvas (Priority 7)
 1. Add execution visualization
 2. Implement entity movement
 3. Create demo mode
@@ -644,30 +906,37 @@ async function runDemo(canvasId: string) {
 - [ ] Entity dots appear at correct positions
 
 ### Phase B Complete When:
-- [ ] Can create canvas from Mermaid string
-- [ ] Can export canvas to Mermaid
-- [ ] Worker definitions documented
-- [ ] Schema validated with Zod
+- [ ] VisualGraph and ExecutionGraph types defined
+- [ ] EdgeMapping works for data flow between nodes
+- [ ] OEG compiler validates and optimizes graphs
+- [ ] stitch_flow_versions table created
+- [ ] Auto-version on run works
 
 ### Phase C Complete When:
-- [ ] All CRUD endpoints work
-- [ ] Can run workflow via API
-- [ ] Can check status via API
-- [ ] Swagger/OpenAPI docs generated
+- [ ] Can create canvas from Mermaid string
+- [ ] Can export canvas to Mermaid
+- [ ] Worker definitions documented with input/output schemas
+- [ ] Schema validated with Zod
 
 ### Phase D Complete When:
+- [ ] All CRUD endpoints work
+- [ ] Version endpoints work
+- [ ] Can run workflow via API (uses OEG)
+- [ ] Can check status via API
+
+### Phase E Complete When:
 - [ ] AI Manager creates valid workflows
 - [ ] AI Manager modifies existing workflows
 - [ ] AI Manager runs workflows
 - [ ] Natural language works for common tasks
 
-### Phase E Complete When:
+### Phase F Complete When:
 - [ ] `stitch list` works
 - [ ] `stitch create` works with Mermaid
 - [ ] `stitch run` executes workflow
 - [ ] `stitch ai` processes natural language
 
-### Phase F Complete When:
+### Phase G Complete When:
 - [ ] Nodes animate during execution
 - [ ] Entities move along edges
 - [ ] Demo mode runs automatically
@@ -679,18 +948,38 @@ async function runDemo(canvasId: string) {
 
 ### New Files
 ```
-src/types/canvas-schema.ts          # Canvas JSON schema
-src/lib/canvas/mermaid-parser.ts    # Mermaid → Canvas
-src/lib/canvas/mermaid-generator.ts # Canvas → Mermaid
+# Schema & Types
+src/types/canvas-schema.ts          # VisualGraph, VisualNode, VisualEdge, EdgeMapping
+src/types/execution-graph.ts        # ExecutionGraph, ExecutionNode, adjacency types
+src/types/worker-definition.ts      # WorkerDefinition interface
+
+# Canvas Compilation
+src/lib/canvas/compile-oeg.ts       # Visual → Execution graph compiler
+src/lib/canvas/validate-graph.ts    # Cycle detection, input validation
+src/lib/canvas/mermaid-parser.ts    # Mermaid → VisualGraph
+src/lib/canvas/mermaid-generator.ts # VisualGraph → Mermaid
 src/lib/canvas/auto-layout.ts       # Position nodes automatically
-src/lib/ai-manager/index.ts         # AI Manager class
+
+# Versioning
+src/lib/canvas/version-manager.ts   # Create/get versions, auto-version on run
+
+# AI Manager
+src/lib/ai-manager/index.ts         # AIManager class
 src/lib/ai-manager/prompts.ts       # Prompt templates
-src/app/api/canvas/route.ts         # Canvas CRUD API
-src/app/api/canvas/[id]/route.ts    # Single canvas API
-src/app/api/canvas/[id]/run/route.ts # Run workflow API
-src/app/api/ai-manager/route.ts     # AI Manager API
+
+# API Routes
+src/app/api/flows/route.ts                    # Flow CRUD (metadata only)
+src/app/api/flows/[id]/route.ts               # Single flow
+src/app/api/flows/[id]/versions/route.ts      # Create/list versions
+src/app/api/flows/[id]/versions/[vid]/route.ts # Get specific version
+src/app/api/flows/[id]/run/route.ts           # Run workflow (auto-versions)
+src/app/api/ai-manager/route.ts               # AI Manager endpoint
+
+# CLI & MCP
 packages/stitch-cli/                # CLI package
 packages/stitch-mcp/                # MCP server (optional)
+
+# Scripts
 scripts/verify-all.ts               # Comprehensive verification
 scripts/test-worker.ts              # Individual worker testing
 ```
