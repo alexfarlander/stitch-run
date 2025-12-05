@@ -14,6 +14,8 @@ import {
   Edge,
   NodeTypes,
   EdgeTypes,
+  useNodesState,
+  useEdgesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowLeft } from 'lucide-react';
@@ -62,52 +64,126 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
   const [scrubTimestamp, setScrubTimestamp] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const traversingEdges = useEdgeTraversal(flow.id);
-  
+
   // Use timeline hook for historical state reconstruction
   // Requirements: 6.2, 6.3, 6.4, 6.5
   const { nodeStates: timelineNodeStates } = useTimelineNodeStates(
     runId || '',
     scrubTimestamp
   );
-  
+
   // Handle AI graph updates using shared hook
   const handleGraphUpdate = useCanvasGraphUpdate(flow.id);
-  
+
   // Subscribe to run updates if runId provided
   const { run } = useRealtimeRun(runId || '');
 
+  // Initialize nodes and edges with local state for interaction
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // Initial load of graph data
+  useEffect(() => {
+    if (flow.graph) {
+      const initialNodes = flow.graph.nodes.map((node) => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: {
+          ...node.data,
+          node_states: nodeStates,
+          // Explicitly pass selected if needed, though React Flow handles it via selected prop on Node
+        },
+        style: node.style,
+        selectable: true,
+        draggable: true,
+      }));
+      setNodes(initialNodes);
+
+      const initialEdges = flow.graph.edges.map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourceHandle,
+        targetHandle: edge.targetHandle,
+        animated: true,
+        style: {
+          stroke: '#06b6d4',
+          strokeWidth: 2,
+        },
+        data: {
+          isTraversing: traversingEdges.get(edge.id) || false,
+        },
+      }));
+      setEdges(initialEdges);
+    }
+  }, [flow.graph]); // Only run on mount or if graph structure changes deeply (which usually doesn't in this view)
+
+  // Sync node states (e.g. from real-time run or time travel)
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          node_states: nodeStates,
+        },
+      }))
+    );
+  }, [nodeStates, setNodes]);
+
   // Update node states based on time travel mode
-  // Requirement 6.2: Update node statuses to reflect state at timestamp
-  // Requirement 6.5: Return to real-time state when exiting time travel
   useEffect(() => {
     if (scrubTimestamp !== null) {
-      // In time travel mode: use historical states
       setNodeStates(timelineNodeStates);
     } else if (run) {
-      // Real-time mode: use current run states
       setNodeStates(run.node_states);
     } else if (!runId) {
-      // No run: clear states
       setNodeStates({});
     }
   }, [run, runId, scrubTimestamp, timelineNodeStates]);
 
-  // Handle timestamp change from timeline scrubber
+  // Handle timestamp change
   const handleTimestampChange = useCallback((timestamp: string | null) => {
     setScrubTimestamp(timestamp);
   }, []);
 
-  // Handle node click to open configuration panel
-  // Requirement 3.1: Display configuration panel on node click
+  // Handle node click
   const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNodeId(node.id);
   }, []);
 
-  // Handle node configuration save
-  // Requirement 3.4: Update node in database and close panel
+  // Sync edge highlighting and traversal state
+  useEffect(() => {
+    setEdges((eds) =>
+      eds.map((edge) => {
+        const isConnectedToSelected =
+          selectedNodeId &&
+          (edge.source === selectedNodeId || edge.target === selectedNodeId);
+
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            isTraversing: traversingEdges.get(edge.id) || false,
+            isHighlighted: !!isConnectedToSelected,
+          },
+          animated: true, // Keep animated
+          style: {
+            ...edge.style,
+            stroke: isConnectedToSelected ? '#22d3ee' : '#06b6d4',
+            strokeWidth: isConnectedToSelected ? 3 : 2,
+            opacity: isConnectedToSelected || !selectedNodeId ? 1 : 0.3, // Dim unconnected edges if something is selected
+          },
+          zIndex: isConnectedToSelected ? 10 : 0, // Bring to front
+        };
+      })
+    );
+  }, [selectedNodeId, traversingEdges, setEdges]); // Dep on selectedNodeId and traversingEdges
+
+  // Handle node config save
   const handleSaveNodeConfig = useCallback(async (nodeId: string, config: any) => {
     try {
-      // Update the node configuration via API
       const response = await fetch(`/api/canvas/${flow.id}/nodes/${nodeId}/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -118,54 +194,15 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to update node configuration');
       }
-
-      // The canvas will update automatically via Supabase real-time subscriptions
-      // or the parent component will refetch the flow data
     } catch (error) {
       console.error('Error saving node configuration:', error);
       throw error;
     }
   }, [flow.id]);
 
-  // Handle node config panel close
   const handleNodeConfigClose = useCallback(() => {
     setSelectedNodeId(null);
   }, []);
-
-  // Transform flow nodes to ReactFlow nodes with status
-  const nodes: Node[] = useMemo(() => {
-    return flow.graph.nodes.map((node) => ({
-      id: node.id,
-      type: node.type,
-      position: node.position,
-      data: {
-        ...node.data,
-        node_states: nodeStates,
-      },
-      style: node.style,
-    }));
-  }, [flow.graph.nodes, nodeStates]);
-
-  // Transform flow edges to ReactFlow edges with traversal state
-  const edges: Edge[] = useMemo(() => {
-    return flow.graph.edges.map((edge) => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      sourceHandle: edge.sourceHandle,
-      targetHandle: edge.targetHandle,
-      animated: true,
-      style: {
-        stroke: '#06b6d4',
-        strokeWidth: 2,
-      },
-      data: {
-        isTraversing: traversingEdges.get(edge.id) || false,
-      },
-    }));
-  }, [flow.graph.edges, traversingEdges]);
-
-
 
   return (
     <div className="w-full h-full bg-slate-950 dark relative flex flex-col">
@@ -210,31 +247,34 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
         <ReactFlow
           nodes={nodes}
           edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           onNodeClick={handleNodeClick}
+          onPaneClick={() => setSelectedNodeId(null)}
           fitView
           minZoom={0.1}
           maxZoom={2}
         >
-          <Background 
-            color="#1e293b" 
+          <Background
+            color="#1e293b"
             gap={16}
             style={{
               backgroundColor: '#020617',
             }}
           />
-          <Controls 
+          <Controls
             className="bg-slate-900 border-slate-700"
           />
         </ReactFlow>
-        
+
         {/* AI Assistant Panel */}
-        <AIAssistantPanel 
+        <AIAssistantPanel
           canvasId={flow.id}
           onGraphUpdate={handleGraphUpdate}
         />
-        
+
         {/* Node Configuration Panel */}
         <NodeConfigPanel
           nodeId={selectedNodeId}
@@ -244,9 +284,9 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
         />
       </div>
 
-      {/* Timeline Scrubber - Requirement 6.1: Display timeline scrubber at bottom */}
+      {/* Timeline Scrubber */}
       {runId && (
-        <TimelineScrubber 
+        <TimelineScrubber
           runId={runId}
           onTimestampChange={handleTimestampChange}
         />

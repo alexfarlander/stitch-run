@@ -23,6 +23,11 @@ interface EntityDotProps {
  * Animation duration is synchronized with edge traversal animations.
  * Supports drag-and-drop for manual entity movement.
  * 
+ * Note: When entity starts traveling on an edge, the parent component changes
+ * the React key, causing this component to remount at the source position.
+ * The `initial` prop ensures no animation on mount, then subsequent position
+ * updates animate smoothly along the edge.
+ * 
  * Requirements: 
  * - 17.1, 17.2, 17.4 - Synchronized animations
  * - 5.1 - Display visual indicator during drag operation
@@ -74,7 +79,8 @@ export function EntityDot({
       style={{ 
         zIndex: 40 // Below EntityDetailPanel (z-50) but above canvas elements
       }}
-      // Use initial to prevent animation from (0,0) on first render
+      // Initial position on mount - prevents animation from (0,0)
+      // When component remounts (key changes), it starts at the correct position
       initial={{ left: position.x, top: position.y }}
       animate={{
         left: position.x,
@@ -85,9 +91,10 @@ export function EntityDot({
         ease: isMoving ? 'linear' : 'easeInOut',
       }}
       onClick={onClick}
-      draggable={!isMoving} // Only allow dragging when not currently moving
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      // Use native HTML drag events (not framer-motion drag)
+      draggable={!isMoving}
+      onDragStartCapture={handleDragStart}
+      onDragEndCapture={handleDragEnd}
     >
       {/* Pulse animation when moving */}
       {isMoving && (

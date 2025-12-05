@@ -3,34 +3,35 @@
 import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { EntityDot } from './EntityDot';
-import { EntityCluster } from './EntityCluster';
-import { EntityDetailPanel } from '@/components/panels/EntityDetailPanel';
-import { StitchEntity } from '@/types/entity';
 import { useEntities } from '@/hooks/useEntities';
 import { useEntityPositions } from '@/hooks/useEntityPosition';
 import { toast } from 'sonner';
 
 interface Props {
   canvasId: string;
+  selectedEntityId?: string;
+  onEntitySelect?: (entityId: string | undefined) => void;
 }
 
 /**
  * EntityOverlay Component
  * 
- * Renders entities on the canvas with clustering logic:
- * - Groups with >5 entities: Display as EntityCluster badge
- * - Groups with ≤5 entities: Display as individual EntityDots
+ * Renders traveling entities (on edges) as animated dots.
+ * Entity count badges are now rendered inside node components directly.
  * 
- * Requirements:
- * - 4.1: Cluster when more than 5 entities at same node
- * - 4.4: Show individual dots when 5 or fewer entities
- * - 4.5: Handle real-time updates to cluster counts
+ * Also handles entity drop events for drag-and-drop movement.
  */
-export function EntityOverlay({ canvasId }: Props) {
+export function EntityOverlay({ 
+  canvasId, 
+  selectedEntityId: externalSelectedId,
+  onEntitySelect 
+}: Props) {
   // Destructure entityProgress to use for smooth animations
   const { entities, isLoading, entityProgress } = useEntities(canvasId);
-  const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
-  const [draggingEntityId, setDraggingEntityId] = useState<string | null>(null);
+  // Use internal state if no external control provided
+  const [internalSelectedId, setInternalSelectedId] = useState<string | undefined>();
+  const selectedEntityId = externalSelectedId ?? internalSelectedId;
+  const setSelectedEntityId = onEntitySelect ?? setInternalSelectedId;
   const { getNodes, getEdges } = useReactFlow();
 
   // Merge database entities with local animation progress
@@ -113,11 +114,9 @@ export function EntityOverlay({ canvasId }: Props) {
       }
 
       toast.success('Entity moved successfully');
-      setDraggingEntityId(null);
     } catch (error) {
       console.error('Error moving entity:', error);
       toast.error('Failed to move entity');
-      setDraggingEntityId(null);
     }
   }, [entities, getNodes, getEdges]);
 
@@ -134,119 +133,37 @@ export function EntityOverlay({ canvasId }: Props) {
     };
   }, [handleNodeDrop]);
 
-  // Group entities by current_node_id
-  // Requirement 4.1, 4.4: Group entities to determine clustering
-  const entitiesByNode = useMemo(() => {
-    if (!animatedEntities) return new Map<string, StitchEntity[]>();
 
-    const grouped = new Map<string, StitchEntity[]>();
-    animatedEntities.forEach((entity) => {
-      const nodeId = entity.current_node_id;
-      if (!nodeId) return;
-
-      if (!grouped.has(nodeId)) {
-        grouped.set(nodeId, []);
-      }
-      grouped.get(nodeId)!.push(entity);
-    });
-
-    return grouped;
-  }, [animatedEntities]);
-  // Get the selected entity object
-  const selectedEntity = useMemo(() => {
-    if (!selectedEntityId || !entities) return null;
-    return entities.find((e) => e.id === selectedEntityId) || null;
-  }, [selectedEntityId, entities]);
-
-  // Handler to close the panel
-  const handleClosePanel = useCallback(() => {
-    setSelectedEntityId(undefined);
-  }, []);
-
-  // Handle drag start
-  const handleDragStart = useCallback((entityId: string) => {
-    setDraggingEntityId(entityId);
-  }, []);
-
-  // Handle drag end (cleanup)
-  const handleDragEnd = useCallback((entityId: string, targetNodeId: string | null) => {
-    setDraggingEntityId(null);
-  }, []);
-
-  // Handler for EntityDetailPanel (existing functionality)
-  const handleMoveEntity = useCallback((entityId: string, targetNodeId: string) => {
-    handleDragEnd(entityId, targetNodeId);
-  }, [handleDragEnd]);
 
   if (isLoading || !entities) {
     return null;
   }
 
   return (
-    <>
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Render clusters for nodes with >5 entities */}
-        {Array.from(entitiesByNode.entries())
-          .filter(([, nodeEntities]) => nodeEntities.length > 5)
-          .map(([nodeId, nodeEntities]) => {
-            const firstEntity = nodeEntities[0];
-            const position = entityPositions.get(firstEntity.id);
-            if (!position) return null;
-
-            return (
-              <div key={`cluster-${nodeId}`} className="pointer-events-auto">
-                <EntityCluster
-                  count={nodeEntities.length}
-                  position={position}
-                  nodeId={nodeId}
-                  entities={nodeEntities}
-                  onClick={() => {
-                    // Optional: Could select first entity or show cluster details
-                  }}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                />
-              </div>
-            );
-          })}
-
-        {/* Render all individual entities (at nodes or traveling) in a single loop for consistent keys */}
-        {animatedEntities.map(entity => {
-          // Skip entities in clusters (nodes with >5 entities)
-          if (entity.current_node_id) {
-            const nodeEntities = entitiesByNode.get(entity.current_node_id);
-            if (nodeEntities && nodeEntities.length > 5) {
-              return null; // Rendered as cluster above
-            }
-          }
-
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 100 }}>
+      {/* Render traveling entities (on edges) only - badges are now rendered inside nodes */}
+      {animatedEntities
+        .filter(entity => entity.current_edge_id) // Only entities traveling on edges
+        .map(entity => {
           const entityPos = entityPositions.get(entity.id);
           if (!entityPos) return null;
 
-          const isMoving = !!entity.current_edge_id;
+          // Use a key that changes when entity starts traveling on a NEW edge
+          const entityKey = `${entity.id}-edge-${entity.current_edge_id}`;
 
           return (
-            <div key={entity.id} className="pointer-events-auto">
+            <div key={entityKey} className="pointer-events-auto">
               <EntityDot
                 entity={entity}
                 position={entityPos}
                 isSelected={entity.id === selectedEntityId}
                 onClick={() => setSelectedEntityId(entity.id)}
-                // Traveling entities cannot be dragged
-                onDragStart={isMoving ? undefined : handleDragStart}
-                onDragEnd={isMoving ? undefined : handleDragEnd}
+                onDragStart={undefined}
+                onDragEnd={undefined}
               />
             </div>
           );
         })}
-      </div>
-
-      {/* Entity Detail Panel */}
-      <EntityDetailPanel
-        entity={selectedEntity}
-        onClose={handleClosePanel}
-        onMoveEntity={handleMoveEntity}
-      />
-    </>
+    </div>
   );
 }

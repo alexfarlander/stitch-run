@@ -201,18 +201,21 @@ describe('sortNodesForRendering', () => {
 });
 
 describe('Z_INDEX_LAYERS constants', () => {
-  it('should have correct layer ordering', () => {
-    expect(Z_INDEX_LAYERS.SECTION_BACKGROUND).toBeLessThan(Z_INDEX_LAYERS.EDGES);
-    expect(Z_INDEX_LAYERS.EDGES).toBeLessThan(Z_INDEX_LAYERS.ITEMS);
+  it('should have correct layer ordering (edges above nodes, entities above edges)', () => {
+    // Stacking order: Sections -> Items -> Financial -> Edges -> Entities
+    expect(Z_INDEX_LAYERS.SECTION_BACKGROUND).toBeLessThan(Z_INDEX_LAYERS.ITEMS);
     expect(Z_INDEX_LAYERS.ITEMS).toBeLessThan(Z_INDEX_LAYERS.FINANCIAL_SECTIONS);
-    expect(Z_INDEX_LAYERS.FINANCIAL_SECTIONS).toBeLessThan(Z_INDEX_LAYERS.ENTITY_OVERLAY);
+    expect(Z_INDEX_LAYERS.FINANCIAL_SECTIONS).toBeLessThan(Z_INDEX_LAYERS.EDGES);
+    expect(Z_INDEX_LAYERS.EDGES).toBeLessThan(Z_INDEX_LAYERS.EDGES_HIGHLIGHTED);
+    expect(Z_INDEX_LAYERS.EDGES_HIGHLIGHTED).toBeLessThan(Z_INDEX_LAYERS.ENTITY_OVERLAY);
   });
 
   it('should have expected values', () => {
     expect(Z_INDEX_LAYERS.SECTION_BACKGROUND).toBe(-1);
-    expect(Z_INDEX_LAYERS.EDGES).toBe(0);
     expect(Z_INDEX_LAYERS.ITEMS).toBe(1);
     expect(Z_INDEX_LAYERS.FINANCIAL_SECTIONS).toBe(5);
+    expect(Z_INDEX_LAYERS.EDGES).toBe(50);
+    expect(Z_INDEX_LAYERS.EDGES_HIGHLIGHTED).toBe(60);
     expect(Z_INDEX_LAYERS.ENTITY_OVERLAY).toBe(100);
   });
 });

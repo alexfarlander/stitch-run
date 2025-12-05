@@ -3,7 +3,9 @@
 import { memo, useState } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import * as LucideIcons from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
+import { StitchEntity } from '@/types/entity';
 
 interface SectionItemNodeData {
   label: string;
@@ -13,113 +15,86 @@ interface SectionItemNodeData {
   linked_workflow_id?: string;
   linked_canvas_id?: string;
   onShowDetail?: (itemId: string) => void;
+  isActivated?: boolean;
+  entityCount?: number;
+  entities?: StitchEntity[];
+  onEntitySelect?: (entityId: string | undefined) => void;
 }
 
-const statusStyles = {
-  idle: 'bg-slate-500',
-  active: 'bg-green-500',
-  running: 'bg-amber-500 animate-pulse',
-  error: 'bg-red-500',
-};
-
-const SectionItemNodeComponent = memo(({ id, data }: NodeProps) => {
+const SectionItemNodeComponent = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as unknown as SectionItemNodeData;
   const { drillInto } = useCanvasNavigation();
   const [isHovered, setIsHovered] = useState(false);
-  
-  // Dynamically get the icon component from lucide-react
+
   const IconComponent = (LucideIcons as any)[nodeData.icon] || LucideIcons.Package;
-  const ExternalLinkIcon = LucideIcons.ExternalLink;
-  
   const hasLinkedContent = !!(nodeData.linked_workflow_id || nodeData.linked_canvas_id);
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-
-    // Priority 1: Navigate to linked workflow
     if (nodeData.linked_workflow_id) {
       drillInto(nodeData.linked_workflow_id, nodeData.label, 'workflow');
       return;
     }
-
-    // Priority 2: Navigate to linked detail canvas
     if (nodeData.linked_canvas_id) {
       drillInto(nodeData.linked_canvas_id, nodeData.label, 'workflow');
       return;
     }
-
-    // Priority 3: Show detail panel (if callback provided)
     if (nodeData.onShowDetail) {
       nodeData.onShowDetail(id);
     }
   };
-  
+
+  const entityCount = nodeData.entityCount || 0;
+
   return (
     <div className="relative">
-      {/* Connection Handles */}
-      <Handle 
-        type="target" 
-        position={Position.Left} 
-        className="w-2 h-2 bg-cyan-400 border-2 border-slate-900"
+      {/* Connection Handles - minimal */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!w-2 !h-2 !bg-slate-600 !border-0"
       />
-      <Handle 
-        type="source" 
-        position={Position.Right} 
-        className="w-2 h-2 bg-cyan-400 border-2 border-slate-900"
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!w-2 !h-2 !bg-slate-600 !border-0"
       />
-      
-      {/* Item Card */}
-      <div
-        onClick={handleClick}
+
+      {/* Simple badge-style node */}
+      <Badge
+        variant="outline"
+        onDoubleClick={handleDoubleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="
-          flex items-center gap-2 px-3 py-2
-          w-[120px] h-[60px]
-          bg-slate-800/90 backdrop-blur-sm
-          border border-slate-700
-          rounded-md
-          shadow-lg
-          transition-all duration-200
-          hover:shadow-cyan-500/20 hover:border-cyan-500/50
-          cursor-pointer
-          group
-        "
+        className={`
+          cursor-pointer px-3 py-2 h-auto
+          bg-slate-900/90 border-slate-700
+          hover:bg-slate-800 hover:border-slate-600
+          transition-all duration-150
+          ${selected ? 'ring-2 ring-cyan-500 border-cyan-500' : ''}
+          ${nodeData.isActivated ? 'ring-2 ring-green-500 border-green-500 bg-green-950/50' : ''}
+        `}
       >
         {/* Icon */}
-        <div className="flex-shrink-0">
-          <IconComponent className="w-5 h-5 text-slate-300 group-hover:text-cyan-400 transition-colors" />
-        </div>
+        <IconComponent className="w-4 h-4 text-slate-400 flex-shrink-0" />
         
         {/* Label */}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-slate-200 truncate">
-            {nodeData.label}
-          </p>
-        </div>
-        
-        {/* Status Indicator */}
-        <div className="absolute top-1 right-1">
-          <div className={`w-2 h-2 rounded-full ${statusStyles[nodeData.status]}`} />
-        </div>
+        <span className="text-sm text-slate-200 font-medium">
+          {nodeData.label}
+        </span>
 
-        {/* Drill-down indicator - always visible when node is drillable */}
-        {hasLinkedContent && (
-          <div className="absolute bottom-1 right-1">
-            <div className={`
-              flex items-center justify-center
-              w-4 h-4 rounded-full
-              bg-cyan-500/20 border border-cyan-400/50
-              transition-all duration-200
-              ${isHovered ? 'bg-cyan-500/40 border-cyan-400 scale-110' : ''}
-            `}>
-              <ExternalLinkIcon 
-                className="w-2.5 h-2.5 text-cyan-400"
-              />
-            </div>
-          </div>
+        {/* Entity count bubble */}
+        {entityCount > 0 && (
+          <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-cyan-500 text-white text-xs font-semibold flex items-center justify-center">
+            {entityCount}
+          </span>
         )}
-      </div>
+
+        {/* Drill-down indicator */}
+        {hasLinkedContent && isHovered && (
+          <LucideIcons.ChevronRight className="w-3 h-3 text-slate-500 ml-1" />
+        )}
+      </Badge>
     </div>
   );
 });

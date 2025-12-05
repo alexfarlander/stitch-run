@@ -12,17 +12,19 @@ interface BaseNodeProps {
   type: string;
   status: NodeStatus;
   label: string;
+  selected?: boolean; // New prop for selection state
   children?: React.ReactNode;
   onDrop?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
 }
 
-export function BaseNode({ id, type, status, label, children, onDrop, onDragOver }: BaseNodeProps) {
+export function BaseNode({ id, type, status, label, selected, children, onDrop, onDragOver }: BaseNodeProps) {
   return (
     <div
       className={cn(
         'relative min-w-[200px] rounded-lg border-2 bg-slate-900 p-4 transition-all',
-        getStatusStyles(status)
+        getStatusStyles(status),
+        selected && 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-950 shadow-[0_0_20px_rgba(34,211,238,0.3)]' // Selection styles
       )}
       onDrop={onDrop}
       onDragOver={onDragOver}
@@ -62,19 +64,19 @@ function getStatusStyles(status: NodeStatus): string {
   switch (status) {
     case 'pending':
       return 'opacity-50 border-slate-700';
-    
+
     case 'running':
       return 'border-amber-500 animate-[pulse-running_1.5s_ease-in-out_infinite]';
-    
+
     case 'completed':
       return 'border-[#00ff99] animate-[flash-completed_1s_ease-out_forwards]';
-    
+
     case 'failed':
       return 'border-red-500 animate-[flash-failed_1s_ease-out_forwards]';
-    
+
     case 'waiting_for_user':
       return 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)] animate-pulse';
-    
+
     default:
       return 'border-slate-700';
   }
@@ -82,7 +84,7 @@ function getStatusStyles(status: NodeStatus): string {
 
 function getStatusIcon(status: NodeStatus) {
   const iconClass = 'w-5 h-5';
-  
+
   switch (status) {
     case 'completed':
       return (
@@ -90,28 +92,28 @@ function getStatusIcon(status: NodeStatus) {
           <CheckCircle2 className={cn(iconClass, 'text-slate-900')} />
         </div>
       );
-    
+
     case 'failed':
       return (
         <div className="rounded-full bg-red-500 p-1">
           <AlertCircle className={cn(iconClass, 'text-white')} />
         </div>
       );
-    
+
     case 'running':
       return (
         <div className="rounded-full bg-amber-500 p-1">
           <Loader2 className={cn(iconClass, 'text-white animate-spin')} />
         </div>
       );
-    
+
     case 'waiting_for_user':
       return (
         <div className="rounded-full bg-blue-500 p-1 animate-pulse">
           <User className={cn(iconClass, 'text-white')} />
         </div>
       );
-    
+
     default:
       return null;
   }

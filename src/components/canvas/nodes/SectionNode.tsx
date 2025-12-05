@@ -2,12 +2,12 @@
 
 import { memo } from 'react';
 import { NodeProps } from '@xyflow/react';
-import { 
-  Megaphone, 
-  ShoppingCart, 
-  Database, 
-  DollarSign, 
-  Users, 
+import {
+  Megaphone,
+  ShoppingCart,
+  Database,
+  DollarSign,
+  Users,
   Package,
   Handshake,
   Target,
@@ -15,7 +15,7 @@ import {
   Lightbulb,
   Wallet,
   TrendingUp,
-  Layers
+  ChevronRight
 } from 'lucide-react';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 
@@ -41,19 +41,19 @@ const iconMap: Record<string, any> = {
   'Paying Customers': Users,
 };
 
-// Glowing border colors based on category
-const categoryGlow = {
-  Production: 'shadow-[0_0_20px_rgba(99,102,241,0.3),0_0_40px_rgba(139,92,246,0.2)] border-[#6366f1]',
-  Customer: 'shadow-[0_0_20px_rgba(6,182,212,0.3),0_0_40px_rgba(20,184,166,0.2)] border-[#06b6d4]',
-  Financial: 'shadow-[0_0_20px_rgba(245,158,11,0.3),0_0_40px_rgba(234,179,8,0.2)] border-[#f59e0b]',
+// Simple category colors - no gradients
+const categoryColors = {
+  Production: 'border-indigo-500/30 text-indigo-400',
+  Customer: 'border-cyan-500/30 text-cyan-400',
+  Financial: 'border-amber-500/30 text-amber-400',
 };
 
 export const SectionNode = memo(({ data }: NodeProps) => {
   const nodeData = data as unknown as SectionNodeData;
   const Icon = iconMap[nodeData.label] || Package;
-  const glowStyle = categoryGlow[nodeData.category];
+  const colors = categoryColors[nodeData.category];
   const { drillInto } = useCanvasNavigation();
-  
+
   const hasChildCanvas = !!nodeData.child_canvas_id;
 
   const handleDrillDown = (e: React.MouseEvent) => {
@@ -66,56 +66,27 @@ export const SectionNode = memo(({ data }: NodeProps) => {
   return (
     <div
       className={`
-        relative w-full h-full p-4
-        bg-[#0d1117]/80 backdrop-blur-sm
-        border-2 ${glowStyle}
+        relative w-full h-full
+        bg-slate-900/50
+        border ${colors.split(' ')[0]}
         rounded-lg
-        transition-all duration-300
-        pointer-events-none
-        ${hasChildCanvas ? 'group/section' : ''}
+        ${hasChildCanvas ? 'cursor-pointer group' : ''}
       `}
-      style={{
-        zIndex: -1,
-        backgroundImage: `
-          repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 11px),
-          repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 11px)
-        `,
-      }}
+      onDoubleClick={hasChildCanvas ? handleDrillDown : undefined}
+      style={{ zIndex: -1 }}
     >
       {/* Header */}
-      <div 
-        className={`
-          flex items-center gap-2 mb-3 pb-2 border-b border-slate-700/50 pointer-events-auto
-          ${hasChildCanvas ? 'cursor-pointer hover:border-cyan-500/50' : ''}
-        `}
+      <div
+        className="flex items-center gap-2 px-3 py-2 border-b border-slate-800/50"
         onDoubleClick={hasChildCanvas ? handleDrillDown : undefined}
       >
-        <Icon className="w-4 h-4 text-slate-400" />
-        <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex-1">
+        <Icon className={`w-4 h-4 ${colors.split(' ')[1]}`} />
+        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex-1">
           {nodeData.label}
-        </h3>
-        
-        {/* Drill-down indicator */}
+        </span>
         {hasChildCanvas && (
-          <button
-            onClick={handleDrillDown}
-            className="
-              p-1 rounded
-              bg-slate-800/50 hover:bg-cyan-500/20
-              border border-slate-700 hover:border-cyan-500
-              transition-all duration-200
-              opacity-60 group-hover/section:opacity-100
-            "
-            title="Double-click to drill down"
-          >
-            <Layers className="w-3 h-3 text-slate-400 group-hover/section:text-cyan-400" />
-          </button>
+          <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
         )}
-      </div>
-
-      {/* Drop zone placeholder */}
-      <div className="flex items-center justify-center h-[calc(100%-3rem)] text-slate-600 text-xs italic">
-        Drop items here
       </div>
     </div>
   );

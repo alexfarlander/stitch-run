@@ -16,18 +16,19 @@ interface WorkerNodeData {
   onDragOver?: (e: React.DragEvent) => void;
 }
 
-export const WorkerNode = memo(({ id, data }: NodeProps) => {
+export const WorkerNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as WorkerNodeData;
   const { status, label } = useNodeStatus(id, nodeData.node_states);
 
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode 
-        id={id} 
-        type="Worker" 
-        status={status} 
+      <BaseNode
+        id={id}
+        type="Worker"
+        status={status}
         label={label}
+        selected={selected}
         onDrop={nodeData.onDrop}
         onDragOver={nodeData.onDragOver}
       >

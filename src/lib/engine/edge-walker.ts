@@ -303,6 +303,20 @@ async function executeJourneyEdge(
     throw new Error(`Failed to start entity travel on edge: ${startError.message}`);
   }
   
+  // Step 1.5: Broadcast source node activation (departure)
+  // This triggers the green flash on the source node
+  try {
+    const { broadcastToCanvasAsync } = await import('../supabase/broadcast');
+    broadcastToCanvasAsync(canvasId, 'node_activated', {
+      nodeId: edge.source,
+      entityId: entityId,
+      activationType: 'departure',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (broadcastError) {
+    console.warn('[Journey Edge] Failed to broadcast source node activation:', broadcastError);
+  }
+  
   // Step 2: Create edge_start journey event (triggers animation)
   const { error: startEventError } = await supabase
     .from('stitch_journey_events')
@@ -321,7 +335,7 @@ async function executeJourneyEdge(
     console.warn('Failed to create edge_start event:', startEventError);
   }
   
-  console.log(`[Journey Edge] Entity ${entityId} started traveling: ${edge.source} -> ${edge.target}`);
+  console.log(`[Journey Edge] Entity ${entityId} started traveling on edge "${edge.id}": ${edge.source} -> ${edge.target}`);
   
   // Step 3: Schedule arrival after animation duration (imported from animation-config)
   setTimeout(async () => {
@@ -340,6 +354,28 @@ async function executeJourneyEdge(
     if (arrivalError) {
       console.error(`Failed to complete entity arrival: ${arrivalError.message}`);
       return;
+    }
+    
+    // Broadcast business event for the event log
+    try {
+      const { broadcastToCanvasAsync } = await import('../supabase/broadcast');
+      
+      // Get entity name for the event description
+      const { data: entity } = await supabase
+        .from('stitch_entities')
+        .select('name')
+        .eq('id', entityId)
+        .single();
+      
+      const entityName = entity?.name || 'Someone';
+      const nodeLabel = formatNodeLabel(edge.target);
+      
+      broadcastToCanvasAsync(canvasId, 'demo_event', {
+        description: `${entityName} ${nodeLabel}`,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (broadcastError) {
+      console.warn('[Journey Edge] Failed to broadcast arrival event:', broadcastError);
     }
     
     // Create node_arrival journey event
@@ -380,19 +416,13 @@ async function executeSystemEdgeInternal(
   entityId: string,
   canvasId: string
 ): Promise<void> {
-  const supabase = getAdminClient();
-  
   try {
     // Broadcast 'edge_fired' event for pulse animation
-    const channel = supabase.channel(`canvas-${canvasId}`);
-    await channel.send({
-      type: 'broadcast',
-      event: 'edge_fired',
-      payload: {
-        edge_id: edge.id,
-        entity_id: entityId,
-        timestamp: new Date().toISOString(),
-      },
+    const { broadcastToCanvasAsync } = await import('../supabase/broadcast');
+    broadcastToCanvasAsync(canvasId, 'edge_fired', {
+      edgeId: edge.id,
+      entityId: entityId,
+      timestamp: new Date().toISOString(),
     });
     
     // Execute the system action
@@ -657,6 +687,24 @@ function resolvePath(obj: any, path: string): any {
   }
   
   return current;
+}
+
+/**
+ * Format node ID into a business-friendly action description
+ */
+function formatNodeLabel(nodeId: string): string {
+  const nodeActions: Record<string, string> = {
+    'item-demo-call': 'registered for demo call',
+    'item-free-trial': 'started free trial',
+    'item-basic-plan': 'purchased Basic plan',
+    'item-pro-plan': 'purchased Pro plan',
+    'item-enterprise': 'purchased Enterprise plan',
+    'item-active-subscribers': 'became active subscriber',
+    'item-help-desk': 'opened support ticket',
+    'item-lead-magnet': 'downloaded lead magnet',
+  };
+  
+  return nodeActions[nodeId] || `arrived at ${nodeId.replace('item-', '').replace(/-/g, ' ')}`;
 }
 
 /**

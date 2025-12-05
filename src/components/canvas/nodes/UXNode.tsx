@@ -23,11 +23,12 @@ export const UXNode = memo(({ id, data }: NodeProps) => {
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode 
-        id={id} 
-        type="UX" 
-        status={status} 
+      <BaseNode
+        id={id}
+        type="UX"
+        status={status}
         label={label}
+        selected={props.selected}
         onDrop={nodeData.onDrop}
         onDragOver={nodeData.onDragOver}
       >

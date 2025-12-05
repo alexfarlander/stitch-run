@@ -52,18 +52,12 @@ export function useEntityPosition(
         
         if (sourceNode && targetNode) {
           return getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
-        } else if (sourceNode) {
-          // Fallback: If target node not found, position at source node
-          const entitiesAtNode = entities.filter((e) => e.current_node_id === edge.source);
-          return getEntityNodePosition(sourceNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
         }
-      } else if (entity.destination_node_id) {
-        // Fallback: If edge not found but we have destination, position at destination
-        const destNode = getNode(entity.destination_node_id);
-        if (destNode) {
-          const entitiesAtNode = entities.filter((e) => e.current_node_id === entity.destination_node_id);
-          return getEntityNodePosition(destNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
-        }
+        // If we have the edge but missing nodes, log warning and return null
+        console.warn(`[EntityPosition] Edge ${edge.id} found but missing nodes: source=${edge.source} (${!!sourceNode}), target=${edge.target} (${!!targetNode})`);
+      } else {
+        // Edge not found - log available edges for debugging
+        console.warn(`[EntityPosition] Edge not found: "${entity.current_edge_id}". Available edge IDs:`, edges.slice(0, 10).map(e => e.id));
       }
     }
 
@@ -140,19 +134,13 @@ export function useEntityPositions(entities: StitchEntity[]): Map<string, Positi
           
           if (sourceNode && targetNode) {
             canvasPos = getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
-          } else if (sourceNode) {
-            // Fallback: If target node not found, position at source node
-            const entitiesAtNode = entities.filter((e) => e.current_node_id === edge.source);
-            canvasPos = getEntityNodePosition(sourceNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
+          } else {
+            // If we have the edge but missing nodes, log warning
+            console.warn(`[EntityPositions] Edge ${edge.id} found but missing nodes: source=${edge.source} (${!!sourceNode}), target=${edge.target} (${!!targetNode})`);
           }
-        } else if (entity.destination_node_id) {
-          // Fallback: If edge not found but we have destination, try to find source from journey
-          // Position at destination node as fallback
-          const destNode = getNode(entity.destination_node_id);
-          if (destNode) {
-            const entitiesAtNode = entities.filter((e) => e.current_node_id === entity.destination_node_id);
-            canvasPos = getEntityNodePosition(destNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
-          }
+        } else {
+          // Edge not found - log available edges for debugging
+          console.warn(`[EntityPositions] Edge not found: "${entity.current_edge_id}" for entity "${entity.name}". Available edge IDs:`, edges.slice(0, 10).map(e => e.id));
         }
       }
 

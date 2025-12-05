@@ -16,18 +16,19 @@ interface SplitterNodeData {
   onDragOver?: (e: React.DragEvent) => void;
 }
 
-export const SplitterNode = memo(({ id, data }: NodeProps) => {
+export const SplitterNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as SplitterNodeData;
   const { status, label } = useNodeStatus(id, nodeData.node_states);
 
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode 
-        id={id} 
-        type="Splitter" 
-        status={status} 
+      <BaseNode
+        id={id}
+        type="Splitter"
+        status={status}
         label={label}
+        selected={selected}
         onDrop={nodeData.onDrop}
         onDragOver={nodeData.onDragOver}
       >

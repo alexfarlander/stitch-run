@@ -209,15 +209,15 @@ export async function resetFinancialMetrics(): Promise<void> {
   
   const graph = bmc.graph;
   
-  // Initial values from seed data
+  // Reset to zero for demo
   const initialValues: Record<string, number> = {
-    'item-mrr': 12450,
-    'item-arr': 149400,
-    'item-ltv': 5000,
-    'item-stripe-fees': 361,
-    'item-claude-cost': 150,
-    'item-elevenlabs-cost': 75,
-    'item-minimax-cost': 200,
+    'item-mrr': 0,
+    'item-arr': 0,
+    'item-ltv': 0,
+    'item-stripe-fees': 0,
+    'item-claude-cost': 0,
+    'item-elevenlabs-cost': 0,
+    'item-minimax-cost': 0,
   };
   
   // Reset all financial nodes to initial values

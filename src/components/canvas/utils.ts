@@ -3,13 +3,21 @@ import { Node } from '@xyflow/react';
 /**
  * Z-index constants for canvas layers
  * These define the stacking order of different node types
+ * 
+ * Stacking order (bottom to top):
+ * 1. Section backgrounds (containers)
+ * 2. Items (nodes inside sections)
+ * 3. Financial sections
+ * 4. Edges (connections between nodes) - ABOVE nodes
+ * 5. Entities (traveling dots) - ABOVE edges
  */
 export const Z_INDEX_LAYERS = {
   SECTION_BACKGROUND: -1,      // Sections render behind everything
-  EDGES: 0,                    // Edges render above sections
-  ITEMS: 1,                    // Items render above edges
-  FINANCIAL_SECTIONS: 5,       // Financial sections above background but below entity overlay
-  ENTITY_OVERLAY: 100,         // Entities render on top
+  ITEMS: 1,                    // Items render above sections
+  FINANCIAL_SECTIONS: 5,       // Financial sections above items
+  EDGES: 50,                   // Edges render ABOVE all nodes
+  EDGES_HIGHLIGHTED: 60,       // Highlighted edges above normal edges
+  ENTITY_OVERLAY: 100,         // Entities render on top of everything
 } as const;
 
 /**

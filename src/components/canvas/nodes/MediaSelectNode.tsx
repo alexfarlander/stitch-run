@@ -48,28 +48,28 @@ const mediaTypeConfig: Record<MediaType, { icon: React.ElementType; label: strin
   document: { icon: FileText, label: 'Document' },
 };
 
-export const MediaSelectNode = memo(({ id, data }: NodeProps) => {
+export const MediaSelectNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as MediaSelectNodeData;
   const { updateNodeData } = useReactFlow();
   const { status, label } = useNodeStatus(id, nodeData.node_states);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  
+
   // Local state for the picker modal (before confirming)
   const [tempSelection, setTempSelection] = useState<StitchMedia[]>([]);
-  
+
   // Current persisted selection
   const selectedAssets = nodeData.selectedAssets || [];
   const selectedIds = selectedAssets.map(a => a.id);
-  
+
   // Handle picker selection change
   const handlePickerSelect = useCallback((media: StitchMedia[]) => {
     setTempSelection(media);
   }, []);
-  
+
   // Handle confirm selection
   const handleConfirm = useCallback(() => {
     setIsPickerOpen(false);
-    
+
     // Create minimal asset records for the node data
     const assetsToStore: SelectedAsset[] = tempSelection.map(m => ({
       id: m.id,
@@ -77,13 +77,13 @@ export const MediaSelectNode = memo(({ id, data }: NodeProps) => {
       name: m.name,
       media_type: m.media_type
     }));
-    
+
     // Update node data using React Flow hook
     updateNodeData(id, {
       selectedAssets: assetsToStore
     });
   }, [id, tempSelection, updateNodeData]);
-  
+
   // Handle opening dialog - initialize temp state
   const handleOpenChange = (open: boolean) => {
     if (open) {
@@ -93,22 +93,23 @@ export const MediaSelectNode = memo(({ id, data }: NodeProps) => {
     }
     setIsPickerOpen(open);
   };
-  
+
   const getMediaTypeIcon = (type: MediaType) => {
     const Icon = mediaTypeConfig[type].icon;
     return <Icon className="h-3 w-3" />;
   };
-  
+
   const hasSelection = selectedAssets.length > 0;
-  
+
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode 
-        id={id} 
-        type="MediaSelect" 
-        status={status} 
+      <BaseNode
+        id={id}
+        type="MediaSelect"
+        status={status}
         label={label}
+        selected={selected}
         onDrop={nodeData.onDrop}
         onDragOver={nodeData.onDragOver}
       >
@@ -124,7 +125,7 @@ export const MediaSelectNode = memo(({ id, data }: NodeProps) => {
               </Badge>
             )}
           </div>
-          
+
           {/* Thumbnail Preview */}
           {hasSelection && (
             <div className="relative w-full overflow-hidden rounded-md border border-slate-700 bg-slate-900">
@@ -175,7 +176,7 @@ export const MediaSelectNode = memo(({ id, data }: NodeProps) => {
               )}
             </div>
           )}
-          
+
           {/* Select Button */}
           <Dialog open={isPickerOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>

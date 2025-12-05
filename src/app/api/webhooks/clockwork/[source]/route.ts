@@ -227,6 +227,21 @@ export async function POST(
     // 3. Move entity to target node (Requirement 5.3)
     await moveEntityToNode(entity.id, targetNodeId, entityType);
     
+    // 3.5 Broadcast node activation event for visual feedback
+    // This triggers the green flash on the node
+    try {
+      const { broadcastToCanvasAsync } = await import('@/lib/supabase/broadcast');
+      broadcastToCanvasAsync(canvasId, 'node_activated', {
+        nodeId: targetNodeId,
+        entityId: entity.id,
+        entityName: entity.name,
+        activationType: 'arrival',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (broadcastError) {
+      console.warn('[Webhook] Failed to broadcast node activation:', broadcastError);
+    }
+    
     // 4. Create journey event (Requirement 5.4)
     await createJourneyEvent(
       entity.id,
@@ -263,16 +278,23 @@ export async function POST(
     
     // 6. Update financial metrics if subscription webhook (Requirement 5.6)
     if (source.startsWith('stripe-subscription')) {
-      // Note: Financial update logic is in task 9
-      // For now, we'll log that this should happen
-      console.log(`[Financial Update] Subscription webhook received:`, {
-        source,
-        plan: payload.plan,
-        amount: payload.amount,
-        entity: entity.name,
-      });
-      
-      // TODO: Call updateFinancials(payload) when task 9 is complete
+      try {
+        const { updateFinancials } = await import('@/lib/metrics/financial-updates');
+        await updateFinancials({
+          plan: payload.plan,
+          amount: payload.amount,
+        });
+        
+        // Broadcast revenue event
+        const { broadcastToCanvasAsync } = await import('@/lib/supabase/broadcast');
+        const amountFormatted = `$${((payload.amount || 0) / 100).toFixed(0)}`;
+        broadcastToCanvasAsync(canvasId, 'demo_event', {
+          description: `💰 +${amountFormatted}/mo MRR from ${entity.name}`,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('[Financial Update] Failed:', err);
+      }
     }
     
     // 7. Return success response (Requirement 5.7)

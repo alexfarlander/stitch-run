@@ -113,9 +113,15 @@ describe('BMCCanvas Z-Index Layer Constants', () => {
     expect(Z_INDEX_LAYERS.SECTION_BACKGROUND).toBe(-1);
   });
 
-  it('should have items above edges', () => {
-    expect(Z_INDEX_LAYERS.ITEMS).toBe(1);
-    expect(Z_INDEX_LAYERS.ITEMS).toBeGreaterThan(Z_INDEX_LAYERS.EDGES);
+  it('should have edges above all nodes', () => {
+    expect(Z_INDEX_LAYERS.EDGES).toBe(50);
+    expect(Z_INDEX_LAYERS.EDGES).toBeGreaterThan(Z_INDEX_LAYERS.ITEMS);
+    expect(Z_INDEX_LAYERS.EDGES).toBeGreaterThan(Z_INDEX_LAYERS.FINANCIAL_SECTIONS);
+  });
+
+  it('should have highlighted edges above normal edges', () => {
+    expect(Z_INDEX_LAYERS.EDGES_HIGHLIGHTED).toBe(60);
+    expect(Z_INDEX_LAYERS.EDGES_HIGHLIGHTED).toBeGreaterThan(Z_INDEX_LAYERS.EDGES);
   });
 
   it('should have financial sections above items', () => {
@@ -128,17 +134,17 @@ describe('BMCCanvas Z-Index Layer Constants', () => {
     expect(Z_INDEX_LAYERS.SECTION_BACKGROUND).toBeLessThan(Z_INDEX_LAYERS.ITEMS);
   });
 
-  it('should ensure edges are between sections and items', () => {
-    // Verify edges are above sections but below items
-    expect(Z_INDEX_LAYERS.EDGES).toBeGreaterThan(Z_INDEX_LAYERS.SECTION_BACKGROUND);
-    expect(Z_INDEX_LAYERS.EDGES).toBeLessThan(Z_INDEX_LAYERS.ITEMS);
+  it('should have correct z-index layer ordering', () => {
+    // Verify the complete stacking order (bottom to top):
+    // Sections -> Items -> Financial Sections -> Edges -> Entities
+    expect(Z_INDEX_LAYERS.SECTION_BACKGROUND).toBeLessThan(Z_INDEX_LAYERS.ITEMS);
+    expect(Z_INDEX_LAYERS.ITEMS).toBeLessThan(Z_INDEX_LAYERS.FINANCIAL_SECTIONS);
+    expect(Z_INDEX_LAYERS.FINANCIAL_SECTIONS).toBeLessThan(Z_INDEX_LAYERS.EDGES);
+    expect(Z_INDEX_LAYERS.EDGES).toBeLessThan(Z_INDEX_LAYERS.ENTITY_OVERLAY);
   });
 
-  it('should have correct z-index layer ordering', () => {
-    // Verify the complete stacking order
-    expect(Z_INDEX_LAYERS.SECTION_BACKGROUND).toBeLessThan(Z_INDEX_LAYERS.EDGES);
-    expect(Z_INDEX_LAYERS.EDGES).toBeLessThan(Z_INDEX_LAYERS.ITEMS);
-    expect(Z_INDEX_LAYERS.ITEMS).toBeLessThan(Z_INDEX_LAYERS.FINANCIAL_SECTIONS);
-    expect(Z_INDEX_LAYERS.FINANCIAL_SECTIONS).toBeLessThan(Z_INDEX_LAYERS.ENTITY_OVERLAY);
+  it('should have entities above everything', () => {
+    expect(Z_INDEX_LAYERS.ENTITY_OVERLAY).toBe(100);
+    expect(Z_INDEX_LAYERS.ENTITY_OVERLAY).toBeGreaterThan(Z_INDEX_LAYERS.EDGES_HIGHLIGHTED);
   });
 });

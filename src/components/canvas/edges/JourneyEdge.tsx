@@ -11,6 +11,7 @@ interface JourneyEdgeData {
     conversionRate?: number;
   };
   isTraversing?: boolean;
+  isHighlighted?: boolean;
 }
 
 /**
@@ -53,6 +54,7 @@ export function JourneyEdge({
   const glowIntensity = intensity * 0.5;
 
   const { opacity = 1 } = style || {};
+  const isHighlighted = edgeData?.isHighlighted;
 
   return (
     <>
@@ -66,13 +68,28 @@ export function JourneyEdge({
         </filter>
       </defs>
 
+      {/* Highlight glow layer */}
+      {isHighlighted && (
+        <path
+          d={edgePath}
+          fill="none"
+          stroke="#22d3ee"
+          strokeWidth={8}
+          opacity={0.4}
+          style={{
+            filter: 'blur(4px)',
+            transition: 'opacity 0.3s ease-in-out',
+          }}
+        />
+      )}
+
       {/* Glow layer */}
       <path
         d={edgePath}
         fill="none"
         stroke={glowColor}
         strokeWidth={12}
-        opacity={Number(opacity) * 0.3}
+        opacity={isHighlighted ? 0.6 : Number(opacity) * 0.3}
         style={{
           filter: `blur(${glowIntensity * 6}px)`,
           transition: 'opacity 0.3s ease-in-out',
@@ -85,10 +102,10 @@ export function JourneyEdge({
         path={edgePath}
         markerEnd={markerEnd}
         style={{
-          stroke: '#06b6d4',
-          strokeWidth: 2,
+          stroke: isHighlighted ? '#22d3ee' : '#06b6d4', // Brighter stroke when highlighted
+          strokeWidth: isHighlighted ? 3 : 2,
           filter: `url(#glow-${id})`,
-          ...style, // BaseEdge will apply the opacity from style
+          ...style,
         }}
       />
 
@@ -100,7 +117,7 @@ export function JourneyEdge({
         strokeWidth={2}
         strokeDasharray="8 4"
         className="journey-edge-animated"
-        opacity={opacity}
+        opacity={isHighlighted ? 1 : opacity} // Always visible when highlighted
         style={{
           transition: 'opacity 0.3s ease-in-out',
           pointerEvents: 'none',

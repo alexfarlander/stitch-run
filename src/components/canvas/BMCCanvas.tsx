@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -9,6 +9,8 @@ import {
   Edge,
   NodeTypes,
   EdgeTypes,
+  useNodesState,
+  useEdgesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -29,13 +31,13 @@ import { JourneyEdge } from './edges/JourneyEdge';
 import { SystemEdge } from './edges/SystemEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { RunStatusOverlay } from './RunStatusOverlay';
-import { DemoControlPanel } from './DemoControlPanel';
-import { AIAssistantPanel } from '@/components/panels/AIAssistantPanel';
+import { RightSidePanel } from '@/components/panels/RightSidePanel';
 import { CanvasBreadcrumbs } from './CanvasBreadcrumbs';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 import { useEdgeTraversal } from '@/hooks/useEdgeTraversal';
 import { useCanvasGraphUpdate } from '@/hooks/useCanvasGraphUpdate';
 import { useEntities } from '@/hooks/useEntities';
+import { useNodeActivation } from '@/hooks/useNodeActivation';
 import { sortNodesForRendering, Z_INDEX_LAYERS } from './utils';
 
 interface BMCCanvasProps {
@@ -63,12 +65,23 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
   // Get entities to derive edge visibility from active entity travel
   const { entities } = useEntities(flow.id);
 
+  // Track node activations for green flash effect
+  const { activatedNodes } = useNodeActivation(flow.id);
+
   // Handle AI graph updates using shared hook
   const handleGraphUpdate = useCanvasGraphUpdate(flow.id);
 
   // Edge visibility state management
-  const [showAllEdges, setShowAllEdges] = useState<boolean>(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  // Entity selection state (lifted from EntityOverlay for RightSidePanel)
+  const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
+
+  // Get selected entity object
+  const selectedEntity = useMemo(() => {
+    if (!selectedEntityId || !entities) return null;
+    return entities.find((e) => e.id === selectedEntityId) || null;
+  }, [selectedEntityId, entities]);
 
   // Memoize nodeTypes so React Flow doesn't re-render constantly
   const nodeTypes = useMemo<NodeTypes>(() => ({
@@ -105,56 +118,54 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     system: SystemEdge,
   }), []);
 
-  // Transform flow nodes to ReactFlow nodes
-  const nodes: Node[] = useMemo(() => {
-    // Get list of registered node types
+  // Use local state for nodes and edges to enable interactivity
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  // Group entities by node for badge display
+  const entitiesByNode = useMemo(() => {
+    const grouped = new Map<string, typeof entities>();
+    if (!entities) return grouped;
+    
+    entities.forEach((entity) => {
+      const nodeId = entity.current_node_id;
+      if (!nodeId) return;
+      
+      if (!grouped.has(nodeId)) {
+        grouped.set(nodeId, []);
+      }
+      grouped.get(nodeId)!.push(entity);
+    });
+    
+    return grouped;
+  }, [entities]);
+
+  // Initialize nodes from flow graph
+  useEffect(() => {
+    if (!flow.graph.nodes) return;
+
     const registeredTypes = new Set([
-      'section',
-      'section-item',
-      'financial-item',
-      'integration-item',
-      'person-item',
-      'code-item',
-      'data-item',
-      'costs-section',
-      'revenue-section',
-      'Worker',
-      'Collector',
-      'UX',
-      'Splitter',
-      'MediaSelect',
+      'section', 'section-item', 'financial-item', 'integration-item',
+      'person-item', 'code-item', 'data-item', 'costs-section', 'revenue-section',
+      'Worker', 'Collector', 'UX', 'Splitter', 'MediaSelect',
     ]);
 
     const transformedNodes = flow.graph.nodes.map((node) => {
       const isSection = node.type === 'section';
       const isFinancialSection = node.type === 'costs-section' || node.type === 'revenue-section';
-      const isItem = node.type === 'section-item' ||
-        node.type === 'financial-item' ||
-        node.type === 'integration-item' ||
-        node.type === 'person-item' ||
-        node.type === 'code-item' ||
-        node.type === 'data-item';
-
-      // Use fallback type if node type is not registered
       const nodeType = registeredTypes.has(node.type) ? node.type : 'fallback';
 
-      // Log warning for unknown node types
-      if (nodeType === 'fallback') {
-        console.warn(`Unknown node type encountered: "${node.type}" for node "${node.id}". Using fallback component.`);
-      }
-
-      // Determine zIndex based on node type using constants
       let zIndex: number;
       if (isSection) {
         zIndex = Z_INDEX_LAYERS.SECTION_BACKGROUND;
       } else if (isFinancialSection) {
         zIndex = Z_INDEX_LAYERS.FINANCIAL_SECTIONS;
-      } else if (isItem) {
-        zIndex = Z_INDEX_LAYERS.ITEMS;
       } else {
-        // Default for workflow nodes and other types
         zIndex = Z_INDEX_LAYERS.ITEMS;
       }
+
+      const isActivated = activatedNodes.has(node.id);
+      const nodeEntities = entitiesByNode.get(node.id) || [];
 
       return {
         id: node.id,
@@ -162,49 +173,38 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
         position: node.position,
         data: {
           ...node.data,
-          // Pass original type to fallback component for display
           originalType: node.type,
+          isActivated,
+          // Pass entity data to nodes for badge display
+          entityCount: nodeEntities.length,
+          entities: nodeEntities,
+          onEntitySelect: setSelectedEntityId,
         },
         parentId: node.parentId,
         extent: node.extent,
-        style: {
-          ...node.style,
-          zIndex,
-        },
+        style: { ...node.style, zIndex },
         width: node.width,
         height: node.height,
-        // Lock sections in place so you don't accidentally drag the background
         draggable: !isSection && !isFinancialSection,
         selectable: !isSection && !isFinancialSection,
-        // Items connect, sections don't (usually)
         connectable: !isSection && !isFinancialSection,
       };
     });
 
-    // CRITICAL: Sort nodes by zIndex to ensure correct DOM stacking order
-    // React Flow renders nodes in array order, which affects z-index stacking context
-    return sortNodesForRendering(transformedNodes);
-  }, [flow.graph.nodes]);
+    setNodes(sortNodesForRendering(transformedNodes));
+  }, [flow.graph.nodes, activatedNodes, entitiesByNode, setSelectedEntityId, setNodes]);
 
-  // Transform flow edges with visibility calculation logic
-  const edges: Edge[] = useMemo(() => {
-    return flow.graph.edges.map((edge) => {
-      // Calculate visibility conditions
+  // Sync edges with visibility and highlighting logic
+  useEffect(() => {
+    if (!flow.graph.edges) return;
+
+    const updatedEdges = flow.graph.edges.map((edge) => {
       const isTraversing = traversingEdges.get(edge.id) || false;
-      const isConnectedToSelected = selectedNodeId &&
-        (edge.source === selectedNodeId || edge.target === selectedNodeId);
-
-      // Check if any entity is currently traveling on this edge
+      const isConnectedToSelected = selectedNodeId && (edge.source === selectedNodeId || edge.target === selectedNodeId);
       const hasActiveEntityTravel = entities?.some(e => e.current_edge_id === edge.id) || false;
-
-      // Determine if edge should be visible
-      const isVisible = showAllEdges || isTraversing || isConnectedToSelected || hasActiveEntityTravel;
-
-      // Determine edge type with fallback to 'journey'
+      const isVisible = isTraversing || isConnectedToSelected || hasActiveEntityTravel;
       const edgeType = edge.type || 'journey';
-
-      // Apply stroke color based on edge type
-      const strokeColor = edgeType === 'system' ? '#64748b' : '#06b6d4';
+      const strokeColor = isConnectedToSelected ? '#22d3ee' : (edgeType === 'system' ? '#64748b' : '#06b6d4');
 
       return {
         id: edge.id,
@@ -214,32 +214,31 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
         animated: isTraversing,
         style: {
           stroke: strokeColor,
-          strokeWidth: 2,
+          strokeWidth: isConnectedToSelected ? 3 : 2,
           opacity: isVisible ? 1 : 0,
           transition: 'opacity 0.3s ease-in-out',
-          pointerEvents: isVisible ? 'auto' : 'none',
+          pointerEvents: (isVisible ? 'auto' : 'none') as 'auto' | 'none',
         },
         data: {
           intensity: 0.8,
           isTraversing,
+          isHighlighted: !!isConnectedToSelected,
         },
+        zIndex: isConnectedToSelected ? Z_INDEX_LAYERS.EDGES_HIGHLIGHTED : Z_INDEX_LAYERS.EDGES,
       };
     });
-  }, [flow.graph.edges, traversingEdges, showAllEdges, selectedNodeId, entities]);
 
-  // Handle section double-clicks for drill-down
+    setEdges(updatedEdges);
+  }, [flow.graph.edges, traversingEdges, selectedNodeId, entities, setEdges]);
+
+  // Handle double-clicks for drill-down (sections, section-items, and financial-items)
   const handleNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
     if (node.type === 'section') {
       const data = node.data as unknown as SectionNodeData;
       if (data.child_canvas_id) {
         drillInto(data.child_canvas_id, data.label, 'workflow');
       }
-    }
-  }, [drillInto]);
-
-  // Handle item single clicks for drill-down
-  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
-    if (node.type === 'section-item') {
+    } else if (node.type === 'section-item' || node.type === 'financial-item') {
       const data = node.data as unknown as ItemNodeData;
       if (data.linked_workflow_id) {
         drillInto(data.linked_workflow_id, data.label, 'workflow');
@@ -249,10 +248,15 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     }
   }, [drillInto]);
 
+  // Handle item single clicks - selection only, no drill-down
+  const handleNodeClick = useCallback((_event: React.MouseEvent, _node: Node) => {
+    // Selection is handled automatically by React Flow
+    // No drill-down on single click
+  }, []);
+
   // Handle node drop event for entity movement
   const onNodeDrop = useCallback((event: React.DragEvent, node: any) => {
     event.preventDefault();
-    // Store the target node ID for EntityOverlay to use
     window.dispatchEvent(new CustomEvent('entity-drop', {
       detail: { targetNodeId: node.id, event }
     }));
@@ -274,60 +278,57 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
   }, []);
 
   return (
-    <div className="w-full h-full bg-[#0a0f1a] text-white relative">
+    <div className="w-full h-full bg-slate-950 text-white relative">
       {/* Canvas Breadcrumbs - Floating in top-left */}
-      <CanvasBreadcrumbs 
-        canvasId={flow.id} 
-        canvasName={flow.name} 
-        canvasType={flow.canvas_type as 'bmc' | 'workflow'} 
+      <CanvasBreadcrumbs
+        canvasId={flow.id}
+        canvasName={flow.name}
+        canvasType={flow.canvas_type as 'bmc' | 'workflow'}
       />
-
-      {/* Edge Visibility Toggle - Floating in top-right */}
-      <div className="absolute top-4 right-4 z-50">
-        <button
-          onClick={() => setShowAllEdges(prev => !prev)}
-          className={`px-3 py-2 rounded-lg border transition-colors ${showAllEdges
-              ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400'
-              : 'bg-slate-800/50 border-slate-700/50 text-slate-400'
-            }`}
-          title={showAllEdges ? 'Hide edges' : 'Show all edges'}
-        >
-          {showAllEdges ? '👁 Edges' : '👁‍🗨 Edges'}
-        </button>
-      </div>
 
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         onSelectionChange={handleSelectionChange}
+        onPaneClick={() => setSelectedNodeId(null)}
         fitView
         minZoom={0.5}
         maxZoom={2}
         colorMode="dark"
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#334155" gap={24} size={1} />
+        <Background color="#1e293b" gap={30} size={1} />
         <Controls className="bg-white/10 border-white/10 fill-white text-white" />
 
         {/* The Magic Layer */}
-        <EntityOverlay canvasId={flow.id} />
+        <EntityOverlay
+          canvasId={flow.id}
+          selectedEntityId={selectedEntityId}
+          onEntitySelect={setSelectedEntityId}
+        />
 
         {/* Run Status Indicators */}
         {runId && <RunStatusOverlay runId={runId} />}
       </ReactFlow>
 
-      {/* AI Assistant Panel */}
-      <AIAssistantPanel
+      {/* Left Side Panel - Events Log with Demo Controls, AI Assistant, Entity Details */}
+      <RightSidePanel
         canvasId={flow.id}
+        selectedEntity={selectedEntity}
+        onEntityClose={() => setSelectedEntityId(undefined)}
+        onMoveEntity={(entityId, targetNodeId) => {
+          // Entity movement is handled by the EntityOverlay drag/drop
+          console.log('Move entity:', entityId, 'to', targetNodeId);
+        }}
+        currentNodes={nodes}
         onGraphUpdate={handleGraphUpdate}
       />
-
-      {/* Demo Control Panel - Fixed at bottom-left */}
-      <DemoControlPanel />
     </div>
   );
 }

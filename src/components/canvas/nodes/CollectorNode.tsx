@@ -15,18 +15,19 @@ interface CollectorNodeData {
   onDragOver?: (e: React.DragEvent) => void;
 }
 
-export const CollectorNode = memo(({ id, data }: NodeProps) => {
+export const CollectorNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as CollectorNodeData;
   const { status, label } = useNodeStatus(id, nodeData.node_states);
 
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode 
-        id={id} 
-        type="Collector" 
-        status={status} 
+      <BaseNode
+        id={id}
+        type="Collector"
+        status={status}
         label={label}
+        selected={selected}
         onDrop={nodeData.onDrop}
         onDragOver={nodeData.onDragOver}
       >

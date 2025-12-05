@@ -1,189 +1,284 @@
 /**
  * Clockwork Canvas Demo Script
  * 
- * Defines a scripted sequence of webhook events that simulate real-world business
- * events for demonstration purposes. The demo showcases entities moving through
- * the Business Model Canvas from lead acquisition through conversion and support.
- * 
- * Each event includes:
- * - delay: Milliseconds from demo start
- * - endpoint: Webhook endpoint path
- * - payload: Data to send to the webhook
- * - description: Human-readable description for UI display
- * 
- * Requirements: 6.1
+ * 13 monster entities flow through the Business Model Canvas.
+ * Interleaved timing creates a "living" canvas with entities at different stages.
  */
 
-/**
- * Demo event structure
- */
 export interface DemoEvent {
-  /** Milliseconds from demo start when this event should fire */
   delay: number;
-  /** Webhook endpoint path (e.g., '/api/webhooks/clockwork/linkedin-lead') */
   endpoint: string;
-  /** Payload to send to the webhook */
-  payload: Record<string, any>;
-  /** Human-readable description for UI display */
+  payload: Record<string, unknown>;
   description: string;
 }
 
-/**
- * Clockwork Canvas Demo Script
- * 
- * A 7-event sequence that demonstrates the complete customer journey:
- * 1. New lead from LinkedIn (Werewolf)
- * 2. Demo call booked (Goblin)
- * 3. Trial started (Witch)
- * 4. Converted to Pro subscription (Ghost)
- * 5. Support ticket opened (Mummy)
- * 6. Another lead from SEO (Skeleton)
- * 7. Enterprise conversion (Kraken)
- * 
- * Total duration: ~30 seconds
- */
-export const CLOCKWORK_DEMO_SCRIPT: DemoEvent[] = [
-  // Event 1: New lead from LinkedIn Ads (0s)
-  {
-    delay: 0,
-    endpoint: '/api/webhooks/clockwork/linkedin-lead',
-    payload: {
-      name: 'Werewolf',
-      email: 'werewolf@monsters.io',
-      company: 'Full Moon Enterprises',
-      source: 'linkedin-ads',
-    },
-    description: '🐺 New lead from LinkedIn Ads',
-  },
-  
-  // Event 2: Demo call booked via Calendly (5s)
-  {
-    delay: 5000,
-    endpoint: '/api/webhooks/clockwork/calendly-demo',
-    payload: {
-      name: 'Goblin',
-      email: 'goblin@monsters.io',
-      scheduled_time: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-      source: 'calendly',
-    },
-    description: '👹 Demo call booked',
-  },
-  
-  // Event 3: Trial started (10s)
-  {
-    delay: 10000,
-    endpoint: '/api/webhooks/clockwork/stripe-trial',
-    payload: {
-      name: 'Witch',
-      email: 'witch@monsters.io',
-      trial_end: new Date(Date.now() + 1209600000).toISOString(), // 14 days
-      source: 'stripe',
-    },
-    description: '🧙‍♀️ Free trial started',
-  },
-  
-  // Event 4: Converted to Pro subscription (15s)
-  {
-    delay: 15000,
-    endpoint: '/api/webhooks/clockwork/stripe-subscription-pro',
-    payload: {
-      name: 'Ghost',
-      email: 'ghost@monsters.io',
-      plan: 'pro',
-      amount: 9900, // $99.00 in cents
-      interval: 'month',
-      source: 'stripe',
-    },
-    description: '👻 Converted to Pro plan ($99/mo)',
-  },
-  
-  // Event 5: Support ticket opened (20s)
-  {
-    delay: 20000,
-    endpoint: '/api/webhooks/clockwork/zendesk-ticket',
-    payload: {
-      name: 'Mummy',
-      email: 'mummy@monsters.io',
-      subject: 'Help unwrapping advanced features',
-      priority: 'normal',
-      source: 'zendesk',
-    },
-    description: '🧟 Support ticket opened',
-  },
-  
-  // Event 6: New lead from SEO content (25s)
-  {
-    delay: 25000,
-    endpoint: '/api/webhooks/clockwork/seo-form',
-    payload: {
-      name: 'Skeleton',
-      email: 'skeleton@monsters.io',
-      form_type: 'contact',
-      source: 'organic-search',
-    },
-    description: '💀 New lead from SEO content',
-  },
-  
-  // Event 7: Enterprise conversion (30s)
-  {
-    delay: 30000,
-    endpoint: '/api/webhooks/clockwork/stripe-subscription-enterprise',
-    payload: {
-      name: 'Kraken',
-      email: 'kraken@monsters.io',
-      plan: 'enterprise',
-      amount: 49900, // $499.00 in cents
-      interval: 'month',
-      seats: 50,
-      source: 'stripe',
-    },
-    description: '🦑 Enterprise conversion ($499/mo)',
-  },
+// All 13 monsters with their journeys
+const MONSTERS = [
+  { name: 'Werewolf', email: 'werewolf@monsters.io', emoji: '🐺' },
+  { name: 'Zombie', email: 'zombie@monsters.io', emoji: '🧟' },
+  { name: 'Skeleton', email: 'skeleton@monsters.io', emoji: '💀' },
+  { name: 'Goblin', email: 'goblin@monsters.io', emoji: '👹' },
+  { name: 'Vampire', email: 'vampire@monsters.io', emoji: '🧛' },
+  { name: 'Mummy', email: 'mummy@monsters.io', emoji: '🧌' },
+  { name: 'Ghost', email: 'ghost@monsters.io', emoji: '👻' },
+  { name: 'Witch', email: 'witch@monsters.io', emoji: '🧙' },
+  { name: 'Dracula', email: 'dracula@monsters.io', emoji: '🦇' },
+  { name: 'Frankenstein', email: 'frankenstein@monsters.io', emoji: '🧟‍♂️' },
+  { name: 'Banshee', email: 'banshee@monsters.io', emoji: '👺' },
+  { name: 'Phantom', email: 'phantom@monsters.io', emoji: '🎭' },
+  { name: 'Kraken', email: 'kraken@monsters.io', emoji: '🦑' },
 ];
 
-/**
- * Get the total duration of the demo script in milliseconds
- * 
- * @returns Total duration from first event to last event, plus 5 seconds buffer
- */
+// Marketing sources
+const MARKETING = [
+  { endpoint: '/api/webhooks/clockwork/linkedin-lead', action: 'clicked LinkedIn Ad' },
+  { endpoint: '/api/webhooks/clockwork/youtube-signup', action: 'subscribed from YouTube' },
+  { endpoint: '/api/webhooks/clockwork/seo-form', action: 'found us via Google' },
+];
+
+// Subscription plans
+const PLANS = [
+  { endpoint: '/api/webhooks/clockwork/stripe-subscription-basic', plan: 'Basic', amount: '$29/mo' },
+  { endpoint: '/api/webhooks/clockwork/stripe-subscription-pro', plan: 'Pro', amount: '$99/mo' },
+  { endpoint: '/api/webhooks/clockwork/stripe-subscription-enterprise', plan: 'Enterprise', amount: '$499/mo' },
+];
+
+export const CLOCKWORK_DEMO_SCRIPT: DemoEvent[] = [];
+
+// Build interleaved script - entities arrive and progress at different rates
+// This creates a "living" canvas where you see entities at all stages
+
+const TICK = 2500; // 2.5 seconds between events
+let t = 0;
+
+// Wave 1: First 3 arrive quickly
+[0, 1, 2].forEach((i) => {
+  const m = MONSTERS[i];
+  const src = MARKETING[i % 3];
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: src.endpoint,
+    payload: { name: m.name, email: m.email },
+    description: `${m.emoji} ${m.name} ${src.action}`,
+  });
+  t += TICK;
+});
+
+// First entity books demo while others arrive
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: '/api/webhooks/clockwork/calendly-demo',
+  payload: { name: MONSTERS[0].name, email: MONSTERS[0].email },
+  description: `${MONSTERS[0].emoji} ${MONSTERS[0].name} booked a demo call`,
+});
+t += TICK;
+
+// Wave 2: More arrivals
+[3, 4, 5].forEach((i) => {
+  const m = MONSTERS[i];
+  const src = MARKETING[i % 3];
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: src.endpoint,
+    payload: { name: m.name, email: m.email },
+    description: `${m.emoji} ${m.name} ${src.action}`,
+  });
+  t += TICK;
+});
+
+// Second entity books demo
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: '/api/webhooks/clockwork/calendly-demo',
+  payload: { name: MONSTERS[1].name, email: MONSTERS[1].email },
+  description: `${MONSTERS[1].emoji} ${MONSTERS[1].name} booked a demo call`,
+});
+t += TICK;
+
+// First entity starts trial!
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: '/api/webhooks/clockwork/stripe-trial',
+  payload: { name: MONSTERS[0].name, email: MONSTERS[0].email },
+  description: `${MONSTERS[0].emoji} ${MONSTERS[0].name} started free trial`,
+});
+t += TICK;
+
+// Wave 3: More arrivals
+[6, 7].forEach((i) => {
+  const m = MONSTERS[i];
+  const src = MARKETING[i % 3];
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: src.endpoint,
+    payload: { name: m.name, email: m.email },
+    description: `${m.emoji} ${m.name} ${src.action}`,
+  });
+  t += TICK;
+});
+
+// Third entity books demo
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: '/api/webhooks/clockwork/calendly-demo',
+  payload: { name: MONSTERS[2].name, email: MONSTERS[2].email },
+  description: `${MONSTERS[2].emoji} ${MONSTERS[2].name} booked a demo call`,
+});
+t += TICK;
+
+// Second entity starts trial
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: '/api/webhooks/clockwork/stripe-trial',
+  payload: { name: MONSTERS[1].name, email: MONSTERS[1].email },
+  description: `${MONSTERS[1].emoji} ${MONSTERS[1].name} started free trial`,
+});
+t += TICK;
+
+// FIRST CONVERSION! 🎉
+const plan0 = PLANS[1]; // Pro
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: plan0.endpoint,
+  payload: { name: MONSTERS[0].name, email: MONSTERS[0].email, plan: plan0.plan.toLowerCase() },
+  description: `${MONSTERS[0].emoji} ${MONSTERS[0].name} purchased ${plan0.plan} (${plan0.amount})`,
+});
+t += TICK;
+
+// More arrivals
+[8, 9].forEach((i) => {
+  const m = MONSTERS[i];
+  const src = MARKETING[i % 3];
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: src.endpoint,
+    payload: { name: m.name, email: m.email },
+    description: `${m.emoji} ${m.name} ${src.action}`,
+  });
+  t += TICK;
+});
+
+// Fourth and fifth book demos
+[3, 4].forEach((i) => {
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: '/api/webhooks/clockwork/calendly-demo',
+    payload: { name: MONSTERS[i].name, email: MONSTERS[i].email },
+    description: `${MONSTERS[i].emoji} ${MONSTERS[i].name} booked a demo call`,
+  });
+  t += TICK;
+});
+
+// Third starts trial
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: '/api/webhooks/clockwork/stripe-trial',
+  payload: { name: MONSTERS[2].name, email: MONSTERS[2].email },
+  description: `${MONSTERS[2].emoji} ${MONSTERS[2].name} started free trial`,
+});
+t += TICK;
+
+// Second conversion
+const plan1 = PLANS[0]; // Basic
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: plan1.endpoint,
+  payload: { name: MONSTERS[1].name, email: MONSTERS[1].email, plan: plan1.plan.toLowerCase() },
+  description: `${MONSTERS[1].emoji} ${MONSTERS[1].name} purchased ${plan1.plan} (${plan1.amount})`,
+});
+t += TICK;
+
+// Last arrivals
+[10, 11, 12].forEach((i) => {
+  const m = MONSTERS[i];
+  const src = MARKETING[i % 3];
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: src.endpoint,
+    payload: { name: m.name, email: m.email },
+    description: `${m.emoji} ${m.name} ${src.action}`,
+  });
+  t += TICK;
+});
+
+// More demos booked
+[5, 6].forEach((i) => {
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: '/api/webhooks/clockwork/calendly-demo',
+    payload: { name: MONSTERS[i].name, email: MONSTERS[i].email },
+    description: `${MONSTERS[i].emoji} ${MONSTERS[i].name} booked a demo call`,
+  });
+  t += TICK;
+});
+
+// More trials
+[3, 4].forEach((i) => {
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: '/api/webhooks/clockwork/stripe-trial',
+    payload: { name: MONSTERS[i].name, email: MONSTERS[i].email },
+    description: `${MONSTERS[i].emoji} ${MONSTERS[i].name} started free trial`,
+  });
+  t += TICK;
+});
+
+// Third conversion - Enterprise!
+const plan2 = PLANS[2];
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: plan2.endpoint,
+  payload: { name: MONSTERS[2].name, email: MONSTERS[2].email, plan: plan2.plan.toLowerCase() },
+  description: `${MONSTERS[2].emoji} ${MONSTERS[2].name} purchased ${plan2.plan} (${plan2.amount})`,
+});
+t += TICK;
+
+// More demos
+[7, 8].forEach((i) => {
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: '/api/webhooks/clockwork/calendly-demo',
+    payload: { name: MONSTERS[i].name, email: MONSTERS[i].email },
+    description: `${MONSTERS[i].emoji} ${MONSTERS[i].name} booked a demo call`,
+  });
+  t += TICK;
+});
+
+// More trials
+[5, 6].forEach((i) => {
+  CLOCKWORK_DEMO_SCRIPT.push({
+    delay: t,
+    endpoint: '/api/webhooks/clockwork/stripe-trial',
+    payload: { name: MONSTERS[i].name, email: MONSTERS[i].email },
+    description: `${MONSTERS[i].emoji} ${MONSTERS[i].name} started free trial`,
+  });
+  t += TICK;
+});
+
+// Fourth conversion
+const plan3 = PLANS[1];
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: plan3.endpoint,
+  payload: { name: MONSTERS[3].name, email: MONSTERS[3].email, plan: plan3.plan.toLowerCase() },
+  description: `${MONSTERS[3].emoji} ${MONSTERS[3].name} purchased ${plan3.plan} (${plan3.amount})`,
+});
+t += TICK;
+
+// Fifth conversion
+const plan4 = PLANS[0];
+CLOCKWORK_DEMO_SCRIPT.push({
+  delay: t,
+  endpoint: plan4.endpoint,
+  payload: { name: MONSTERS[4].name, email: MONSTERS[4].email, plan: plan4.plan.toLowerCase() },
+  description: `${MONSTERS[4].emoji} ${MONSTERS[4].name} purchased ${plan4.plan} (${plan4.amount})`,
+});
+
 export function getDemoScriptDuration(): number {
   if (CLOCKWORK_DEMO_SCRIPT.length === 0) return 0;
-  
-  const maxDelay = Math.max(...CLOCKWORK_DEMO_SCRIPT.map(event => event.delay));
-  return maxDelay + 5000; // Add 5 seconds buffer for final event to complete
+  return Math.max(...CLOCKWORK_DEMO_SCRIPT.map(e => e.delay)) + 10000;
 }
 
-/**
- * Get the number of events in the demo script
- * 
- * @returns Number of demo events
- */
 export function getDemoScriptEventCount(): number {
   return CLOCKWORK_DEMO_SCRIPT.length;
-}
-
-/**
- * Validate that all demo events have valid webhook endpoints
- * 
- * @returns True if all endpoints are valid, false otherwise
- */
-export function validateDemoScript(): boolean {
-  const validSources = [
-    'linkedin-lead',
-    'youtube-signup',
-    'seo-form',
-    'calendly-demo',
-    'stripe-trial',
-    'stripe-subscription-basic',
-    'stripe-subscription-pro',
-    'stripe-subscription-enterprise',
-    'zendesk-ticket',
-    'stripe-churn',
-    'referral',
-  ];
-  
-  return CLOCKWORK_DEMO_SCRIPT.every(event => {
-    const source = event.endpoint.split('/').pop();
-    return source && validSources.includes(source);
-  });
 }
