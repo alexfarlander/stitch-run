@@ -89,7 +89,16 @@ export async function processWebhook(
     if (!webhookConfig.is_active) {
       throw new Error(`Webhook endpoint is inactive: ${endpointSlug}`);
     }
-    
+
+    // Step 3.5: Enforce signature validation if required
+    // In production or when explicitly required, reject webhooks without signatures
+    const isProduction = process.env.NODE_ENV === 'production';
+    const requireSignature = webhookConfig.require_signature || (isProduction && webhookConfig.secret);
+
+    if (requireSignature && !signature) {
+      throw new Error(`Webhook signature is required but not provided for endpoint: ${endpointSlug}`);
+    }
+
     // Step 4: Validate signature and extract entity data using adapters
     // Construct Headers object for adapter processing
     // Map signature to appropriate header based on source

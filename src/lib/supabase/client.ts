@@ -22,13 +22,34 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // ADMIN CLIENT: For the Backend Engine only (Bypasses RLS)
 // The Engine needs full authority to update run states.
+// SECURITY: This function MUST only be called server-side
 export const getAdminClient = () => {
+  // Prevent client-side usage - critical security check
+  if (typeof window !== 'undefined') {
+    throw new Error(
+      'SECURITY ERROR: getAdminClient() cannot be called on client-side. ' +
+      'This function exposes privileged database access and must only be used in server-side code.'
+    );
+  }
+
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
+
   if (!serviceRoleKey) {
-    // Fallback for development/build time to prevent crashes if key is missing
-    console.warn('Missing SUPABASE_SERVICE_ROLE_KEY - Engine writes may fail');
-    return supabase; 
+    // In production, fail fast - no silent fallbacks
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'CRITICAL: SUPABASE_SERVICE_ROLE_KEY is required in production. ' +
+        'Set this environment variable to enable database operations.'
+      );
+    }
+
+    // Development fallback with clear warning
+    console.warn(
+      '\x1b[33m%s\x1b[0m', // Yellow color
+      '⚠️  WARNING: Missing SUPABASE_SERVICE_ROLE_KEY - Engine writes may fail. ' +
+      'Set this environment variable for full functionality.'
+    );
+    return supabase;
   }
 
   return createClient(supabaseUrl, serviceRoleKey, {
