@@ -34,7 +34,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function main() {
   console.log('🚀 Starting Production System Workflows Seed\n');
@@ -42,7 +42,7 @@ async function main() {
   console.log('\n');
   
   // Store global reference for workflow functions
-  (global as any).supabaseAdminClient = supabase;
+  (global as unknown).supabaseAdminClient = supabase;
   
   try {
     // Seed all four production workflows
@@ -82,7 +82,7 @@ async function main() {
     console.log(`   - Stripe Sync: ${workflowIds.stripeSync}`);
     console.log('\n✅ All 4 production workflows are ready!');
     
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Production workflows seed failed:', error);
     process.exit(1);
   }

@@ -20,9 +20,9 @@ export class MediaLibraryWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: any
+    input: unknown
   ): Promise<void> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     
     logWorker('info', 'Media Library worker started', {
       worker: 'media-library',
@@ -32,7 +32,7 @@ export class MediaLibraryWorker implements IWorker {
     });
 
     try {
-      let result: any;
+      let result: unknown;
 
       // Mode 1: Load specific items by ID (from MediaSelect node)
       // Input might be:
@@ -43,7 +43,7 @@ export class MediaLibraryWorker implements IWorker {
       if (config.operation === 'load-metadata' || input?.media_id || Array.isArray(input)) {
         
         // Determine the list of items to process
-        let itemsToLoad: any[] = [];
+        let itemsToLoad: unknown[] = [];
         
         // Case A: Input is the raw array (direct from MediaSelectNode)
         if (Array.isArray(input)) {
@@ -120,7 +120,7 @@ export class MediaLibraryWorker implements IWorker {
           });
           
           const loadedItems = await Promise.all(
-            itemsToLoad.map(async (item: any) => {
+            itemsToLoad.map(async (item: unknown) => {
               const id = item.media_id || item.id;
               if (!id) {
                 logWorker('warn', 'Skipping item without ID', {
@@ -196,7 +196,7 @@ export class MediaLibraryWorker implements IWorker {
         output: result,
       });
 
-    } catch (error) {
+    } catch (_error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       

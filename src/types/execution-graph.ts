@@ -33,7 +33,7 @@ export interface ExecutionNode {
   id: string;                                    // MUST match VisualNode.id exactly
   type: string;                                  // worker, ux, splitter, collector, etc.
   worker_type?: string;                          // For worker nodes: claude, minimax, etc.
-  config?: Record<string, any>;                  // Worker-specific configuration
+  config?: Record<string, unknown>;                  // Worker-specific configuration
   inputs?: Record<string, InputSchema>;          // Input schema for validation
   outputs?: Record<string, OutputSchema>;        // Output schema for validation
   entityMovement?: EntityMovementConfig;         // Entity movement rules

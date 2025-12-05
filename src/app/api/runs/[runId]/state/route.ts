@@ -161,7 +161,7 @@ export async function GET(
       );
     }
 
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
 
     // Get the run to find the flow_id (canvas_id)
     const { data: run, error: runError } = await supabase
@@ -227,7 +227,7 @@ export async function GET(
     };
 
     return NextResponse.json(response);
-  } catch (error) {
+  } catch (_error) {
     console.error('Historical state API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

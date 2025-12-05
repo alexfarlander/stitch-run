@@ -22,8 +22,8 @@ import {
  */
 interface UpdateNodeConfigRequest {
   workerType?: string;
-  config?: Record<string, any>;
-  inputs?: Record<string, any>;
+  config?: Record<string, unknown>;
+  inputs?: Record<string, unknown>;
   entityMovement?: {
     onSuccess?: {
       targetSectionId: string;
@@ -143,7 +143,7 @@ export async function PUT(
     }
     
     // Get current flow with version data
-    const flow = await getFlow(canvasId, true);
+    const _flow = await getFlow(canvasId, true);
     
     if (!flow) {
       throw new APIError(
@@ -155,8 +155,8 @@ export async function PUT(
     
     // Extract current visual graph
     let currentGraph: VisualGraph;
-    if (flow.current_version_id && (flow as any).current_version?.visual_graph) {
-      currentGraph = (flow as any).current_version.visual_graph;
+    if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
+      currentGraph = (flow as unknown).current_version.visual_graph;
     } else {
       // Fallback to legacy graph format
       currentGraph = {
@@ -243,7 +243,7 @@ export async function PUT(
     
     return NextResponse.json(response);
     
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }

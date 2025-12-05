@@ -7,7 +7,7 @@ config({ path: envPath });
 
 async function main() {
   const { getAdminClient } = await import('../src/lib/supabase/client');
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_flows')
@@ -20,7 +20,7 @@ async function main() {
     process.exit(1);
   }
 
-  const loadWireframesNode = data.graph.nodes.find((n: any) => n.id === 'load-wireframes');
+  const loadWireframesNode = data.graph.nodes.find((n: unknown) => n.id === 'load-wireframes');
   
   if (!loadWireframesNode) {
     console.error('❌ Load Wireframes node not found');

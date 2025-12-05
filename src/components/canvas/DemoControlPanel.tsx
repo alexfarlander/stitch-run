@@ -77,7 +77,7 @@ export function DemoControlPanel({
         description: 'Running in continuous loop. Click Stop to end.',
       });
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to start demo:', error);
       toast.error('Failed to start demo');
     } finally {
@@ -106,7 +106,7 @@ export function DemoControlPanel({
         description: `Completed ${result.loopsCompleted || 0} loops`,
       });
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to stop demo:', error);
       toast.error('Failed to stop demo');
     } finally {
@@ -139,7 +139,7 @@ export function DemoControlPanel({
       setLoopCount(0);
       toast.success('Demo reset successfully');
       
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to reset demo:', error);
       toast.error('Failed to reset demo');
     } finally {

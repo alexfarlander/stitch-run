@@ -21,7 +21,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 async function testDemoOrchestrator() {
   console.log('=== Testing Demo Orchestrator System ===\n');
   
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   try {
     // Step 1: Get BMC canvas ID
@@ -178,7 +178,7 @@ async function testDemoOrchestrator() {
     console.log('✅ Financial metrics reset correctly');
     console.log('\n🎉 All tests passed!');
     
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Test failed:', error);
     process.exit(1);
   }

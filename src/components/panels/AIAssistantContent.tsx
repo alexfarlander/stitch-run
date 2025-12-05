@@ -86,7 +86,7 @@ export function AIAssistantContent({
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (_error) {
       if (retryCount < AI_RETRY_CONFIG.MAX_RETRIES) {
         const delay = Math.min(
           AI_RETRY_CONFIG.INITIAL_DELAY_MS *

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createServerClient();
+    const _supabase = createServerClient();
 
     // Create a new run
     const { data: run, error } = await supabase
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ runId: run.id });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error creating run:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

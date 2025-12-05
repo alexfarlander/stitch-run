@@ -10,7 +10,7 @@ export async function GET() {
       canvasId,
       viewUrl: `/canvas/${canvasId}`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

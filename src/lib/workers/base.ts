@@ -21,6 +21,6 @@ export interface IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: any
+    input: unknown
   ): Promise<void>;
 }

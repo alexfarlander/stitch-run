@@ -14,14 +14,14 @@ import { uploadFromUrl } from '@/lib/media/media-service';
  * Image generation API adapter interface
  */
 interface ImageGenerationAdapter {
-  generateImage(prompt: string, config: any): Promise<string>;
+  generateImage(prompt: string, config: unknown): Promise<string>;
 }
 
 /**
  * Mock adapter for testing and development
  */
 class MockImageAdapter implements ImageGenerationAdapter {
-  async generateImage(prompt: string, config: any): Promise<string> {
+  async generateImage(prompt: string, config: unknown): Promise<string> {
     logWorker('info', 'Mock image generation', { prompt, config });
     // Return a placeholder image URL
     return 'https://via.placeholder.com/1024x1024.png?text=Wireframe';
@@ -39,7 +39,7 @@ class IdeogramAdapter implements ImageGenerationAdapter {
     this.apiKey = apiKey;
   }
 
-  async generateImage(prompt: string, config: any): Promise<string> {
+  async generateImage(prompt: string, config: unknown): Promise<string> {
     const response = await fetch('https://api.ideogram.ai/generate', {
       method: 'POST',
       headers: {
@@ -60,7 +60,7 @@ class IdeogramAdapter implements ImageGenerationAdapter {
       throw new Error(`Ideogram API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     if (!data.data || !data.data[0] || !data.data[0].url) {
       throw new Error('Invalid response from Ideogram API');
@@ -81,7 +81,7 @@ class DallEAdapter implements ImageGenerationAdapter {
     this.apiKey = apiKey;
   }
 
-  async generateImage(prompt: string, config: any): Promise<string> {
+  async generateImage(prompt: string, config: unknown): Promise<string> {
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -101,7 +101,7 @@ class DallEAdapter implements ImageGenerationAdapter {
       throw new Error(`DALL-E API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     if (!data.data || !data.data[0] || !data.data[0].url) {
       throw new Error('Invalid response from DALL-E API');
@@ -119,7 +119,7 @@ export class WireframeGeneratorWorker implements IWorker {
   private adapter: ImageGenerationAdapter;
 
   constructor() {
-    const config = getConfig();
+    const _config = getConfig();
     
     // Determine which adapter to use based on configuration
     const adapterType = process.env.IMAGE_GENERATION_ADAPTER || 'mock';
@@ -184,9 +184,9 @@ export class WireframeGeneratorWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: any
+    input: unknown
   ): Promise<void> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     logWorker('info', 'Wireframe Generator worker execution started', {
       worker: 'wireframe-generator',
@@ -249,7 +249,7 @@ export class WireframeGeneratorWorker implements IWorker {
           imageUrl = await Promise.race([generationPromise, timeoutPromise]);
           lastError = null;
           break;
-        } catch (error) {
+        } catch (_error) {
           lastError = error instanceof Error ? error : new Error('Unknown error');
           logWorker('warn', `Image generation attempt ${attempt} failed`, {
             worker: 'wireframe-generator',
@@ -320,7 +320,7 @@ export class WireframeGeneratorWorker implements IWorker {
         },
       });
 
-    } catch (error) {
+    } catch (_error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

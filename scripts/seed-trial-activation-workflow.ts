@@ -36,7 +36,7 @@ async function main() {
     console.log('=' .repeat(60));
     
     process.exit(0);
-  } catch (error) {
+  } catch (_error) {
     console.error('\n');
     console.error('=' .repeat(60));
     console.error('❌ Seed failed!');

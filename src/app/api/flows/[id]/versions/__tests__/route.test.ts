@@ -3,7 +3,7 @@
  * Tests: Requirements 10.1, 10.4, 10.5
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { POST, GET } from '../route';
 import { GET as GET_VERSION } from '../[vid]/route';
 import { createFlow, deleteFlow } from '@/lib/db/flows';
@@ -16,7 +16,7 @@ describe('Flow Versions API', () => {
 
   beforeEach(async () => {
     // Create a test flow
-    const flow = await createFlow('Test Flow for Versions', {
+    const _flow = await createFlow('Test Flow for Versions', {
       nodes: [],
       edges: [],
     });
@@ -28,7 +28,7 @@ describe('Flow Versions API', () => {
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -82,7 +82,7 @@ describe('Flow Versions API', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { id: testFlowId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       // Track for cleanup
       if (data.versionId) testVersionIds.push(data.versionId);
@@ -137,7 +137,7 @@ describe('Flow Versions API', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { id: testFlowId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       // Verify response
       expect(response.status).toBe(400);
@@ -158,7 +158,7 @@ describe('Flow Versions API', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { id: testFlowId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       // Verify response
       expect(response.status).toBe(400);
@@ -219,7 +219,7 @@ describe('Flow Versions API', () => {
       expect(listData.versions.length).toBeGreaterThanOrEqual(2);
       
       // Verify metadata-only response (no heavy graph blobs)
-      listData.versions.forEach((v: any) => {
+      listData.versions.forEach((v: unknown) => {
         expect(v).toHaveProperty('id');
         expect(v).toHaveProperty('flow_id');
         expect(v).toHaveProperty('commit_message');
@@ -231,7 +231,7 @@ describe('Flow Versions API', () => {
       
       // Verify versions are ordered by created_at DESC (newest first)
       if (listData.versions.length >= 2) {
-        const dates = listData.versions.map((v: any) => new Date(v.created_at).getTime());
+        const dates = listData.versions.map((v: unknown) => new Date(v.created_at).getTime());
         for (let i = 0; i < dates.length - 1; i++) {
           expect(dates[i]).toBeGreaterThanOrEqual(dates[i + 1]);
         }
@@ -247,7 +247,7 @@ describe('Flow Versions API', () => {
           method: 'GET',
         });
         const response = await GET(request, { params: { id: emptyFlow.id } });
-        const data = await response.json();
+        const _data = await response.json();
 
         // Verify response
         expect(response.status).toBe(200);
@@ -286,7 +286,7 @@ describe('Flow Versions API', () => {
       });
       const createResponse = await POST(createRequest, { params: { id: testFlowId } });
       const createData = await createResponse.json();
-      const versionId = createData.versionId;
+      const _versionId = createData.versionId;
       testVersionIds.push(versionId);
 
       // Retrieve the version
@@ -319,7 +319,7 @@ describe('Flow Versions API', () => {
       const response = await GET_VERSION(request, {
         params: { id: testFlowId, vid: fakeVersionId }
       });
-      const data = await response.json();
+      const _data = await response.json();
 
       // Verify response
       expect(response.status).toBe(404);
@@ -355,7 +355,7 @@ describe('Flow Versions API', () => {
         });
         const createResponse = await POST(createRequest, { params: { id: testFlowId } });
         const createData = await createResponse.json();
-        const versionId = createData.versionId;
+        const _versionId = createData.versionId;
         testVersionIds.push(versionId);
 
         // Try to retrieve the version using the other flow's ID

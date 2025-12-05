@@ -60,7 +60,7 @@ export interface NodeConfig {
   label?: string;
   
   // Allow additional custom configuration
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -129,7 +129,7 @@ export interface StitchEdge {
   data?: {
     intensity?: number;
     stats?: JourneyEdgeData;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -164,13 +164,13 @@ export interface StitchFlow {
  */
 export interface NodeState {
   status: NodeStatus;
-  output?: any;
+  output?: unknown;
   error?: string;
   
   // Collector-specific state tracking (Requirements 1.7, 9.4)
   upstream_completed_count?: number;
   expected_upstream_count?: number;
-  upstream_outputs?: Record<string, any>;
+  upstream_outputs?: Record<string, unknown>;
 }
 
 /**
@@ -209,7 +209,7 @@ export interface StitchRun {
 export interface JourneyEntry {
   node_id: string;
   timestamp: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -229,7 +229,7 @@ export interface StitchEntity {
   edge_progress: number | null;        // 0.0 to 1.0 when on edge
   
   journey: JourneyEntry[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -245,7 +245,7 @@ export interface JourneyEvent {
   node_id: string | null;
   edge_id: string | null;
   progress: number | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -316,7 +316,7 @@ export interface WebhookEvent {
   id: string;
   webhook_config_id: string;
   received_at: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   entity_id: string | null;
   workflow_run_id: string | null;
   status: 'pending' | 'processing' | 'completed' | 'failed';
@@ -336,7 +336,7 @@ export interface WorkerPayload {
   runId: string;
   nodeId: string;
   config: NodeConfig;
-  input: any;
+  input: unknown;
   callbackUrl: string;
 }
 
@@ -346,7 +346,7 @@ export interface WorkerPayload {
  */
 export interface WorkerCallback {
   status: 'completed' | 'failed';
-  output?: any;
+  output?: unknown;
   error?: string;
 }
 

@@ -23,7 +23,7 @@ export async function handleNodeCompletion(
   if (!run.entity_id) return null;
 
   // 2. Get the flow and node config (Admin client to bypass RLS)
-  const flow = await getFlowAdmin(run.flow_id);
+  const _flow = await getFlowAdmin(run.flow_id);
   if (!flow) return null;
 
   const node = flow.graph.nodes.find(n => n.id === completedNodeId);
@@ -36,7 +36,7 @@ export async function handleNodeCompletion(
   
   if (!action) return null;
 
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   const result: MovementResult = { moved: false };
 
   // Fetch current entity state to know where we are

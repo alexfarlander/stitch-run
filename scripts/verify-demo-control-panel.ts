@@ -99,7 +99,7 @@ try {
     process.exit(1);
   }
 
-} catch (error) {
+} catch (_error) {
   console.error('❌ Error verifying component:', error);
   process.exit(1);
 }

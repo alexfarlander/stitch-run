@@ -4,7 +4,7 @@
  * Tests: Properties 7, 8, 11
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import fc from 'fast-check';
 import { generateBMCGraph, seedDefaultBMC } from '../default-bmc';
 import { createServerClient } from '../../supabase/server';
@@ -56,7 +56,7 @@ const EXPECTED_POSITIONS: Record<string, { x: number; y: number }> = {
 /**
  * Validates that a graph has valid React Flow structure
  */
-function isValidReactFlowStructure(graph: { nodes: any[]; edges: any[] }): boolean {
+function isValidReactFlowStructure(graph: { nodes: unknown[]; edges: unknown[] }): boolean {
   // Must have nodes and edges arrays
   if (!Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) {
     return false;
@@ -189,7 +189,7 @@ describe('BMC Seed Script Property Tests', () => {
     
     beforeEach(async () => {
       // Clean up any existing BMCs before each test
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       await supabase
         .from('stitch_flows')
         .delete()
@@ -202,7 +202,7 @@ describe('BMC Seed Script Property Tests', () => {
     afterEach(async () => {
       // Clean up created BMCs after each test
       if (createdBMCIds.length > 0) {
-        const supabase = createServerClient();
+        const _supabase = createServerClient();
         await supabase
           .from('stitch_flows')
           .delete()
@@ -233,7 +233,7 @@ describe('BMC Seed Script Property Tests', () => {
             expect(uniqueIds.size).toBe(1);
             
             // Verify only one BMC exists in database
-            const supabase = createServerClient();
+            const _supabase = createServerClient();
             const { data: bmcs, error } = await supabase
               .from('stitch_flows')
               .select('id')

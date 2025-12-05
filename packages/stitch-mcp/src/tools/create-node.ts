@@ -44,7 +44,7 @@ export const createNodeTool = {
         },
         required: ["canvasId", "label", "nodeType"]
     },
-    handler: async (params: any) => {
+    handler: async (params: unknown) => {
         try {
             // Validate input parameters
             const validatedParams = CreateNodeParamsSchema.parse(params);
@@ -96,7 +96,7 @@ export const createNodeTool = {
                     }
                 ]
             };
-        } catch (error) {
+        } catch (_error) {
             // Handle validation errors with clear parameter names
             if (error instanceof z.ZodError) {
                 const errorDetails = error.errors.map(e => ({

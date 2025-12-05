@@ -45,7 +45,7 @@ export function useFlow(flowId: string | null, realtime = false): UseFlowResult 
           setFlow(data as StitchFlow);
           setLoading(false);
         }
-      } catch (err) {
+      } catch (_err) {
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Failed to fetch flow');
           setLoading(false);

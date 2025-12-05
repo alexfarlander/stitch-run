@@ -28,7 +28,7 @@ import { StitchNode, StitchEdge } from '@/types/stitch';
  * Final Assembly (Worker) → Final Review (UX)
  */
 async function createVideoFactoryV2Workflow(canvasId: string) {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Check if workflow already exists
   const { data: existing } = await supabase
@@ -268,7 +268,7 @@ async function createVideoFactoryV2Workflow(canvasId: string) {
 export async function seedVideoFactoryV2() {
   console.log('🌱 Seeding Video Factory V2 Workflow...\n');
   
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   try {
     // Step 1: Get the default BMC canvas
@@ -310,7 +310,7 @@ export async function seedVideoFactoryV2() {
       workflowId,
     };
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Video Factory V2 workflow seed failed:', error);
     throw error;
   }

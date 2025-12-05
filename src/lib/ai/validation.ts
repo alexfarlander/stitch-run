@@ -13,7 +13,7 @@ import type { Node, Edge } from '@xyflow/react';
 /**
  * Type guard to check if an object is a valid Node
  */
-export function isValidNode(obj: any): obj is Node {
+export function isValidNode(obj: unknown): obj is Node {
   return (
     obj &&
     typeof obj === 'object' &&
@@ -27,7 +27,7 @@ export function isValidNode(obj: any): obj is Node {
 /**
  * Type guard to check if an object is a valid Edge
  */
-export function isValidEdge(obj: any): obj is Edge {
+export function isValidEdge(obj: unknown): obj is Edge {
   return (
     obj &&
     typeof obj === 'object' &&
@@ -40,7 +40,7 @@ export function isValidEdge(obj: any): obj is Edge {
 export interface ValidationError {
   field: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 export interface ValidationResult {

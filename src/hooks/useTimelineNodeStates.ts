@@ -67,7 +67,7 @@ export function useTimelineNodeStates(
         }
 
         // Reconstruct historical state from journey events
-        const supabase = createBrowserClient();
+        const _supabase = createBrowserClient();
         
         // Query all journey events up to the selected timestamp
         // Requirement 7.1: Query all journey events up to that timestamp
@@ -127,7 +127,7 @@ export function useTimelineNodeStates(
           setNodeStates(reconstructed);
           setLoading(false);
         }
-      } catch (err) {
+      } catch (_err) {
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Unknown error');
           setLoading(false);

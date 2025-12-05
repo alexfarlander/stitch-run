@@ -47,7 +47,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // ============================================================================
 // Migration Statistics
@@ -87,7 +87,7 @@ const stats: MigrationStats = {
  * Convert legacy graph format to VisualGraph format
  * Legacy format uses StitchNode/StitchEdge, new format uses VisualNode/VisualEdge
  */
-function convertToVisualGraph(legacyGraph: { nodes: any[]; edges: any[] }): VisualGraph {
+function convertToVisualGraph(legacyGraph: { nodes: unknown[]; edges: unknown[] }): VisualGraph {
   return {
     nodes: legacyGraph.nodes.map(node => ({
       id: node.id,
@@ -207,7 +207,7 @@ async function migrateFlow(flow: StitchFlow): Promise<void> {
     console.log('   ✅ Successfully migrated');
     stats.flows.successful++;
     
-  } catch (error) {
+  } catch (_error) {
     console.log(`   ❌ Migration failed: ${error}`);
     stats.flows.failed++;
     stats.errors.push({
@@ -295,7 +295,7 @@ async function migrateRun(run: StitchRun): Promise<void> {
     
     stats.runs.linked++;
     
-  } catch (error) {
+  } catch (_error) {
     console.log(`   ❌ Failed to migrate run ${run.id}: ${error}`);
     stats.runs.needsReview++;
     stats.errors.push({
@@ -367,7 +367,7 @@ async function migrate() {
     // Step 3: Print summary
     printSummary();
     
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Migration failed:', error);
     process.exit(1);
   }

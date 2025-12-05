@@ -87,7 +87,7 @@ export function formatRelativeTime(isoTimestamp: string): string {
       const diffMonths = Math.floor(diffDays / 30);
       return diffMonths === 1 ? '1 month ago' : `${diffMonths} months ago`;
     }
-  } catch (error) {
+  } catch (_error) {
     return 'Unknown';
   }
 }

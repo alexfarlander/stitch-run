@@ -19,7 +19,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function verifyEntities() {
   console.log('🔍 Verifying entity setup...\n');
@@ -58,7 +58,7 @@ async function verifyEntities() {
 
   console.log(`✅ Found ${entities.length} entities:\n`);
 
-  entities.forEach((entity: any) => {
+  entities.forEach((entity: unknown) => {
     const typeColor = {
       lead: '🔵',
       customer: '🟢',
@@ -89,12 +89,12 @@ async function verifyEntities() {
     process.exit(1);
   }
 
-  const nodeIds = new Set(flow.graph.nodes.map((n: any) => n.id));
+  const nodeIds = new Set(flow.graph.nodes.map((n: unknown) => n.id));
   
   console.log('📊 Validation:\n');
   
   let allValid = true;
-  entities.forEach((entity: any) => {
+  entities.forEach((entity: unknown) => {
     if (entity.current_node_id && !nodeIds.has(entity.current_node_id)) {
       console.log(`❌ ${entity.name}: Invalid node ID "${entity.current_node_id}"`);
       allValid = false;

@@ -3,7 +3,7 @@
  * Tests: Requirements 1.1, 1.2, 9.1, 9.3
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { GET, POST } from '../route';
 import { deleteFlow } from '@/lib/db/flows';
 import { NextRequest } from 'next/server';
@@ -17,7 +17,7 @@ describe('Canvas Management API - Base Route', () => {
     for (const canvasId of testCanvasIds) {
       try {
         await deleteFlow(canvasId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -27,7 +27,7 @@ describe('Canvas Management API - Base Route', () => {
   describe('GET /api/canvas', () => {
     it('should list all canvases (Requirement 1.1)', async () => {
       const response = await GET();
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('canvases');
@@ -64,10 +64,10 @@ describe('Canvas Management API - Base Route', () => {
 
       // Now list canvases
       const response = await GET();
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
-      const canvas = data.canvases.find((c: any) => c.id === createData.id);
+      const canvas = data.canvases.find((c: unknown) => c.id === createData.id);
       expect(canvas).toBeDefined();
       expect(canvas).toHaveProperty('id');
       expect(canvas).toHaveProperty('name');
@@ -105,7 +105,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       testCanvasIds.push(data.id);
 
@@ -124,7 +124,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -142,7 +142,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -162,7 +162,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -181,7 +181,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -200,7 +200,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -219,7 +219,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(201);
       expect(data).toHaveProperty('id');
@@ -240,7 +240,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -261,7 +261,7 @@ describe('Canvas Management API - Base Route', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');

@@ -4,7 +4,7 @@
  * Validates: Requirements 5.1
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+// beforeEach import removed as unused
 import * as fc from 'fast-check';
 import { SceneParserWorker } from '../scene-parser';
 import Anthropic from '@anthropic-ai/sdk';
@@ -70,7 +70,7 @@ describe('Scene Parser Worker - Property Tests', () => {
           });
 
           const MockAnthropicConstructor = Anthropic as unknown as Mock;
-          MockAnthropicConstructor.mockImplementation(function(this: any) {
+          MockAnthropicConstructor.mockImplementation(function(this: unknown) {
             this.messages = {
               create: mockCreate,
             };
@@ -80,7 +80,7 @@ describe('Scene Parser Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new SceneParserWorker();
           await worker.execute(runId, nodeId, {}, { script });
@@ -149,7 +149,7 @@ describe('Scene Parser Worker - Property Tests', () => {
           });
 
           const MockAnthropicConstructor = Anthropic as unknown as Mock;
-          MockAnthropicConstructor.mockImplementation(function(this: any) {
+          MockAnthropicConstructor.mockImplementation(function(this: unknown) {
             this.messages = {
               create: mockCreate,
             };
@@ -159,7 +159,7 @@ describe('Scene Parser Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new SceneParserWorker();
           await worker.execute(runId, nodeId, {}, { script });
@@ -200,7 +200,7 @@ describe('Scene Parser Worker - Property Tests', () => {
           });
 
           const MockAnthropicConstructor = Anthropic as unknown as Mock;
-          MockAnthropicConstructor.mockImplementation(function(this: any) {
+          MockAnthropicConstructor.mockImplementation(function(this: unknown) {
             this.messages = {
               create: mockCreate,
             };
@@ -210,7 +210,7 @@ describe('Scene Parser Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new SceneParserWorker();
           await worker.execute(runId, nodeId, {}, { script });
@@ -253,7 +253,7 @@ describe('Scene Parser Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new SceneParserWorker();
           await worker.execute(runId, nodeId, {}, invalidScript);

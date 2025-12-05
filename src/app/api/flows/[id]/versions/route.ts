@@ -56,7 +56,7 @@ export async function POST(
       executionGraph: result.executionGraph
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating version:', error);
     
     // Handle validation errors
@@ -104,7 +104,7 @@ export async function GET(
     
     return NextResponse.json({ versions });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error listing versions:', error);
     
     return NextResponse.json(

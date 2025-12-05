@@ -3,7 +3,7 @@
  * Basic unit tests for the Image-to-Video worker
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { ImageToVideoWorker } from '../image-to-video';
 
 // Mock dependencies

@@ -18,7 +18,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 interface WebhookTestCase {
   name: string;
   source: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   expectedStatus: number;
 }
 
@@ -104,7 +104,7 @@ async function testWebhook(testCase: WebhookTestCase): Promise<void> {
       body: JSON.stringify(testCase.payload),
     });
     
-    const data = await response.json();
+    const _data = await response.json();
     
     console.log(`   Status: ${response.status} (expected: ${testCase.expectedStatus})`);
     console.log(`   Response:`, JSON.stringify(data, null, 2));
@@ -119,13 +119,13 @@ async function testWebhook(testCase: WebhookTestCase): Promise<void> {
     } else {
       console.log(`   ❌ FAIL: Expected status ${testCase.expectedStatus}, got ${response.status}`);
     }
-  } catch (error) {
+  } catch (_error) {
     console.error(`   ❌ ERROR:`, error);
   }
 }
 
 async function verifyEntity(entityId: string, testCase: WebhookTestCase): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Verify entity exists
   const { data: entity, error: entityError } = await supabase
@@ -168,7 +168,7 @@ async function verifyEntity(entityId: string, testCase: WebhookTestCase): Promis
 }
 
 async function checkBMCExists(): Promise<boolean> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   const { data: bmc, error } = await supabase
     .from('stitch_flows')
@@ -188,7 +188,7 @@ async function checkBMCExists(): Promise<boolean> {
 
 async function cleanupTestEntities(): Promise<void> {
   console.log('\n🧹 Cleaning up test entities...');
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   const { error } = await supabase
     .from('stitch_entities')

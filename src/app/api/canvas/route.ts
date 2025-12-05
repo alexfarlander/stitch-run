@@ -37,8 +37,8 @@ export async function GET(): Promise<NextResponse> {
       let nodeCount = 0;
       let edgeCount = 0;
 
-      if (flow.current_version_id && (flow as any).current_version?.visual_graph) {
-        const visualGraph = (flow as any).current_version.visual_graph;
+      if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
+        const visualGraph = (flow as unknown).current_version.visual_graph;
         nodeCount = visualGraph.nodes?.length || 0;
         edgeCount = visualGraph.edges?.length || 0;
       } else {
@@ -58,7 +58,7 @@ export async function GET(): Promise<NextResponse> {
 
     const response: ListCanvasesResponse = { canvases };
     return NextResponse.json(response);
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }
@@ -103,7 +103,7 @@ export async function POST(
       if (typeof content === 'string') {
         try {
           visualGraph = JSON.parse(content);
-        } catch (e) {
+        } catch (_e) {
           throw new APIError(
             'BAD_REQUEST',
             400,
@@ -148,10 +148,10 @@ export async function POST(
       try {
         // Parse Mermaid to VisualGraph
         visualGraph = mermaidToCanvas(content);
-      } catch (e) {
+      } catch (_e) {
         // Check if it's a MermaidParseError with detailed information
         if (e instanceof Error && e.name === 'MermaidParseError') {
-          const mermaidError = e as any;
+          const mermaidError = e as unknown;
           const details: string[] = [];
           
           if (mermaidError.hint) {
@@ -195,7 +195,7 @@ export async function POST(
 
     return NextResponse.json(response, { status: 201 });
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }

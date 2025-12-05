@@ -77,7 +77,7 @@ export async function stitchRequest(path, options = {}) {
         }
         return response.json();
     }
-    catch (error) {
+    catch (_error) {
         // If it's already a StitchAPIError, re-throw it
         if (error instanceof StitchAPIError) {
             throw error;

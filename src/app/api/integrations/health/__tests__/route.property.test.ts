@@ -107,7 +107,7 @@ describe('Health Check API Property Tests', () => {
             try {
               // Call the health check endpoint
               const response = await GET();
-              const data = await response.json();
+              const _data = await response.json();
               
               // Verify response structure
               expect(data).toHaveProperty('integrations');
@@ -124,7 +124,7 @@ describe('Health Check API Property Tests', () => {
                 'MiniMax': 'MINIMAX_API_KEY',
               };
               
-              data.integrations.forEach((integration: any) => {
+              data.integrations.forEach((integration: unknown) => {
                 const envKey = integrationMap[integration.name];
                 const envState = envConfig[envKey as keyof typeof envConfig];
                 
@@ -159,10 +159,10 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const data = await response.json();
+              const _data = await response.json();
               
               const claudeIntegration = data.integrations.find(
-                (i: any) => i.name === 'Claude API'
+                (i: unknown) => i.name === 'Claude API'
               );
               
               expect(claudeIntegration.status).toBe('connected');
@@ -190,10 +190,10 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const data = await response.json();
+              const _data = await response.json();
               
               const claudeIntegration = data.integrations.find(
-                (i: any) => i.name === 'Claude API'
+                (i: unknown) => i.name === 'Claude API'
               );
               
               expect(claudeIntegration.status).toBe('disconnected');
@@ -219,7 +219,7 @@ describe('Health Check API Property Tests', () => {
             try {
               // Call the health check endpoint
               const response = await GET();
-              const data = await response.json();
+              const _data = await response.json();
               
               // Define all expected integrations
               const expectedIntegrations = [
@@ -237,7 +237,7 @@ describe('Health Check API Property Tests', () => {
               // Verify each expected integration is in the response
               expectedIntegrations.forEach(expectedName => {
                 const integration = data.integrations.find(
-                  (i: any) => i.name === expectedName
+                  (i: unknown) => i.name === expectedName
                 );
                 expect(integration).toBeDefined();
                 expect(integration).toHaveProperty('name', expectedName);
@@ -246,7 +246,7 @@ describe('Health Check API Property Tests', () => {
               });
               
               // Verify no duplicate integrations
-              const names = data.integrations.map((i: any) => i.name);
+              const names = data.integrations.map((i: unknown) => i.name);
               const uniqueNames = new Set(names);
               expect(uniqueNames.size).toBe(names.length);
               
@@ -269,7 +269,7 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const data = await response.json();
+              const _data = await response.json();
               
               // Should always return exactly 6 integrations
               expect(data.integrations).toHaveLength(6);
@@ -291,10 +291,10 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const data = await response.json();
+              const _data = await response.json();
               
               // Check that all integration names are present
-              const integrationNames = data.integrations.map((i: any) => i.name);
+              const integrationNames = data.integrations.map((i: unknown) => i.name);
               
               expect(integrationNames).toContain('Claude API');
               expect(integrationNames).toContain('Supabase URL');

@@ -39,7 +39,7 @@ interface ClaudeOutput {
 /**
  * Logs execution progress with timestamp and context
  */
-function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: string, context?: any) {
+function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: string, context?: unknown) {
   const timestamp = new Date().toISOString();
   const emoji = {
     info: 'ℹ️ ',
@@ -57,7 +57,7 @@ function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: str
 /**
  * Validates that the output matches the expected schema
  */
-function validateOutputSchema(output: any): { valid: boolean; errors: string[] } {
+function validateOutputSchema(output: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   // Check if output exists
@@ -118,7 +118,7 @@ async function main() {
   }
   
   // Create admin client
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const _supabase = createClient(supabaseUrl, serviceRoleKey);
   
   try {
     // Step 1: Validate workflow structure
@@ -156,7 +156,7 @@ async function main() {
     ];
     
     for (const expected of expectedNodes) {
-      const node = nodes.find((n: any) => n.id === expected.id);
+      const node = nodes.find((n: unknown) => n.id === expected.id);
       if (!node) {
         logExecution('error', `Node ${expected.id} not found`);
         process.exit(1);
@@ -176,7 +176,7 @@ async function main() {
     }
     
     // Validate Claude worker configuration
-    const claudeNode = nodes.find((n: any) => n.id === 'claude');
+    const claudeNode = nodes.find((n: unknown) => n.id === 'claude');
     if (claudeNode.data.workerType !== 'claude') {
       logExecution('error', `Claude node has wrong workerType: ${claudeNode.data.workerType}`);
       process.exit(1);
@@ -201,7 +201,7 @@ async function main() {
     ];
     
     for (const expected of expectedEdges) {
-      const edge = edges.find((e: any) => e.id === expected.id);
+      const edge = edges.find((e: unknown) => e.id === expected.id);
       if (!edge) {
         logExecution('error', `Edge ${expected.id} not found`);
         process.exit(1);
@@ -306,7 +306,7 @@ async function main() {
     
     process.exit(0);
     
-  } catch (error) {
+  } catch (_error) {
     logExecution('error', 'Validation failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,

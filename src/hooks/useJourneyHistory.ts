@@ -53,7 +53,7 @@ export function useJourneyHistory(entityId: string | null): UseJourneyHistoryRes
           );
           setEvents(typedEvents);
         }
-      } catch (err) {
+      } catch (_err) {
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Failed to fetch journey history');
           setEvents([]);

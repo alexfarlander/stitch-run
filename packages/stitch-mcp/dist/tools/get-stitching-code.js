@@ -34,7 +34,7 @@ export async function sendStitchEvent(event: string, data: Record<string, any>) 
     }
     
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     console.error("Error sending Stitch event:", error);
     return false;
   }
@@ -55,7 +55,7 @@ export async function sendUptimePing(status: "healthy" | "degraded" | "down" = "
     });
     
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     console.error("Error sending uptime ping:", error);
     return false;
   }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     });
     
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (_error) {
     console.error("Form submission error:", error);
     return NextResponse.json(
       { error: "Failed to process form" },
@@ -124,7 +124,7 @@ export function ContactForm() {
         setStatus("success");
         setFormData({ email: "", name: "" });
       }
-    } catch (error) {
+    } catch (_error) {
       console.error("Submission error:", error);
       setStatus("idle");
     }
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
     });
     
     return NextResponse.json({ received: true });
-  } catch (error) {
+  } catch (_error) {
     console.error("Webhook processing error:", error);
     return NextResponse.json(
       { error: "Failed to process webhook" },
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
     });
     
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (_error) {
     await sendStitchEvent("data_processing_failed", {
       error: error instanceof Error ? error.message : "Unknown error"
     });
@@ -275,7 +275,7 @@ async function sendStitchEvent(event, data) {
     }
     
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     console.error("Error sending Stitch event:", error);
     return false;
   }
@@ -296,7 +296,7 @@ async function sendUptimePing(status = "healthy") {
     });
     
     return response.ok;
-  } catch (error) {
+  } catch (_error) {
     console.error("Error sending uptime ping:", error);
     return false;
   }
@@ -330,7 +330,7 @@ router.post("/submit-form", async (req, res) => {
     });
     
     res.json({ success: true, message: "Form submitted successfully" });
-  } catch (error) {
+  } catch (_error) {
     console.error("Form submission error:", error);
     res.status(500).json({ error: "Failed to process form" });
   }
@@ -409,7 +409,7 @@ app.listen(PORT, () => {
           document.getElementById("message").textContent = "Thank you! We'll be in touch.";
           e.target.reset();
         }
-      } catch (error) {
+      } catch (_error) {
         console.error("Submission error:", error);
       }
     });
@@ -443,7 +443,7 @@ router.post("/webhook-handler", async (req, res) => {
     });
     
     res.json({ received: true });
-  } catch (error) {
+  } catch (_error) {
     console.error("Webhook processing error:", error);
     res.status(500).json({ error: "Failed to process webhook" });
   }
@@ -471,7 +471,7 @@ router.post("/process-data", async (req, res) => {
     });
     
     res.json(result);
-  } catch (error) {
+  } catch (_error) {
     await sendStitchEvent("data_processing_failed", {
       error: error.message
     });
@@ -675,7 +675,7 @@ if __name__ == "__main__":
                     document.getElementById("message").textContent = "Thank you! We'll be in touch.";
                     e.target.reset();
                 }
-            } catch (error) {
+            } catch (_error) {
                 console.error("Submission error:", error);
             }
         });
@@ -833,7 +833,7 @@ export const getStitchingCodeTool = {
                 ]
             };
         }
-        catch (error) {
+        catch (_error) {
             // Handle validation errors with clear parameter names
             if (error instanceof z.ZodError) {
                 const errorDetails = error.errors.map(e => ({

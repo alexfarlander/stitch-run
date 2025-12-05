@@ -75,7 +75,7 @@ export const n8nAdapter: WebhookAdapter = {
    * n8n payloads may have 'event', 'type', or custom fields.
    * Falls back to 'n8n_workflow_trigger' if not found.
    */
-  getEventType: (payload: any): string => {
+  getEventType: (payload: unknown): string => {
     return payload.event || payload.type || 'n8n_workflow_trigger';
   }
 };

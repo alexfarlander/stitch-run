@@ -3,7 +3,7 @@
  * Tests: Requirements 4.1, 4.2, 4.3, 4.5, 9.6
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { constructCallbackUrl, buildWorkerPayload, fireWorkerNode } from '../worker';
 import { NodeConfig } from '@/types/stitch';
 import * as config from '@/lib/config';
@@ -104,7 +104,7 @@ describe('Worker Node Handler', () => {
     beforeEach(() => {
       // Mock global fetch
       fetchMock = vi.fn();
-      global.fetch = fetchMock as any;
+      global.fetch = fetchMock as unknown;
     });
 
     it('should mark node as running before firing webhook (Requirement 9.6)', async () => {

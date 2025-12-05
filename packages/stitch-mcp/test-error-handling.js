@@ -26,7 +26,7 @@ try {
     console.log(`  - Status: ${error.statusCode} ${error.statusText}`);
     console.log(`  - Message: ${error.message}`);
     console.log(`  - URL: ${error.url}`);
-} catch (e) {
+} catch (_e) {
     console.error('✗ Failed to create StitchAPIError:', e.message);
 }
 
@@ -41,7 +41,7 @@ try {
     console.log('✓ StitchNetworkError created successfully');
     console.log(`  - Message: ${error.message}`);
     console.log(`  - URL: ${error.url}`);
-} catch (e) {
+} catch (_e) {
     console.error('✗ Failed to create StitchNetworkError:', e.message);
 }
 

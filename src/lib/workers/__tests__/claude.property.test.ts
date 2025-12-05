@@ -2,7 +2,7 @@
  * Property-based tests for Claude worker
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+// beforeEach import removed as unused
 import * as fc from 'fast-check';
 import { ClaudeWorker } from '../claude';
 import Anthropic from '@anthropic-ai/sdk';
@@ -63,7 +63,7 @@ describe('Claude Worker - Property Tests', () => {
           });
 
           const MockAnthropicConstructor = Anthropic as unknown as Mock;
-          MockAnthropicConstructor.mockImplementation(function(this: any) {
+          MockAnthropicConstructor.mockImplementation(function(this: unknown) {
             this.messages = {
               create: mockCreate,
             };
@@ -73,7 +73,7 @@ describe('Claude Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new ClaudeWorker();
           await worker.execute(runId, nodeId, {}, { prompt });
@@ -136,7 +136,7 @@ describe('Claude Worker - Property Tests', () => {
           });
 
           const MockAnthropicConstructor = Anthropic as unknown as Mock;
-          MockAnthropicConstructor.mockImplementation(function(this: any) {
+          MockAnthropicConstructor.mockImplementation(function(this: unknown) {
             this.messages = {
               create: mockCreate,
             };
@@ -146,7 +146,7 @@ describe('Claude Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new ClaudeWorker();
           await worker.execute(runId, nodeId, {}, { prompt });

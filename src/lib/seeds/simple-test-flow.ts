@@ -24,7 +24,7 @@ import { StitchNode, StitchEdge } from '@/types/stitch';
  * Input (UX) → Claude (Worker) → Output (UX)
  */
 async function createSimpleTestFlow(canvasId: string) {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Check if workflow already exists
   const { data: existing } = await supabase
@@ -135,7 +135,7 @@ async function createSimpleTestFlow(canvasId: string) {
 export async function seedSimpleTestFlow() {
   console.log('🌱 Seeding Simple Test Flow...\n');
   
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   try {
     // Step 1: Get the default BMC canvas
@@ -176,7 +176,7 @@ export async function seedSimpleTestFlow() {
       workflowId,
     };
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Simple Test Flow seed failed:', error);
     throw error;
   }

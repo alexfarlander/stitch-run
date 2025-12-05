@@ -126,7 +126,7 @@ export interface DeleteCanvasResponse {
  * Requirements: 2.1
  */
 export interface RunWorkflowRequest {
-  input: Record<string, any>;
+  input: Record<string, unknown>;
   entityId?: string;  // Optional: entity to move through workflow
 }
 
@@ -147,7 +147,7 @@ export interface RunWorkflowResponse {
  */
 export interface NodeStateResponse {
   status: NodeStatus;
-  output?: any;
+  output?: unknown;
   error?: string;
 }
 
@@ -159,6 +159,6 @@ export interface GetStatusResponse {
   runId: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
   nodes: Record<string, NodeStateResponse>;
-  finalOutputs?: Record<string, any>;  // Outputs from terminal nodes
+  finalOutputs?: Record<string, unknown>;  // Outputs from terminal nodes
   statusUrl: string;  // HATEOAS: URL to poll for continued status updates
 }

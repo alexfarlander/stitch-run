@@ -3,7 +3,7 @@
  * Tests: Requirements 1.3, 1.4, 1.5, 9.2
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { GET, PUT, DELETE } from '../route';
 import { createFlowWithVersion, deleteFlow } from '@/lib/db/flows';
 import { NextRequest } from 'next/server';
@@ -43,7 +43,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
     for (const canvasId of testCanvasIds) {
       try {
         await deleteFlow(canvasId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -54,7 +54,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
     it('should retrieve canvas by ID (Requirement 1.3)', async () => {
       const request = new NextRequest(`http://localhost:3000/api/canvas/${testCanvasId}`);
       const response = await GET(request, { params: { id: testCanvasId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('id');
@@ -71,7 +71,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
       const request = new NextRequest(`http://localhost:3000/api/canvas/${fakeId}`);
       const response = await GET(request, { params: { id: fakeId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data).toHaveProperty('error');
@@ -81,7 +81,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
     it('should return 400 for invalid canvas ID (Requirement 9.2)', async () => {
       const request = new NextRequest('http://localhost:3000/api/canvas/invalid-id');
       const response = await GET(request, { params: { id: '' } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -111,7 +111,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
       });
 
       const response = await PUT(request, { params: { id: testCanvasId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('id');
@@ -154,7 +154,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
       });
 
       const response = await PUT(request, { params: { id: testCanvasId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.canvas.nodes).toHaveLength(2);
@@ -173,7 +173,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
       });
 
       const response = await PUT(request, { params: { id: fakeId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data).toHaveProperty('error');
@@ -188,7 +188,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
       });
 
       const response = await PUT(request, { params: { id: testCanvasId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -205,7 +205,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
       });
 
       const response = await PUT(request, { params: { id: testCanvasId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toHaveProperty('error');
@@ -217,7 +217,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
     it('should delete canvas by ID (Requirement 1.5)', async () => {
       const request = new NextRequest(`http://localhost:3000/api/canvas/${testCanvasId}`);
       const response = await DELETE(request, { params: { id: testCanvasId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('success');
@@ -238,7 +238,7 @@ describe('Canvas Management API - Individual Canvas Route', () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
       const request = new NextRequest(`http://localhost:3000/api/canvas/${fakeId}`);
       const response = await DELETE(request, { params: { id: fakeId } });
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data).toHaveProperty('error');

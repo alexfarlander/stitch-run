@@ -60,7 +60,7 @@ export function useCanvasEvents(canvasId: string) {
     const channel = supabase
       .channel(`canvas-${canvasId}`)
       .on('broadcast', { event: 'demo_event' }, (payload) => {
-        const data = payload.payload;
+        const _data = payload.payload;
         
         addEvent({
           type: 'demo_event',
@@ -85,7 +85,7 @@ function formatNodeName(nodeId: string): string {
   if (!nodeId) return 'Unknown';
   
   // Remove common prefixes
-  let name = nodeId
+  const name = nodeId
     .replace('item-', '')
     .replace('section-', '')
     .replace(/-/g, ' ');

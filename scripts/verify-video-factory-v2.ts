@@ -44,7 +44,7 @@ async function main() {
     logInfo('Running all verification checks on Video Factory V2 workflow...\n');
 
     // Get the Video Factory V2 workflow ID
-    const supabase = createServerClient();
+    const _supabase = createServerClient();
     
     // First check if any Video Factory V2 workflow exists
     const { data: workflows, error: queryError } = await supabase
@@ -115,7 +115,7 @@ async function main() {
     } else {
       process.exit(1);
     }
-  } catch (error) {
+  } catch (_error) {
     logError('Unexpected error during verification');
     console.error(error);
     process.exit(1);

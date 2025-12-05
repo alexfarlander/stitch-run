@@ -4,7 +4,7 @@
  * Validates: Requirements 5.1, 5.2
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+// beforeEach import removed as unused
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import * as versionManager from '@/lib/canvas/version-manager';
@@ -62,7 +62,7 @@ describe('POST /api/flows/[id]/run', () => {
   it('should run flow with current version when no visual graph provided', async () => {
     // Setup mocks
     vi.mocked(flowsDb.getFlow).mockResolvedValue(mockFlow);
-    vi.mocked(edgeWalker.startRun).mockResolvedValue(mockRun as any);
+    vi.mocked(edgeWalker.startRun).mockResolvedValue(mockRun as unknown);
 
     // Create request
     const request = new NextRequest('http://localhost/api/flows/flow-123/run', {
@@ -72,7 +72,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const data = await response.json();
+    const _data = await response.json();
 
     // Verify
     expect(response.status).toBe(200);
@@ -98,7 +98,7 @@ describe('POST /api/flows/[id]/run', () => {
     vi.mocked(edgeWalker.startRun).mockResolvedValue({
       ...mockRun,
       flow_version_id: 'new-version-123',
-    } as any);
+    } as unknown);
 
     // Create request with visual graph
     const request = new NextRequest('http://localhost/api/flows/flow-123/run', {
@@ -108,7 +108,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const data = await response.json();
+    const _data = await response.json();
 
     // Verify
     expect(response.status).toBe(200);
@@ -133,7 +133,7 @@ describe('POST /api/flows/[id]/run', () => {
   it('should pass entity ID and input to startRun', async () => {
     // Setup mocks
     vi.mocked(flowsDb.getFlow).mockResolvedValue(mockFlow);
-    vi.mocked(edgeWalker.startRun).mockResolvedValue(mockRun as any);
+    vi.mocked(edgeWalker.startRun).mockResolvedValue(mockRun as unknown);
 
     // Create request with entity and input
     const request = new NextRequest('http://localhost/api/flows/flow-123/run', {
@@ -168,7 +168,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const data = await response.json();
+    const _data = await response.json();
 
     // Verify
     expect(response.status).toBe(404);
@@ -190,7 +190,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const data = await response.json();
+    const _data = await response.json();
 
     // Verify
     expect(response.status).toBe(400);
@@ -212,7 +212,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const data = await response.json();
+    const _data = await response.json();
 
     // Verify
     expect(response.status).toBe(400);
@@ -235,7 +235,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const data = await response.json();
+    const _data = await response.json();
 
     // Verify
     expect(response.status).toBe(500);

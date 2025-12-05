@@ -62,7 +62,7 @@ async function testResources() {
       console.log(`  ✓ PASSED\n`);
       passed++;
       
-    } catch (error) {
+    } catch (_error) {
       console.log(`  ✗ FAILED: ${error.message}\n`);
       failed++;
     }

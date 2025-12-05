@@ -2,7 +2,7 @@
  * Property-based tests for worker utilities
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import * as fc from 'fast-check';
 import { buildCallbackUrl } from '../utils';
 

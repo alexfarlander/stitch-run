@@ -33,7 +33,7 @@ function checkEnvVar(key: string): 'connected' | 'disconnected' | 'error' {
       return 'connected';
     }
     return 'disconnected';
-  } catch (error) {
+  } catch (_error) {
     return 'error';
   }
 }

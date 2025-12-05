@@ -102,7 +102,7 @@ export async function arriveAtNode(
   });
 }
 
-async function appendJourneyEvent(entityId: string, event: any): Promise<void> {
+async function appendJourneyEvent(entityId: string, event: unknown): Promise<void> {
   const { data: entity } = await supabase
     .from('stitch_entities')
     .select('journey')

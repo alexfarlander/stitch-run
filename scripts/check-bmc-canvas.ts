@@ -5,7 +5,7 @@
 import { getAdminClient } from '../src/lib/supabase/client';
 
 async function main() {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   console.log('Checking for BMC canvas...\n');
   

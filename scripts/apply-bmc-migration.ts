@@ -22,7 +22,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function applyMigration() {
   console.log('📦 Applying BMC architecture migration...');
@@ -81,7 +81,7 @@ async function runSeed() {
     console.log(`   Edges: ${bmc.graph.edges.length}`);
     
     // Verify all 12 sections are present
-    const sectionNames = bmc.graph.nodes.map((n: any) => n.data.label).sort();
+    const sectionNames = bmc.graph.nodes.map((n: unknown) => n.data.label).sort();
     console.log(`   Sections: ${sectionNames.join(', ')}`);
     
     if (bmc.graph.nodes.length === 12 && bmc.canvas_type === 'bmc' && bmc.parent_id === null) {
@@ -90,7 +90,7 @@ async function runSeed() {
       console.log('\n⚠️  Verification warnings detected');
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Seed failed:', error);
     process.exit(1);
   }

@@ -3,7 +3,7 @@
  * Tests: Requirements 9.1, 9.2, 9.3, 9.4, 9.5, 10.3
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import * as runs from '@/lib/db/runs';
@@ -67,7 +67,7 @@ describe('Callback API Endpoint', () => {
     vi.restoreAllMocks();
   });
 
-  function createMockRequest(body: any): NextRequest {
+  function createMockRequest(body: unknown): NextRequest {
     return {
       json: async () => body,
     } as NextRequest;
@@ -81,7 +81,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: 'invalid-run', nodeId: mockNodeId }) });
 
       expect(response.status).toBe(404);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Run not found: invalid-run');
     });
 
@@ -92,7 +92,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: 'invalid-node' }) });
 
       expect(response.status).toBe(404);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Node not found in run: invalid-node');
     });
 
@@ -108,7 +108,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Invalid JSON in callback payload');
     });
 
@@ -119,7 +119,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Invalid status value: "invalid-status". Must be "completed" or "failed"');
     });
 
@@ -130,7 +130,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Missing required field: status');
     });
 
@@ -141,7 +141,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Output field must be an object when provided');
     });
 
@@ -152,7 +152,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Error field must be a string when provided');
     });
 
@@ -163,7 +163,7 @@ describe('Callback API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Callback payload must be an object');
     });
   });
@@ -206,7 +206,7 @@ describe('Callback API Endpoint', () => {
       });
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.success).toBe(true);
     });
 

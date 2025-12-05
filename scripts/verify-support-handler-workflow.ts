@@ -32,7 +32,7 @@ const PARENT_ITEM_ID = 'item-help-desk';
 async function verify() {
   console.log('🔍 Verifying Support Handler workflow...\n');
   
-  const supabase = await getClient();
+  const _supabase = await getClient();
   let hasErrors = false;
   
   try {
@@ -75,7 +75,7 @@ async function verify() {
       console.log(`✅ Linked to BMC canvas (ID: ${bmc.id})\n`);
       
       // Verify parent item node exists in BMC
-      const parentNode = bmc.graph.nodes.find((n: any) => n.id === PARENT_ITEM_ID);
+      const parentNode = bmc.graph.nodes.find((n: unknown) => n.id === PARENT_ITEM_ID);
       if (!parentNode) {
         console.error(`❌ Parent item node '${PARENT_ITEM_ID}' not found in BMC`);
         hasErrors = true;
@@ -114,7 +114,7 @@ async function verify() {
     ];
     
     for (const expected of expectedNodes) {
-      const node = nodes.find((n: any) => n.id === expected.id);
+      const node = nodes.find((n: unknown) => n.id === expected.id);
       
       if (!node) {
         console.error(`❌ Node '${expected.id}' not found`);
@@ -157,7 +157,7 @@ async function verify() {
     
     for (const expected of expectedEdges) {
       const edge = edges.find(
-        (e: any) => e.source === expected.source && e.target === expected.target
+        (e: unknown) => e.source === expected.source && e.target === expected.target
       );
       
       if (!edge) {
@@ -173,7 +173,7 @@ async function verify() {
     // Step 6: Verify specific configurations
     console.log('📋 Step 6: Verifying node configurations...');
     
-    const analyzeTicket = nodes.find((n: any) => n.id === 'analyze-ticket');
+    const analyzeTicket = nodes.find((n: unknown) => n.id === 'analyze-ticket');
     if (analyzeTicket) {
       if (!analyzeTicket.data.config.prompt) {
         console.error('❌ Analyze Ticket missing prompt');
@@ -190,7 +190,7 @@ async function verify() {
       }
     }
     
-    const aiSuggest = nodes.find((n: any) => n.id === 'ai-suggest');
+    const aiSuggest = nodes.find((n: unknown) => n.id === 'ai-suggest');
     if (aiSuggest) {
       if (!aiSuggest.data.config.prompt) {
         console.error('❌ AI Suggest missing prompt');
@@ -200,7 +200,7 @@ async function verify() {
       }
     }
     
-    const escalate = nodes.find((n: any) => n.id === 'escalate-if-needed');
+    const escalate = nodes.find((n: unknown) => n.id === 'escalate-if-needed');
     if (escalate) {
       if (!escalate.data.config.escalationRules) {
         console.error('❌ Escalate if Needed missing escalation rules');
@@ -236,7 +236,7 @@ async function verify() {
       process.exit(0);
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Verification failed:', error);
     process.exit(1);
   }

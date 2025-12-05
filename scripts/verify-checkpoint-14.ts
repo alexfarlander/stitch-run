@@ -44,7 +44,7 @@ function addResult(name: string, passed: boolean, message: string, task: string)
 
 async function checkBMCSeedData() {
   console.log('\n📊 Checking BMC Seed Data (Task 1)...');
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   try {
     const { data: bmc, error } = await supabase
@@ -61,36 +61,36 @@ async function checkBMCSeedData() {
     addResult('BMC Canvas', true, `Found: ${bmc.name}`, '1');
     
     // Check sections
-    const sections = bmc.graph.nodes.filter((n: any) => n.type === 'Section');
+    const sections = bmc.graph.nodes.filter((n: unknown) => n.type === 'Section');
     addResult('BMC Sections', sections.length === 13, `${sections.length}/13 sections`, '1');
     
     // Check item nodes
-    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
+    const itemNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section-item');
     addResult('Item Nodes', itemNodes.length > 0, `${itemNodes.length} item nodes`, '1');
     
     // Check financial nodes
-    const financialNodes = bmc.graph.nodes.filter((n: any) => 
+    const financialNodes = bmc.graph.nodes.filter((n: unknown) => 
       n.id.includes('mrr') || n.id.includes('arr') || n.id.includes('cost') || n.id.includes('ltv')
     );
     addResult('Financial Nodes', financialNodes.length >= 7, `${financialNodes.length} financial nodes`, '1');
     
     // Check journey edges
-    const journeyEdges = bmc.graph.edges.filter((e: any) => e.type === 'journey');
+    const journeyEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'journey');
     addResult('Journey Edges', journeyEdges.length > 0, `${journeyEdges.length} journey edges`, '1');
     
     // Check system edges
-    const systemEdges = bmc.graph.edges.filter((e: any) => e.type === 'system');
+    const systemEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'system');
     addResult('System Edges', systemEdges.length > 0, `${systemEdges.length} system edges`, '1');
     
     // Check system edge styling
-    const dashedEdges = systemEdges.filter((e: any) => 
+    const dashedEdges = systemEdges.filter((e: unknown) => 
       e.style?.strokeDasharray || e.data?.strokeDasharray
     );
     addResult('System Edge Styling', dashedEdges.length === systemEdges.length, 
       `${dashedEdges.length}/${systemEdges.length} have dashed styling`, '4');
     
     return true;
-  } catch (error) {
+  } catch (_error) {
     addResult('BMC Canvas', false, `Error: ${error}`, '1');
     return false;
   }
@@ -98,7 +98,7 @@ async function checkBMCSeedData() {
 
 async function checkEntitySeedData() {
   console.log('\n👻 Checking Entity Seed Data (Task 2)...');
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   try {
     const { data: entities, error } = await supabase
@@ -136,7 +136,7 @@ async function checkEntitySeedData() {
       `Ghost: ${ghostOnEdge}, Goblin: ${goblinOnEdge}`, '2');
     
     return true;
-  } catch (error) {
+  } catch (_error) {
     addResult('Entities', false, `Error: ${error}`, '2');
     return false;
   }
@@ -305,7 +305,7 @@ async function checkSystemEdgeComponent() {
   
   // Check registration in canvas components
   const bmcCanvasPath = path.join(__dirname, '../src/components/canvas/BMCCanvas.tsx');
-  const workflowCanvasPath = path.join(__dirname, '../src/components/canvas/WorkflowCanvas.tsx');
+  const _workflowCanvasPath = path.join(__dirname, '../src/components/canvas/WorkflowCanvas.tsx');
   
   let registered = false;
   if (fs.existsSync(bmcCanvasPath)) {

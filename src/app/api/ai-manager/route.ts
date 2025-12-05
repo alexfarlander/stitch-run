@@ -106,7 +106,7 @@ export async function POST(
       }
 
       // Load canvas from database
-      const flow = await getFlow(canvasId, true);
+      const _flow = await getFlow(canvasId, true);
       
       if (!flow) {
         throw new APIError(
@@ -149,7 +149,7 @@ export async function POST(
     let llmClient;
     try {
       llmClient = createLLMClient();
-    } catch (error) {
+    } catch (_error) {
       // Handle LLM client creation errors (e.g., missing API key)
       if (error instanceof LLMError) {
         throw new APIError(
@@ -165,7 +165,7 @@ export async function POST(
     let llmResponse: string;
     try {
       llmResponse = await llmClient.complete(prompt);
-    } catch (error) {
+    } catch (_error) {
       // Handle LLM-specific errors
       if (error instanceof LLMError) {
         throw new APIError(
@@ -182,7 +182,7 @@ export async function POST(
     let parsedResponse: AIManagerResponse;
     try {
       parsedResponse = parseAndValidateResponse(llmResponse);
-    } catch (error) {
+    } catch (_error) {
       // Handle parsing/validation errors
       if (error instanceof ActionExecutorError) {
         const details: string[] = [error.code];
@@ -200,15 +200,15 @@ export async function POST(
     }
 
     // Step 7: Execute action based on parsed response
-    let result: any;
+    let result: unknown;
     try {
       result = await executeAction(parsedResponse, {
-        createWorkflow: handleCreateWorkflow as any,
-        modifyWorkflow: handleModifyWorkflow as any,
-        runWorkflow: handleRunWorkflow as any,
-        getStatus: handleGetStatus as any
+        createWorkflow: handleCreateWorkflow as unknown,
+        modifyWorkflow: handleModifyWorkflow as unknown,
+        runWorkflow: handleRunWorkflow as unknown,
+        getStatus: handleGetStatus as unknown
       });
-    } catch (error) {
+    } catch (_error) {
       // Handle action execution errors
       if (error instanceof ActionExecutorError) {
         // Map error codes to HTTP status codes
@@ -234,7 +234,7 @@ export async function POST(
         }
 
         throw new APIError(
-          error.code as any,
+          error.code as unknown,
           statusCode,
           error.message,
           detailsArray
@@ -250,7 +250,7 @@ export async function POST(
       result: result
     });
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }

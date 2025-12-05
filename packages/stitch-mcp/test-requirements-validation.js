@@ -116,7 +116,7 @@ for (const req of requirements) {
             console.log(`❌ Requirement ${req.id}: ${req.desc}`);
             failed++;
         }
-    } catch (error) {
+    } catch (_error) {
         console.log(`❌ Requirement ${req.id}: ${req.desc} - Error: ${error.message}`);
         failed++;
     }

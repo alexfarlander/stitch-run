@@ -18,7 +18,7 @@ export type DatabaseJourneyEvent = {
   edge_id: string | null;
   progress: number | null;
   timestamp: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 };
 
 /**
@@ -67,7 +67,7 @@ export function isFallbackEvent(event: TypedJourneyEvent): event is FallbackJour
  * @param raw - Raw event data from database or entity.journey
  * @returns Typed journey event with source discriminator
  */
-export function normalizeJourneyEvent(raw: any): TypedJourneyEvent {
+export function normalizeJourneyEvent(raw: unknown): TypedJourneyEvent {
   // Database events have 'event_type' field
   if ('event_type' in raw && raw.event_type) {
     return {
@@ -156,7 +156,7 @@ export function getTimestamp(event: TypedJourneyEvent): string {
  * @param event - Typed journey event
  * @returns Metadata object or null
  */
-export function getMetadata(event: TypedJourneyEvent): Record<string, any> | null {
+export function getMetadata(event: TypedJourneyEvent): Record<string, unknown> | null {
   if (isDatabaseEvent(event)) {
     return event.metadata;
   }

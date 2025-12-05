@@ -43,7 +43,7 @@ const VALID_CANVAS_TYPES = ['bmc', 'workflow', 'detail'] as const;
  */
 export async function checkForeignKeys(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Get the flow
@@ -140,7 +140,7 @@ export async function checkForeignKeys(flowId: string): Promise<VerificationErro
       });
     }
     // If runs query succeeds, the foreign key is valid (enforced by database)
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'foreign_key',
       message: `Unexpected error checking foreign keys for flow ${flowId}`,
@@ -157,7 +157,7 @@ export async function checkForeignKeys(flowId: string): Promise<VerificationErro
  */
 export async function checkNodeTypes(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Get the flow
@@ -196,7 +196,7 @@ export async function checkNodeTypes(flowId: string): Promise<VerificationError[
     }
 
     // Also check canvas_type is valid
-    if (!VALID_CANVAS_TYPES.includes(flow.canvas_type as any)) {
+    if (!VALID_CANVAS_TYPES.includes(flow.canvas_type as unknown)) {
       errors.push({
         type: 'node_type',
         message: `Flow ${flowId} has invalid canvas_type: ${flow.canvas_type}`,
@@ -207,7 +207,7 @@ export async function checkNodeTypes(flowId: string): Promise<VerificationError[
         },
       });
     }
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'node_type',
       message: `Unexpected error checking node types for flow ${flowId}`,
@@ -224,7 +224,7 @@ export async function checkNodeTypes(flowId: string): Promise<VerificationError[
  */
 export async function checkEdgeReferences(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Get the flow
@@ -274,7 +274,7 @@ export async function checkEdgeReferences(flowId: string): Promise<VerificationE
         });
       }
     }
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'edge_reference',
       message: `Unexpected error checking edge references for flow ${flowId}`,
@@ -292,7 +292,7 @@ export async function checkEdgeReferences(flowId: string): Promise<VerificationE
  */
 export async function checkParentNodes(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Get the flow
@@ -344,7 +344,7 @@ export async function checkParentNodes(flowId: string): Promise<VerificationErro
         });
       }
     }
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'parent_node',
       message: `Unexpected error checking parent nodes for flow ${flowId}`,
@@ -363,7 +363,7 @@ export async function checkParentNodes(flowId: string): Promise<VerificationErro
  */
 export async function checkTopology(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Get the flow
@@ -427,7 +427,7 @@ export async function checkTopology(flowId: string): Promise<VerificationError[]
         }
       }
     }
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'topology',
       message: `Unexpected error checking topology for flow ${flowId}`,
@@ -444,7 +444,7 @@ export async function checkTopology(flowId: string): Promise<VerificationError[]
  */
 export async function checkRealtimeConfig(): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Query the realtime.subscription table to check if stitch_runs is enabled
@@ -454,7 +454,7 @@ export async function checkRealtimeConfig(): Promise<VerificationError[]> {
     // Try to query the publication to see if table is included
     let publications = null;
     try {
-      const result = await supabase.rpc('get_realtime_publications' as any);
+      const result = await supabase.rpc('get_realtime_publications' as unknown);
       publications = result.data;
     } catch (rpcError) {
       // RPC doesn't exist, continue with alternative approach
@@ -463,7 +463,7 @@ export async function checkRealtimeConfig(): Promise<VerificationError[]> {
     // If RPC doesn't exist, try direct query to pg_publication_tables
     if (!publications) {
       const { data: pubTables, error: tablesError } = await supabase
-        .from('pg_publication_tables' as any)
+        .from('pg_publication_tables' as unknown)
         .select('*')
         .eq('pubname', 'supabase_realtime')
         .eq('schemaname', 'public')
@@ -513,7 +513,7 @@ export async function checkRealtimeConfig(): Promise<VerificationError[]> {
         });
       }
     }
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'realtime',
       message: 'Unexpected error checking Realtime configuration',
@@ -532,7 +532,7 @@ export async function checkRealtimeConfig(): Promise<VerificationError[]> {
  */
 export async function checkJourneyEdges(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Get the flow
@@ -640,7 +640,7 @@ export async function checkJourneyEdges(flowId: string): Promise<VerificationErr
         },
       });
     }
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'journey_edge',
       message: `Unexpected error checking journey edges for flow ${flowId}`,
@@ -657,7 +657,7 @@ export async function checkJourneyEdges(flowId: string): Promise<VerificationErr
  */
 export async function checkRLSPolicies(): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   try {
     // Tables that should have RLS policies allowing SELECT
@@ -675,7 +675,7 @@ export async function checkRLSPolicies(): Promise<VerificationError[]> {
         // But we can check if RLS is enabled and policies exist
         
         const { data: policies, error: policiesError } = await supabase
-          .from('pg_policies' as any)
+          .from('pg_policies' as unknown)
           .select('*')
           .eq('schemaname', 'public')
           .eq('tablename', tableName)
@@ -684,7 +684,7 @@ export async function checkRLSPolicies(): Promise<VerificationError[]> {
         if (policiesError) {
           // Can't query pg_policies, try functional test
           const { error: selectError } = await supabase
-            .from(tableName as any)
+            .from(tableName as unknown)
             .select('id')
             .limit(1);
 
@@ -703,7 +703,7 @@ export async function checkRLSPolicies(): Promise<VerificationError[]> {
           // No SELECT policies found - this might be intentional if RLS is disabled
           // Check if RLS is enabled on the table
           const { data: tableInfo, error: tableError } = await supabase
-            .from('pg_tables' as any)
+            .from('pg_tables' as unknown)
             .select('*')
             .eq('schemaname', 'public')
             .eq('tablename', tableName)
@@ -733,7 +733,7 @@ export async function checkRLSPolicies(): Promise<VerificationError[]> {
         });
       }
     }
-  } catch (error) {
+  } catch (_error) {
     errors.push({
       type: 'rls',
       message: 'Unexpected error checking RLS policies',

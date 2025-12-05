@@ -44,7 +44,7 @@ async function main() {
     logInfo('Running all verification checks on BMC canvas...\n');
 
     // Get the BMC canvas ID
-    const supabase = createServerClient();
+    const _supabase = createServerClient();
     
     // First check if any BMC exists
     const { data: bmcs, error: queryError } = await supabase
@@ -120,7 +120,7 @@ async function main() {
     } else {
       process.exit(1);
     }
-  } catch (error) {
+  } catch (_error) {
     logError('Unexpected error during verification');
     console.error(error);
     process.exit(1);

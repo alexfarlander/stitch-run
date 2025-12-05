@@ -35,7 +35,7 @@ async function main() {
   }
   
   // Create admin client
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const _supabase = createClient(supabaseUrl, serviceRoleKey);
   
   try {
     // Import and run seed function
@@ -43,7 +43,7 @@ async function main() {
     await seedWireframeWorkflow();
     console.log('\n✅ Script completed successfully!');
     process.exit(0);
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Script failed:', error);
     process.exit(1);
   }

@@ -15,7 +15,7 @@ interface DemoSession {
 }
 
 // Global demo state (server-side only)
-let demoSession: DemoSession = {
+const demoSession: DemoSession = {
   isRunning: false,
   sessionId: null,
   loopCount: 0,

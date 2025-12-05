@@ -38,7 +38,7 @@ function formatCurrency(value: number, currency: string = 'USD'): string {
 async function verifyFinancialDisplay() {
   console.log('🔍 Verifying Financial Value Display...\n');
   
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Step 1: Fetch BMC canvas
   console.log('📋 Step 1: Fetching BMC canvas...');
@@ -76,10 +76,10 @@ async function verifyFinancialDisplay() {
   let allValid = true;
   
   for (const node of financialNodes) {
-    const data = node.data as FinancialNodeData;
+    const _data = node.data as FinancialNodeData;
     const hasValue = data.value !== undefined;
-    const hasCurrency = data.currency !== undefined;
-    const hasFormat = data.format !== undefined;
+    const _hasCurrency = data.currency !== undefined;
+    const _hasFormat = data.format !== undefined;
     
     console.log(`\n  Node: ${node.id}`);
     console.log(`    Label: ${data.label}`);

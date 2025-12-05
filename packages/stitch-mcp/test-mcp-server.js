@@ -131,7 +131,7 @@ async function testMCPServer() {
               resolve(results);
             }
           }
-        } catch (err) {
+        } catch (_err) {
           // Ignore parse errors for non-JSON lines
         }
       }

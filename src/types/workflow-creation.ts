@@ -46,7 +46,7 @@ export interface NodeConfig {
    * Worker-specific configuration
    * Examples: { model: "...", endpoint: "...", temperature: 0.7 }
    */
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   
   /**
    * Entity movement configuration for worker nodes

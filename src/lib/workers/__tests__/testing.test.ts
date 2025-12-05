@@ -3,7 +3,7 @@
  * Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import {
   testWorker,
   createMockWorker,

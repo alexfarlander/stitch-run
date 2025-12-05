@@ -3,7 +3,7 @@
  * Tests: Requirements 1.3, 1.4
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { createFlow, createFlowWithVersion, getFlow, updateFlow, deleteFlow } from '../flows';
 import { StitchNode, StitchEdge } from '@/types/stitch';
 import { VisualGraph } from '@/types/canvas-schema';
@@ -16,7 +16,7 @@ describe('Flow Database Operations', () => {
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -47,7 +47,7 @@ describe('Flow Database Operations', () => {
         },
       ];
 
-      const flow = await createFlow('Test Flow', { nodes, edges });
+      const _flow = await createFlow('Test Flow', { nodes, edges });
       testFlowId = flow.id;
 
       // Validate flow structure (Requirements 1.3, 1.4)
@@ -85,7 +85,7 @@ describe('Flow Database Operations', () => {
         { id: 'collector', type: 'Collector', position: { x: 300, y: 0 }, data: {} },
       ];
 
-      const flow = await createFlow('All Node Types', { nodes, edges: [] });
+      const _flow = await createFlow('All Node Types', { nodes, edges: [] });
       testFlowId = flow.id;
 
       expect(flow.graph.nodes).toHaveLength(4);
@@ -159,7 +159,7 @@ describe('Flow Database Operations', () => {
 
   describe('createFlow with canvas_type and parent_id', () => {
     it('should create a flow with canvas_type', async () => {
-      const flow = await createFlow(
+      const _flow = await createFlow(
         'BMC Canvas',
         { nodes: [], edges: [] },
         'bmc'

@@ -74,11 +74,11 @@ export const typeformAdapter: WebhookAdapter = {
     const answers = payload.form_response?.answers || [];
     
     // Find email field (type === 'email')
-    const emailAnswer = answers.find((a: any) => a.type === 'email');
+    const emailAnswer = answers.find((a: unknown) => a.type === 'email');
     const email = emailAnswer?.email;
     
     // Find name field (type === 'text' and field ref/title contains 'name')
-    const nameAnswer = answers.find((a: any) => 
+    const nameAnswer = answers.find((a: unknown) => 
       a.type === 'text' && (
         a.field?.ref?.toLowerCase().includes('name') ||
         a.field?.title?.toLowerCase().includes('name')
@@ -104,7 +104,7 @@ export const typeformAdapter: WebhookAdapter = {
    * Typeform events have an 'event_type' field at the root level
    * (typically 'form_response')
    */
-  getEventType: (payload: any): string => {
+  getEventType: (payload: unknown): string => {
     return payload.event_type || 'form_response';
   }
 };

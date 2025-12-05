@@ -53,7 +53,7 @@ export async function POST(
 
     // 1. Load canvas by ID
     const { getFlow } = await import('@/lib/db/flows');
-    const flow = await getFlow(id, true);
+    const _flow = await getFlow(id, true);
     
     if (!flow) {
       throw new APIError(
@@ -88,7 +88,7 @@ export async function POST(
     
     // Auto-version: only creates new version if canvas has changed since last version
     // This prevents duplicate versions when running the same canvas multiple times
-    const versionId = await autoVersionOnRun(id, visualGraph);
+    const _versionId = await autoVersionOnRun(id, visualGraph);
 
     // 4. Start workflow execution (creates run record and fires entry nodes)
     const { startRun } = await import('@/lib/engine/edge-walker');
@@ -117,7 +117,7 @@ export async function POST(
 
     return NextResponse.json(response, { status: 200 });
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }

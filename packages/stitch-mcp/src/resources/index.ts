@@ -22,7 +22,7 @@ export function registerResources(server: Server) {
                     mimeType: resource.mimeType,
                 })),
             };
-        } catch (error) {
+        } catch (_error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             throw new Error(`Failed to list resources: ${errorMessage}`);
         }
@@ -48,7 +48,7 @@ export function registerResources(server: Server) {
             
             // Call the resource's read method
             return await resource.read();
-        } catch (error) {
+        } catch (_error) {
             // If it's already our formatted error, re-throw it
             if (error instanceof Error && error.message.includes('Resource not found:')) {
                 throw error;

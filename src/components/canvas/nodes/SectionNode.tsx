@@ -25,7 +25,7 @@ interface SectionNodeData {
   child_canvas_id?: string;
 }
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, unknown> = {
   Marketing: Megaphone,
   Sales: ShoppingCart,
   Data: Database,

@@ -27,7 +27,7 @@ interface VideoGenerationAdapter {
    * Initiates video generation from an image
    * @returns Job ID for polling
    */
-  generateVideo(imageUrl: string, motionPrompt: string, config: any): Promise<string>;
+  generateVideo(imageUrl: string, motionPrompt: string, config: unknown): Promise<string>;
   
   /**
    * Polls for job completion
@@ -40,7 +40,7 @@ interface VideoGenerationAdapter {
  * Mock adapter for testing and development
  */
 class MockVideoAdapter implements VideoGenerationAdapter {
-  async generateVideo(imageUrl: string, motionPrompt: string, config: any): Promise<string> {
+  async generateVideo(imageUrl: string, motionPrompt: string, config: unknown): Promise<string> {
     logWorker('info', 'Mock video generation initiated', { imageUrl, motionPrompt, config });
     // Return a mock job ID
     return `mock-job-${Date.now()}`;
@@ -70,7 +70,7 @@ class RunwayAdapter implements VideoGenerationAdapter {
     this.apiKey = apiKey;
   }
 
-  async generateVideo(imageUrl: string, motionPrompt: string, config: any): Promise<string> {
+  async generateVideo(imageUrl: string, motionPrompt: string, config: unknown): Promise<string> {
     const response = await fetch(`${this.baseUrl}/image-to-video`, {
       method: 'POST',
       headers: {
@@ -89,7 +89,7 @@ class RunwayAdapter implements VideoGenerationAdapter {
       throw new Error(`Runway API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     if (!data.id) {
       throw new Error('Invalid response from Runway API: missing job ID');
@@ -110,7 +110,7 @@ class RunwayAdapter implements VideoGenerationAdapter {
       throw new Error(`Runway API polling error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     // Map Runway status to our status
     let status: VideoGenerationJob['status'];
@@ -150,7 +150,7 @@ class PikaAdapter implements VideoGenerationAdapter {
     this.apiKey = apiKey;
   }
 
-  async generateVideo(imageUrl: string, motionPrompt: string, config: any): Promise<string> {
+  async generateVideo(imageUrl: string, motionPrompt: string, config: unknown): Promise<string> {
     const response = await fetch(`${this.baseUrl}/generate`, {
       method: 'POST',
       headers: {
@@ -169,7 +169,7 @@ class PikaAdapter implements VideoGenerationAdapter {
       throw new Error(`Pika API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     if (!data.job_id) {
       throw new Error('Invalid response from Pika API: missing job ID');
@@ -190,7 +190,7 @@ class PikaAdapter implements VideoGenerationAdapter {
       throw new Error(`Pika API polling error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     // Map Pika status to our status
     let status: VideoGenerationJob['status'];
@@ -230,7 +230,7 @@ class KlingAdapter implements VideoGenerationAdapter {
     this.apiKey = apiKey;
   }
 
-  async generateVideo(imageUrl: string, motionPrompt: string, config: any): Promise<string> {
+  async generateVideo(imageUrl: string, motionPrompt: string, config: unknown): Promise<string> {
     const response = await fetch(`${this.baseUrl}/videos/image2video`, {
       method: 'POST',
       headers: {
@@ -249,7 +249,7 @@ class KlingAdapter implements VideoGenerationAdapter {
       throw new Error(`Kling API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     if (!data.data?.task_id) {
       throw new Error('Invalid response from Kling API: missing task ID');
@@ -270,7 +270,7 @@ class KlingAdapter implements VideoGenerationAdapter {
       throw new Error(`Kling API polling error: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const _data = await response.json();
     
     // Map Kling status to our status
     let status: VideoGenerationJob['status'];
@@ -394,7 +394,7 @@ export class ImageToVideoWorker implements IWorker {
     jobId: string,
     maxDuration: number = 5 * 60 * 1000
   ): Promise<VideoGenerationJob> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     let pollInterval = 5000; // Start with 5 seconds
     const maxPollInterval = 30000; // Max 30 seconds between polls
 
@@ -428,9 +428,9 @@ export class ImageToVideoWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: any
+    input: unknown
   ): Promise<void> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     logWorker('info', 'Image-to-Video worker execution started', {
       worker: 'image-to-video',
@@ -547,7 +547,7 @@ export class ImageToVideoWorker implements IWorker {
         },
       });
 
-    } catch (error) {
+    } catch (_error) {
       const totalDuration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

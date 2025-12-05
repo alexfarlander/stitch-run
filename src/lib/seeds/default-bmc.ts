@@ -178,7 +178,7 @@ const BMC_ITEM_EDGES = [
  * 
  * @returns Graph object with nodes and edges arrays
  */
-export function generateBMCGraph(): { nodes: any[]; edges: StitchEdge[] } {
+export function generateBMCGraph(): { nodes: unknown[]; edges: StitchEdge[] } {
   // Section nodes (background containers)
   const sectionNodes = BMC_SECTIONS.map((section) => ({
     id: slugifySection(section.name),
@@ -199,7 +199,7 @@ export function generateBMCGraph(): { nodes: any[]; edges: StitchEdge[] } {
   // Item nodes (interactive workers/assets inside sections)
   const itemNodes = BMC_ITEMS.map((item) => {
     // Use financial-item type for nodes with value property
-    const isFinancial = (item as any).value !== undefined;
+    const isFinancial = (item as unknown).value !== undefined;
     
     return {
       id: item.id,
@@ -210,9 +210,9 @@ export function generateBMCGraph(): { nodes: any[]; edges: StitchEdge[] } {
         icon: item.icon,
         status: 'idle',
         itemType: item.type,
-        value: (item as any).value, // Financial nodes have a value property
-        currency: (item as any).value !== undefined ? 'USD' : undefined,
-        format: (item as any).value !== undefined ? 'currency' : undefined,
+        value: (item as unknown).value, // Financial nodes have a value property
+        currency: (item as unknown).value !== undefined ? 'USD' : undefined,
+        format: (item as unknown).value !== undefined ? 'currency' : undefined,
       },
       parentId: slugifySection(item.section),
       extent: 'parent' as const,

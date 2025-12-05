@@ -8,12 +8,12 @@ import { generateTrendData, generateForecast } from '../calculations';
 describe('Demo Data Generation', () => {
   describe('generateTrendData', () => {
     it('should generate the correct number of data points', () => {
-      const data = generateTrendData(1000, 6, 0.10);
+      const _data = generateTrendData(1000, 6, 0.10);
       expect(data).toHaveLength(6);
     });
 
     it('should generate data points with period and value', () => {
-      const data = generateTrendData(1000, 6, 0.10);
+      const _data = generateTrendData(1000, 6, 0.10);
       
       data.forEach(point => {
         expect(point).toHaveProperty('period');
@@ -24,7 +24,7 @@ describe('Demo Data Generation', () => {
     });
 
     it('should generate non-negative values', () => {
-      const data = generateTrendData(1000, 12, 0.10);
+      const _data = generateTrendData(1000, 12, 0.10);
       
       data.forEach(point => {
         expect(point.value).toBeGreaterThanOrEqual(0);
@@ -32,7 +32,7 @@ describe('Demo Data Generation', () => {
     });
 
     it('should show growth with positive growth rate', () => {
-      const data = generateTrendData(1000, 12, 0.10);
+      const _data = generateTrendData(1000, 12, 0.10);
       
       // First value should be around base value (with some randomness)
       expect(data[0].value).toBeGreaterThan(800);
@@ -48,7 +48,7 @@ describe('Demo Data Generation', () => {
     });
 
     it('should handle zero growth rate', () => {
-      const data = generateTrendData(1000, 6, 0);
+      const _data = generateTrendData(1000, 6, 0);
       
       // Values should stay relatively stable (within randomness range)
       data.forEach(point => {
@@ -58,7 +58,7 @@ describe('Demo Data Generation', () => {
     });
 
     it('should use month names for periods', () => {
-      const data = generateTrendData(1000, 12, 0.10);
+      const _data = generateTrendData(1000, 12, 0.10);
       const validMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
       data.forEach(point => {

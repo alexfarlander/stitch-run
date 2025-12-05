@@ -40,7 +40,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
  * Seeds the 13 Halloween-themed entities for the Clockwork Canvas
@@ -163,7 +163,7 @@ async function main() {
       try {
         await workflow.seed();
         console.log(`   ✅ ${workflow.name} workflow ready`);
-      } catch (error) {
+      } catch (_error) {
         console.error(`   ❌ Failed to seed ${workflow.name}:`, error);
         throw error;
       }
@@ -185,7 +185,7 @@ async function main() {
       try {
         await workflow.seed();
         console.log(`   ✅ ${workflow.name} workflow ready`);
-      } catch (error) {
+      } catch (_error) {
         console.error(`   ❌ Failed to seed ${workflow.name}:`, error);
         throw error;
       }
@@ -238,7 +238,7 @@ async function main() {
       
       if (!itemNodeId) continue;
       
-      const nodeIndex = graph.nodes.findIndex((n: any) => n.id === itemNodeId);
+      const nodeIndex = graph.nodes.findIndex((n: unknown) => n.id === itemNodeId);
       
       if (nodeIndex === -1) continue;
       
@@ -309,10 +309,10 @@ async function main() {
     }
     
     // Count node types
-    const sectionNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section');
-    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
-    const journeyEdges = bmc.graph.edges.filter((e: any) => e.type === 'journey');
-    const systemEdges = bmc.graph.edges.filter((e: any) => e.type === 'system');
+    const sectionNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section');
+    const itemNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section-item');
+    const journeyEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'journey');
+    const systemEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'system');
     
     // Count entity positions
     const entitiesOnNodes = allEntities?.filter(e => e.current_node_id) || [];
@@ -329,7 +329,7 @@ async function main() {
     
     console.log('   🔧 Drill-Down Workflows:');
     console.log(`      - Total Workflows: ${verifiedWorkflows?.length || 0}`);
-    verifiedWorkflows?.forEach((wf: any) => {
+    verifiedWorkflows?.forEach((wf: unknown) => {
       const nodeCount = wf.graph?.nodes?.length || 0;
       console.log(`      - ${wf.name}: ${nodeCount} nodes`);
     });
@@ -354,7 +354,7 @@ async function main() {
     
     // Show sample entities
     console.log('   🦇 Sample Entities:');
-    allEntities?.slice(0, 5).forEach((entity: any) => {
+    allEntities?.slice(0, 5).forEach((entity: unknown) => {
       const position = entity.current_node_id 
         ? `at node ${entity.current_node_id}`
         : entity.current_edge_id
@@ -411,7 +411,7 @@ async function main() {
       process.exit(1);
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');

@@ -36,7 +36,7 @@ export function validateMCPAuth(request: Request): boolean {
  * @returns Wrapped handler that validates authentication before executing
  * 
  * @example
- * export const POST = requireMCPAuth(async (request: Request, context: any) => {
+ * export const POST = requireMCPAuth(async (request: Request, context: unknown) => {
  *   // Your protected handler logic here
  * });
  */

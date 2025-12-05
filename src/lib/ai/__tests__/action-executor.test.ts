@@ -312,7 +312,7 @@ describe('AI Manager Action Executor', () => {
               type: 'worker',
               position: { x: 0, y: 0 },
               data: { label: 'Test' },
-            } as any,
+            } as unknown,
           ],
           edges: [],
         },
@@ -334,7 +334,7 @@ describe('AI Manager Action Executor', () => {
               // Missing type
               position: { x: 0, y: 0 },
               data: { label: 'Test' },
-            } as any,
+            } as unknown,
           ],
           edges: [],
         },
@@ -356,7 +356,7 @@ describe('AI Manager Action Executor', () => {
               type: 'worker',
               position: { x: 0, y: 0 },
               // Missing data
-            } as any,
+            } as unknown,
           ],
           edges: [],
         },
@@ -380,7 +380,7 @@ describe('AI Manager Action Executor', () => {
               data: {
                 // Missing label
               },
-            } as any,
+            } as unknown,
           ],
           edges: [],
         },
@@ -936,7 +936,7 @@ describe('AI Manager Action Executor', () => {
         const { validateResponseFormat } = await import('../action-executor');
         
         // Create a circular reference (not JSON-serializable)
-        const response: any = { canvasId: 'test', canvas: { nodes: [], edges: [] } };
+        const response: unknown = { canvasId: 'test', canvas: { nodes: [], edges: [] } };
         response.circular = response;
         
         expect(() => validateResponseFormat('CREATE_WORKFLOW', response)).toThrow(ActionExecutorError);
@@ -981,7 +981,7 @@ describe('AI Manager Action Executor', () => {
         // Handler returns invalid response (missing canvas)
         await expect(
           executeAction(response, {
-            createWorkflow: async () => ({ canvasId: 'test' } as any),
+            createWorkflow: async () => ({ canvasId: 'test' } as unknown),
             modifyWorkflow: async () => ({ success: false }),
             runWorkflow: async () => ({ success: false }),
             getStatus: async () => ({ success: false }),
@@ -1003,7 +1003,7 @@ describe('AI Manager Action Executor', () => {
           executeAction(response, {
             createWorkflow: async () => ({ success: false }),
             modifyWorkflow: async () => ({ success: false }),
-            runWorkflow: async () => ({ status: 'running' } as any),
+            runWorkflow: async () => ({ status: 'running' } as unknown),
             getStatus: async () => ({ success: false }),
           })
         ).rejects.toThrow(ActionExecutorError);

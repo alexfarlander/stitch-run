@@ -8,7 +8,7 @@
 import { getAdminClient } from './client';
 
 interface BroadcastPayload {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -25,7 +25,7 @@ export async function broadcastToCanvas(
   event: string,
   payload: BroadcastPayload
 ): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   const channelName = `canvas-${canvasId}`;
   
   try {
@@ -64,7 +64,7 @@ export async function broadcastToCanvas(
         reject(new Error('Broadcast timeout'));
       }, 5000);
     });
-  } catch (error) {
+  } catch (_error) {
     console.warn(`[Broadcast] Failed to broadcast ${event} to ${channelName}:`, error);
   }
 }

@@ -28,7 +28,7 @@ import { resetFinancialMetrics } from '@/lib/metrics/financial-updates';
  */
 export async function POST() {
   try {
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     
     console.log('Resetting Clockwork Canvas demo to blank state...');
     
@@ -86,7 +86,7 @@ export async function POST() {
       financial_metrics_reset: true,
     });
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to reset demo:', error);
     return NextResponse.json(
       { 

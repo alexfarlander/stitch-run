@@ -23,7 +23,7 @@ export async function triggerSystemEdges(
   entityId: string,
   canvasId: string
 ): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   try {
     // Find the BMC canvas containing this node
@@ -54,7 +54,7 @@ export async function triggerSystemEdges(
     await Promise.all(
       systemEdges.map((edge: StitchEdge) => executeSystemEdge(edge, entityId, canvasId))
     );
-  } catch (error) {
+  } catch (_error) {
     console.error('Error triggering system edges:', error);
     // Don't throw - system edge failures shouldn't block entity movement
   }
@@ -75,7 +75,7 @@ async function executeSystemEdge(
   entityId: string,
   canvasId: string
 ): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   try {
     // Broadcast 'edge_fired' event for pulse animation (Requirement 4.3)
@@ -113,7 +113,7 @@ async function executeSystemEdge(
       default:
         console.warn(`Unknown system action: ${systemAction}`);
     }
-  } catch (error) {
+  } catch (_error) {
     console.error(`Failed to execute system edge ${edge.id}:`, error);
     // Don't throw - individual system edge failures shouldn't block others
   }
@@ -128,7 +128,7 @@ async function executeSystemEdge(
  * @param edge - The system edge
  */
 async function executeCRMSync(entityId: string, edge: StitchEdge): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   // Get entity data
   const { data: entity } = await supabase
@@ -162,7 +162,7 @@ async function executeCRMSync(entityId: string, edge: StitchEdge): Promise<void>
  * @param edge - The system edge
  */
 async function executeAnalyticsUpdate(entityId: string, edge: StitchEdge): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   // Get entity data for context
   const { data: entity } = await supabase
@@ -190,7 +190,7 @@ async function executeAnalyticsUpdate(entityId: string, edge: StitchEdge): Promi
  * @param edge - The system edge
  */
 async function executeSlackNotify(entityId: string, edge: StitchEdge): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   // Get entity data
   const { data: entity } = await supabase
@@ -227,7 +227,7 @@ async function executeSlackNotify(entityId: string, edge: StitchEdge): Promise<v
  * @param edge - The system edge
  */
 async function executeStripeSync(entityId: string, edge: StitchEdge): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   // Get entity data
   const { data: entity } = await supabase

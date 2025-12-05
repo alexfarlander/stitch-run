@@ -4,7 +4,7 @@
  * Tests the POST /api/ai-manager endpoint with various scenarios
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
 
@@ -29,7 +29,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Invalid JSON');
@@ -43,7 +43,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Missing required fields');
@@ -59,7 +59,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('non-empty string');
@@ -73,7 +73,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('non-empty string');
@@ -90,7 +90,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('canvasId must be a string');
@@ -112,7 +112,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.error).toContain('Canvas not found');
@@ -128,7 +128,7 @@ describe('POST /api/ai-manager', () => {
         current_version_id: 'version-1',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      } as any);
+      } as unknown);
 
       vi.mocked(getVersion).mockResolvedValue(null);
 
@@ -142,7 +142,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('no visual graph data');
@@ -173,7 +173,7 @@ describe('POST /api/ai-manager', () => {
         canvas: { nodes: [], edges: [] }
       };
       
-      vi.mocked(createLLMClient).mockReturnValue(mockClient as any);
+      vi.mocked(createLLMClient).mockReturnValue(mockClient as unknown);
       vi.mocked(buildAIManagerContext).mockReturnValue({
         workers: [],
         request: 'Create a workflow'
@@ -208,7 +208,7 @@ describe('POST /api/ai-manager', () => {
         complete: vi.fn().mockResolvedValue('invalid response')
       };
       
-      vi.mocked(createLLMClient).mockReturnValue(mockClient as any);
+      vi.mocked(createLLMClient).mockReturnValue(mockClient as unknown);
       vi.mocked(buildAIManagerContext).mockReturnValue({
         workers: [],
         request: 'Create a workflow'
@@ -227,7 +227,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Failed to parse LLM response');
@@ -258,7 +258,7 @@ describe('POST /api/ai-manager', () => {
         canvas: { nodes: [], edges: [] }
       };
       
-      vi.mocked(createLLMClient).mockReturnValue(mockClient as any);
+      vi.mocked(createLLMClient).mockReturnValue(mockClient as unknown);
       vi.mocked(buildAIManagerContext).mockReturnValue({
         workers: [],
         request: 'Create a workflow'
@@ -276,7 +276,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.action).toBe('CREATE_WORKFLOW');
@@ -306,7 +306,7 @@ describe('POST /api/ai-manager', () => {
         canvas: { nodes: [], edges: [] }
       };
       
-      vi.mocked(createLLMClient).mockReturnValue(mockClient as any);
+      vi.mocked(createLLMClient).mockReturnValue(mockClient as unknown);
       vi.mocked(buildAIManagerContext).mockReturnValue({
         workers: [],
         request: 'Create a workflow'
@@ -383,7 +383,7 @@ describe('POST /api/ai-manager', () => {
         canvas: mockResponse.payload.canvas
       };
       
-      vi.mocked(createLLMClient).mockReturnValue(mockClient as any);
+      vi.mocked(createLLMClient).mockReturnValue(mockClient as unknown);
       vi.mocked(buildAIManagerContext).mockReturnValue({
         workers: [],
         request: 'Create a video generation workflow'
@@ -401,7 +401,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.action).toBe('CREATE_WORKFLOW');
@@ -430,13 +430,13 @@ describe('POST /api/ai-manager', () => {
         current_version_id: 'version-1',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      } as any);
+      } as unknown);
 
       vi.mocked(getVersion).mockResolvedValue({
         id: 'version-1',
         flow_id: 'canvas-1',
         visual_graph: existingCanvas,
-        execution_graph: {} as any,
+        execution_graph: {} as unknown,
         version_number: 1,
         created_at: new Date().toISOString(),
       });
@@ -482,7 +482,7 @@ describe('POST /api/ai-manager', () => {
         canvas: mockResponse.payload.canvas
       };
       
-      vi.mocked(createLLMClient).mockReturnValue(mockClient as any);
+      vi.mocked(createLLMClient).mockReturnValue(mockClient as unknown);
       vi.mocked(buildAIManagerContext).mockReturnValue({
         workers: [],
         currentCanvas: existingCanvas,
@@ -502,7 +502,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.action).toBe('MODIFY_WORKFLOW');

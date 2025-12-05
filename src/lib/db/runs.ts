@@ -24,7 +24,7 @@ export async function createRun(
     trigger?: TriggerMetadata;
   }
 ): Promise<StitchRun> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   let executionGraph: ExecutionGraph;
   let versionId: string;
@@ -39,7 +39,7 @@ export async function createRun(
     executionGraph = version.execution_graph;
   } else {
     // Otherwise, get the current version from the flow
-    const flow = await getFlow(flowId);
+    const _flow = await getFlow(flowId);
     if (!flow) {
       throw new Error(`Flow not found: ${flowId}`);
     }
@@ -65,7 +65,7 @@ export async function createRun(
   }
 
   // Build insert payload with optional fields
-  const insertPayload: any = {
+  const insertPayload: unknown = {
     flow_id: flowId,
     flow_version_id: versionId,
     node_states: nodeStates,
@@ -116,7 +116,7 @@ export async function createRunAdmin(
     trigger?: TriggerMetadata;
   }
 ): Promise<StitchRun> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   let executionGraph: ExecutionGraph;
   let versionId: string;
@@ -131,7 +131,7 @@ export async function createRunAdmin(
     executionGraph = version.execution_graph;
   } else {
     // Otherwise, get the current version from the flow
-    const flow = await getFlowAdmin(flowId);
+    const _flow = await getFlowAdmin(flowId);
     if (!flow) {
       throw new Error(`Flow not found: ${flowId}`);
     }
@@ -157,7 +157,7 @@ export async function createRunAdmin(
   }
 
   // Build insert payload with optional fields
-  const insertPayload: any = {
+  const insertPayload: unknown = {
     flow_id: flowId,
     flow_version_id: versionId,
     node_states: nodeStates,
@@ -197,7 +197,7 @@ export async function createRunAdmin(
  * Get a run by ID
  */
 export async function getRun(runId: string): Promise<StitchRun | null> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_runs')
@@ -221,7 +221,7 @@ export async function getRun(runId: string): Promise<StitchRun | null> {
  * Use this in webhook endpoints where there are no cookies/session
  */
 export async function getRunAdmin(runId: string): Promise<StitchRun | null> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_runs')
@@ -244,7 +244,7 @@ export async function getRunAdmin(runId: string): Promise<StitchRun | null> {
  * Get all runs for a flow
  */
 export async function getRunsForFlow(flowId: string): Promise<StitchRun[]> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_runs')
@@ -272,7 +272,7 @@ export async function updateNodeState(
   state: NodeState
 ): Promise<StitchRun> {
   // Use Admin Client to bypass RLS and Auth issues for webhooks
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   // Get current run state to validate transition
   const currentRun = await getRunAdmin(runId);
@@ -286,7 +286,7 @@ export async function updateNodeState(
     const { validateTransition } = await import('../engine/status-transitions');
     try {
       validateTransition(currentNodeState.status, state.status);
-    } catch (error) {
+    } catch (_error) {
       // Re-throw with context about which node failed
       if (error instanceof Error) {
         throw new Error(`Node ${nodeId}: ${error.message}`);
@@ -334,7 +334,7 @@ export async function updateNodeStates(
   updates: Record<string, NodeState>
 ): Promise<StitchRun> {
   // Use Admin Client for consistent permissions
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   // Read current run state
   const run = await getRunAdmin(runId);
@@ -349,7 +349,7 @@ export async function updateNodeStates(
     if (currentNodeState) {
       try {
         validateTransition(currentNodeState.status, newState.status);
-      } catch (error) {
+      } catch (_error) {
         // Re-throw with context about which node failed
         if (error instanceof Error) {
           throw new Error(`Node ${nodeId}: ${error.message}`);
@@ -386,7 +386,7 @@ export async function updateNodeStates(
  * Delete a run
  */
 export async function deleteRun(runId: string): Promise<void> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   const { error } = await supabase
     .from('stitch_runs')

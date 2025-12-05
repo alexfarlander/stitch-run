@@ -75,7 +75,7 @@ export async function GET(
     const nodeStates = run.node_states;
 
     // 3. Aggregate node outputs for completed nodes
-    const nodes: Record<string, { status: NodeStatus; output?: any; error?: string }> = {};
+    const nodes: Record<string, { status: NodeStatus; output?: unknown; error?: string }> = {};
     
     for (const [nodeId, state] of Object.entries(nodeStates)) {
       nodes[nodeId] = {
@@ -103,7 +103,7 @@ export async function GET(
     }
 
     // 5. Extract final outputs from terminal nodes
-    let finalOutputs: Record<string, any> | undefined;
+    let finalOutputs: Record<string, unknown> | undefined;
 
     if (overallStatus === 'completed') {
       // Load the execution graph to identify terminal nodes
@@ -146,7 +146,7 @@ export async function GET(
 
     return NextResponse.json(response, { status: 200 });
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }

@@ -47,7 +47,7 @@ export async function GET(
     
     return NextResponse.json({ version });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error retrieving version:', error);
     
     return NextResponse.json(

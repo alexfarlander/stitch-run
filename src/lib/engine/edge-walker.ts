@@ -43,7 +43,7 @@ export async function startRun(
   options: {
     entityId?: string | null;
     trigger?: TriggerMetadata;
-    input?: any;
+    input?: unknown;
     flow_version_id?: string;
   } = {}
 ): Promise<StitchRun> {
@@ -132,7 +132,7 @@ export async function walkEdges(
       // Check for movement (Success case)
       // Note: walkEdges is only called on success, so success=true
       await handleNodeCompletion(run, completedNodeId, output, true);
-    } catch (error) {
+    } catch (_error) {
       logExecutionError('Failed to handle entity movement', error, {
         runId: run.id,
         completedNodeId,
@@ -189,7 +189,7 @@ export async function walkParallelEdges(
   journeyEdges: { success: boolean; error?: string }[];
   systemEdges: { success: boolean; error?: string }[];
 }> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Load the BMC canvas
   const { data: flow, error: flowError } = await supabase
@@ -204,11 +204,11 @@ export async function walkParallelEdges(
   }
   
   // Find all edges from this node
-  const allEdges = flow.graph.edges.filter((edge: any) => edge.source === nodeId);
+  const allEdges = flow.graph.edges.filter((edge: unknown) => edge.source === nodeId);
   
   // Separate journey edges and system edges
-  const journeyEdges = allEdges.filter((edge: any) => edge.type === 'journey' || !edge.type);
-  const systemEdges = allEdges.filter((edge: any) => edge.type === 'system');
+  const journeyEdges = allEdges.filter((edge: unknown) => edge.type === 'journey' || !edge.type);
+  const systemEdges = allEdges.filter((edge: unknown) => edge.type === 'system');
   
   console.log(`[Parallel Edge Walking] Node ${nodeId}:`, {
     journeyEdgeCount: journeyEdges.length,
@@ -220,11 +220,11 @@ export async function walkParallelEdges(
   const [journeyResults, systemResults] = await Promise.allSettled([
     // Journey edge execution (entity movement)
     Promise.allSettled(
-      journeyEdges.map(async (edge: any) => {
+      journeyEdges.map(async (edge: unknown) => {
         try {
           await executeJourneyEdge(edge, entityId, canvasId);
           return { success: true };
-        } catch (error) {
+        } catch (_error) {
           console.error(`Journey edge ${edge.id} failed:`, error);
           return { 
             success: false, 
@@ -236,11 +236,11 @@ export async function walkParallelEdges(
     
     // System edge execution (background processes)
     Promise.allSettled(
-      systemEdges.map(async (edge: any) => {
+      systemEdges.map(async (edge: unknown) => {
         try {
           await executeSystemEdgeInternal(edge, entityId, canvasId);
           return { success: true };
-        } catch (error) {
+        } catch (_error) {
           console.error(`System edge ${edge.id} failed:`, error);
           return { 
             success: false, 
@@ -285,7 +285,7 @@ async function executeJourneyEdge(
   entityId: string,
   canvasId: string
 ): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Step 1: Start entity traveling on the edge (animated movement)
   const { error: startError } = await supabase
@@ -440,7 +440,7 @@ async function executeSystemEdgeInternal(
     
     // In production, this would execute the actual system action
     // For now, we just log it
-  } catch (error) {
+  } catch (_error) {
     console.error(`Failed to execute system edge ${edge.id}:`, error);
     throw error;
   }
@@ -617,7 +617,7 @@ function mergeUpstreamOutputsWithGraph(
   }
   
   // Merge all upstream outputs
-  const mergedInput: any = {};
+  const mergedInput: unknown = {};
   
   for (const upstreamId of upstreamNodeIds) {
     const upstreamState = run.node_states[upstreamId];

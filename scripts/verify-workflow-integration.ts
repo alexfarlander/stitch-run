@@ -22,7 +22,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function main() {
   console.log('🔍 Verifying Workflow Integration\n');
@@ -134,7 +134,7 @@ async function main() {
       process.exit(1);
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');

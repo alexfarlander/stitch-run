@@ -20,7 +20,7 @@ describe('Database Verification Checks', () => {
 
   beforeAll(async () => {
     // Create a test flow with valid data
-    const supabase = createServerClient();
+    const _supabase = createServerClient();
     
     const testGraph = {
       nodes: [
@@ -95,13 +95,13 @@ describe('Database Verification Checks', () => {
 
     it('should detect invalid node types', async () => {
       // Create a flow with invalid node type
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       const invalidGraph = {
         nodes: [
           {
             id: 'invalid-node',
-            type: 'InvalidType' as any,
+            type: 'InvalidType' as unknown,
             position: { x: 0, y: 0 },
             data: { label: 'Invalid' },
           },
@@ -136,7 +136,7 @@ describe('Database Verification Checks', () => {
 
     it('should detect invalid edge source', async () => {
       // Create a flow with invalid edge source
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       const invalidGraph = {
         nodes: [
@@ -183,7 +183,7 @@ describe('Database Verification Checks', () => {
 
     it('should detect invalid parent references', async () => {
       // Create a flow with invalid parent reference
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       const invalidGraph = {
         nodes: [
@@ -225,7 +225,7 @@ describe('Database Verification Checks', () => {
 
     it('should detect Splitter with insufficient outgoing edges', async () => {
       // Create a flow with Splitter that has only 1 outgoing edge
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       const invalidGraph = {
         nodes: [
@@ -272,7 +272,7 @@ describe('Database Verification Checks', () => {
 
     it('should detect Collector with insufficient incoming edges', async () => {
       // Create a flow with Collector that has only 1 incoming edge
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       const invalidGraph = {
         nodes: [
@@ -325,7 +325,7 @@ describe('Database Verification Checks', () => {
     });
 
     it('should return no errors when journey events reference valid edges', async () => {
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       // Create an entity for the test flow
       const { data: entity } = await supabase
@@ -361,7 +361,7 @@ describe('Database Verification Checks', () => {
     });
 
     it('should detect journey events with invalid edge references', async () => {
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       // Create an entity for the test flow
       const { data: entity } = await supabase
@@ -399,7 +399,7 @@ describe('Database Verification Checks', () => {
     });
 
     it('should report which entities have invalid journey data', async () => {
-      const supabase = createServerClient();
+      const _supabase = createServerClient();
       
       // Create multiple entities with invalid journey data
       const { data: entity1 } = await supabase

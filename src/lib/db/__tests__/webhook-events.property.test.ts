@@ -19,7 +19,7 @@ import {
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Test configuration
 const testConfig = { numRuns: 100 };
@@ -207,7 +207,7 @@ describe('Webhook Events Property Tests', () => {
               eventId = event.id;
 
               // Update the event to the final status
-              const updates: any = { status: finalStatus };
+              const updates: unknown = { status: finalStatus };
               
               // Add error message only if status is 'failed'
               if (finalStatus === 'failed' && errorMessage) {

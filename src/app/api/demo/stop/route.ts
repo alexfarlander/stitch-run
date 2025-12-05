@@ -40,7 +40,7 @@ export async function POST() {
       runningForMs: sessionInfo.runningFor,
     });
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to stop demo:', error);
     return NextResponse.json(
       { 

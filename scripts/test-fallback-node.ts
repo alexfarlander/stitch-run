@@ -26,7 +26,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createFallbackTestFlow() {
   
@@ -84,7 +84,7 @@ async function createFallbackTestFlow() {
       // Unknown node type 1
       {
         id: 'unknown-1',
-        type: 'CustomWorker' as any,
+        type: 'CustomWorker' as unknown,
         position: { x: 100, y: 200 },
         data: {
           label: 'Custom Worker (Unknown)',
@@ -95,7 +95,7 @@ async function createFallbackTestFlow() {
       // Unknown node type 2
       {
         id: 'unknown-2',
-        type: 'MagicProcessor' as any,
+        type: 'MagicProcessor' as unknown,
         position: { x: 100, y: 350 },
         data: {
           label: 'Magic Processor (Unknown)',
@@ -156,7 +156,7 @@ async function createFallbackTestFlow() {
     
     return workflow.id;
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Fallback Node Test flow creation failed:', error);
     throw error;
   }

@@ -31,7 +31,7 @@ export interface PromptTemplateConfig {
   workers: WorkerDefinition[];
   
   /** Current canvas context (for modifications) */
-  currentCanvas?: any;
+  currentCanvas?: unknown;
   
   /** User's natural language request */
   userRequest: string;
@@ -685,7 +685,7 @@ ${workerDocs}`;
  * @param canvas - Current canvas (stripped of UI properties)
  * @returns Formatted canvas context string
  */
-function formatCurrentCanvas(canvas: any): string {
+function formatCurrentCanvas(canvas: unknown): string {
   if (!canvas) {
     return '';
   }

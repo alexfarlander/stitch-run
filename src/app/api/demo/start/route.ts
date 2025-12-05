@@ -61,7 +61,7 @@ async function executeDemoLoop(baseUrl: string, sessionId: string, loopOffset: n
           const { broadcastToCanvasAsync } = await import('@/lib/supabase/broadcast');
           // Get the BMC canvas ID (we need to fetch it)
           const { getAdminClient } = await import('@/lib/supabase/client');
-          const supabase = getAdminClient();
+          const _supabase = getAdminClient();
           const { data: bmcCanvas } = await supabase
             .from('stitch_flows')
             .select('id')
@@ -93,7 +93,7 @@ async function executeDemoLoop(baseUrl: string, sessionId: string, loopOffset: n
           const errorText = await response.text();
           console.error(`[Demo Event Failed] ${event.description}:`, errorText);
         }
-      } catch (error) {
+      } catch (_error) {
         console.error(`[Demo Event Error] ${event.description}:`, error);
       }
     }, loopOffset + event.delay);
@@ -114,7 +114,7 @@ async function executeDemoLoop(baseUrl: string, sessionId: string, loopOffset: n
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-    } catch (error) {
+    } catch (_error) {
       console.error('[Demo] Reset failed:', error);
     }
     
@@ -180,7 +180,7 @@ export async function POST() {
       if (!resetResponse.ok) {
         console.warn('[Demo] Reset returned non-OK status, continuing anyway');
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('[Demo] Reset failed, continuing anyway:', error);
     }
     
@@ -206,7 +206,7 @@ export async function POST() {
       })),
     });
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to start demo:', error);
     stopDemoSession();
     return NextResponse.json(

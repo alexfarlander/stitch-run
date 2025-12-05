@@ -93,7 +93,7 @@ export class ClaudeLLMClient implements LLMClient {
       try {
         const response = await this.makeRequest(prompt);
         return response;
-      } catch (error) {
+      } catch (_error) {
         lastError = error;
         
         // If error is not retryable or we've exhausted retries, throw
@@ -156,7 +156,7 @@ export class ClaudeLLMClient implements LLMClient {
       }
       
       return textContent.text;
-    } catch (error) {
+    } catch (_error) {
       clearTimeout(timeoutId);
       throw error;
     }

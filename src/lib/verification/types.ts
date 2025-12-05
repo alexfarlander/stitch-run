@@ -30,7 +30,7 @@ export type VerificationWarningType =
 export interface VerificationError {
   type: VerificationErrorType;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface VerificationError {
 export interface VerificationWarning {
   type: VerificationWarningType;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 /**

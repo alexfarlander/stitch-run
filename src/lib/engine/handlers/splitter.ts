@@ -18,7 +18,7 @@ import { logParallelInstanceCreation, logExecutionError } from '../logger';
  * @returns The extracted array
  * @throws Error if path doesn't exist or value is not an array
  */
-export function extractArray(input: any, arrayPath: string): any[] {
+export function extractArray(input: unknown, arrayPath: string): unknown[] {
   if (!arrayPath) {
     throw new Error('Array path not configured');
   }
@@ -54,7 +54,7 @@ export function extractArray(input: any, arrayPath: string): any[] {
  */
 export function createParallelPathStates(
   downstreamNodeIds: string[],
-  arrayElements: any[]
+  arrayElements: unknown[]
 ): Record<string, NodeState> {
   const parallelStates: Record<string, NodeState> = {};
 
@@ -87,7 +87,7 @@ export async function fireSplitterNode(
   runId: string,
   nodeId: string,
   config: NodeConfig,
-  input: any,
+  input: unknown,
   downstreamNodeIds: string[]
 ): Promise<void> {
   try {
@@ -131,7 +131,7 @@ export async function fireSplitterNode(
     };
 
     await updateNodeStates(runId, updates);
-  } catch (error) {
+  } catch (_error) {
     // Handle extraction errors (Requirement 10.5)
     let errorMessage = 'Failed to process splitter node';
     if (error instanceof Error) {

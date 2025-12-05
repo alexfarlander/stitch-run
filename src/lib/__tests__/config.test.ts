@@ -3,7 +3,7 @@
  * Tests: Requirement 12.3
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { getConfig, validateConfig } from '../config';
 
 describe('Environment Configuration Validation', () => {
@@ -82,7 +82,7 @@ describe('Environment Configuration Validation', () => {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
       process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
-      const config = getConfig();
+      const _config = getConfig();
 
       expect(config).toEqual({
         supabase: {

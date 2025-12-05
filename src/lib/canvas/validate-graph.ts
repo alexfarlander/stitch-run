@@ -720,7 +720,7 @@ function validateEntityMovementAction(
       field: `${actionType}.completeAs`,
       message: `Worker node "${nodeId}" entityMovement.${actionType} missing required "completeAs"`,
     });
-  } else if (!VALID_COMPLETE_AS_VALUES.includes(action.completeAs as any)) {
+  } else if (!VALID_COMPLETE_AS_VALUES.includes(action.completeAs as unknown)) {
     errors.push({
       type: 'invalid_entity_movement',
       node: nodeId,
@@ -738,7 +738,7 @@ function validateEntityMovementAction(
         field: `${actionType}.setEntityType`,
         message: `Worker node "${nodeId}" entityMovement.${actionType}.setEntityType must be a string`,
       });
-    } else if (!VALID_ENTITY_TYPES.includes(action.setEntityType as any)) {
+    } else if (!VALID_ENTITY_TYPES.includes(action.setEntityType as unknown)) {
       errors.push({
         type: 'invalid_entity_movement',
         node: nodeId,

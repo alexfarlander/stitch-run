@@ -20,7 +20,7 @@ export function registerResources(server) {
                 })),
             };
         }
-        catch (error) {
+        catch (_error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             throw new Error(`Failed to list resources: ${errorMessage}`);
         }
@@ -41,7 +41,7 @@ export function registerResources(server) {
             // Call the resource's read method
             return await resource.read();
         }
-        catch (error) {
+        catch (_error) {
             // If it's already our formatted error, re-throw it
             if (error instanceof Error && error.message.includes('Resource not found:')) {
                 throw error;

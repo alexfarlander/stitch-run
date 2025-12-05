@@ -124,7 +124,7 @@ async function main() {
   console.log('');
 
   // Generate appropriate test input for each worker
-  let testInput: any;
+  let testInput: unknown;
   switch (workerName) {
     case 'claude':
       testInput = { 
@@ -251,7 +251,7 @@ async function main() {
 
       process.exit(1);
     }
-  } catch (error) {
+  } catch (_error) {
     console.log('═══════════════════════════════════════════════════════════');
     console.log('❌ Unexpected Error:');
     console.log('═══════════════════════════════════════════════════════════');

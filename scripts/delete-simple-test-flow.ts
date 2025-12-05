@@ -6,7 +6,7 @@ config({ path: join(__dirname, '../.env.local') });
 
 async function main() {
   const { getAdminClient } = await import('../src/lib/supabase/client');
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   const { error } = await supabase
     .from('stitch_flows')
     .delete()

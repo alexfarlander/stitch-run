@@ -22,7 +22,7 @@ async function testParallelEdgeExecution() {
   const { walkParallelEdges } = await import('../src/lib/engine/edge-walker');
   console.log('🧪 Testing Parallel Edge Execution\n');
   
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   try {
     // 1. Get the BMC canvas
@@ -43,12 +43,12 @@ async function testParallelEdgeExecution() {
     
     // 2. Find a node with both journey and system edges
     const graph = bmcCanvas.graph;
-    const nodesWithBothEdges = graph.nodes.filter((node: any) => {
+    const nodesWithBothEdges = graph.nodes.filter((node: unknown) => {
       const journeyEdges = graph.edges.filter(
-        (e: any) => e.source === node.id && (e.type === 'journey' || !e.type)
+        (e: unknown) => e.source === node.id && (e.type === 'journey' || !e.type)
       );
       const systemEdges = graph.edges.filter(
-        (e: any) => e.source === node.id && e.type === 'system'
+        (e: unknown) => e.source === node.id && e.type === 'system'
       );
       return journeyEdges.length > 0 && systemEdges.length > 0;
     });
@@ -58,8 +58,8 @@ async function testParallelEdgeExecution() {
       console.log('Creating test scenario...\n');
       
       // Use a node that has at least one edge
-      const nodeWithEdges = graph.nodes.find((node: any) => {
-        const edges = graph.edges.filter((e: any) => e.source === node.id);
+      const nodeWithEdges = graph.nodes.find((node: unknown) => {
+        const edges = graph.edges.filter((e: unknown) => e.source === node.id);
         return edges.length > 0;
       });
       
@@ -70,10 +70,10 @@ async function testParallelEdgeExecution() {
       
       console.log(`Using node: ${nodeWithEdges.id} (${nodeWithEdges.data?.label || 'No label'})`);
       
-      const edges = graph.edges.filter((e: any) => e.source === nodeWithEdges.id);
+      const edges = graph.edges.filter((e: unknown) => e.source === nodeWithEdges.id);
       console.log(`  - Total edges: ${edges.length}`);
-      console.log(`  - Journey edges: ${edges.filter((e: any) => e.type === 'journey' || !e.type).length}`);
-      console.log(`  - System edges: ${edges.filter((e: any) => e.type === 'system').length}\n`);
+      console.log(`  - Journey edges: ${edges.filter((e: unknown) => e.type === 'journey' || !e.type).length}`);
+      console.log(`  - System edges: ${edges.filter((e: unknown) => e.type === 'system').length}\n`);
       
       // 3. Get or create a test entity
       const { data: entities } = await supabase
@@ -93,7 +93,7 @@ async function testParallelEdgeExecution() {
       // 4. Test parallel edge execution
       console.log('🚀 Testing parallel edge execution...\n');
       
-      const startTime = Date.now();
+      const _startTime = Date.now();
       const results = await walkParallelEdges(
         nodeWithEdges.id,
         testEntity.id,
@@ -147,9 +147,9 @@ async function testParallelEdgeExecution() {
       }
       
       // 7. Test with a node that has multiple system edges (Requirement 12.4)
-      const nodeWithMultipleSystemEdges = graph.nodes.find((node: any) => {
+      const nodeWithMultipleSystemEdges = graph.nodes.find((node: unknown) => {
         const systemEdges = graph.edges.filter(
-          (e: any) => e.source === node.id && e.type === 'system'
+          (e: unknown) => e.source === node.id && e.type === 'system'
         );
         return systemEdges.length > 1;
       });
@@ -158,7 +158,7 @@ async function testParallelEdgeExecution() {
         console.log('🔄 Testing concurrent system edge execution (Requirement 12.4)...\n');
         
         const systemEdges = graph.edges.filter(
-          (e: any) => e.source === nodeWithMultipleSystemEdges.id && e.type === 'system'
+          (e: unknown) => e.source === nodeWithMultipleSystemEdges.id && e.type === 'system'
         );
         
         console.log(`Node: ${nodeWithMultipleSystemEdges.id}`);
@@ -198,10 +198,10 @@ async function testParallelEdgeExecution() {
       console.log(`✅ Found node with both edge types: ${testNode.id} (${testNode.data?.label || 'No label'})`);
       
       const journeyEdges = graph.edges.filter(
-        (e: any) => e.source === testNode.id && (e.type === 'journey' || !e.type)
+        (e: unknown) => e.source === testNode.id && (e.type === 'journey' || !e.type)
       );
       const systemEdges = graph.edges.filter(
-        (e: any) => e.source === testNode.id && e.type === 'system'
+        (e: unknown) => e.source === testNode.id && e.type === 'system'
       );
       
       console.log(`  - Journey edges: ${journeyEdges.length}`);
@@ -225,7 +225,7 @@ async function testParallelEdgeExecution() {
       // Test parallel execution
       console.log('🚀 Testing parallel edge execution...\n');
       
-      const startTime = Date.now();
+      const _startTime = Date.now();
       const results = await walkParallelEdges(
         testNode.id,
         testEntity.id,
@@ -249,7 +249,7 @@ async function testParallelEdgeExecution() {
       console.log('  ✓ 12.5 - All edge execution results logged');
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Test failed:', error);
     process.exit(1);
   }

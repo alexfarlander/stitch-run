@@ -2,7 +2,7 @@
  * Property-based tests for Shotstack worker
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+// beforeEach import removed as unused
 import * as fc from 'fast-check';
 import { ShotstackWorker } from '../shotstack';
 import { Scene } from '@/types/stitch';
@@ -50,7 +50,7 @@ describe('Shotstack Worker - Property Tests', () => {
         scenesArbitrary,
         async (runId, nodeId, scenes) => {
           // Mock fetch for Shotstack API
-          let capturedPayload: any = null;
+          let capturedPayload: unknown = null;
           global.fetch = vi.fn().mockImplementation(async (url, options) => {
             if (typeof url === 'string' && url.includes('shotstack.io')) {
               capturedPayload = JSON.parse(options?.body as string);
@@ -65,7 +65,7 @@ describe('Shotstack Worker - Property Tests', () => {
               ok: true,
               status: 200,
             };
-          }) as any;
+          }) as unknown;
 
           const worker = new ShotstackWorker();
           await worker.execute(runId, nodeId, {}, scenes);
@@ -134,7 +134,7 @@ describe('Shotstack Worker - Property Tests', () => {
         scenesArbitrary,
         async (runId, nodeId, scenes) => {
           // Mock fetch for Shotstack API
-          let capturedPayload: any = null;
+          let capturedPayload: unknown = null;
           global.fetch = vi.fn().mockImplementation(async (url, options) => {
             if (typeof url === 'string' && url.includes('shotstack.io')) {
               capturedPayload = JSON.parse(options?.body as string);
@@ -148,7 +148,7 @@ describe('Shotstack Worker - Property Tests', () => {
               ok: true,
               status: 200,
             };
-          }) as any;
+          }) as unknown;
 
           const worker = new ShotstackWorker();
           await worker.execute(runId, nodeId, {}, scenes);

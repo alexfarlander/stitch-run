@@ -28,7 +28,7 @@ async function main() {
     console.log(`   Workflow ID: ${workflowId}`);
     
     process.exit(0);
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Seed failed:', error);
     process.exit(1);
   }

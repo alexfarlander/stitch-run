@@ -75,7 +75,7 @@ export function TimelineScrubber({ runId, onTimestampChange }: TimelineScrubberP
         }
 
         setEvents((data || []) as JourneyEvent[]);
-      } catch (err) {
+      } catch (_err) {
         console.error('Error fetching timeline events:', err);
         setError(err instanceof Error ? err.message : 'Failed to load timeline');
       } finally {

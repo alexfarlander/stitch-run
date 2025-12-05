@@ -2,7 +2,7 @@
  * Unit tests for LLM Client
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { ClaudeLLMClient, LLMError, createLLMClient } from '../llm-client';
 
 // Mock the Anthropic SDK
@@ -113,7 +113,7 @@ describe('ClaudeLLMClient', () => {
       
       try {
         await client.complete('Test');
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('INVALID_API_KEY');
         expect((error as LLMError).retryable).toBe(false);
@@ -133,7 +133,7 @@ describe('ClaudeLLMClient', () => {
       
       try {
         await client.complete('Test');
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('INVALID_REQUEST');
         expect((error as LLMError).retryable).toBe(false);
@@ -154,7 +154,7 @@ describe('ClaudeLLMClient', () => {
       try {
         await client.complete('Test');
         throw new Error('Should have thrown');
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('RATE_LIMIT');
         expect((error as LLMError).retryable).toBe(true);
@@ -175,7 +175,7 @@ describe('ClaudeLLMClient', () => {
       try {
         await client.complete('Test');
         throw new Error('Should have thrown');
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('SERVER_ERROR');
         expect((error as LLMError).retryable).toBe(true);
@@ -259,7 +259,7 @@ describe('ClaudeLLMClient', () => {
       
       mockCreate.mockRejectedValue({ status: 429 });
       
-      const startTime = Date.now();
+      const _startTime = Date.now();
       
       try {
         await client.complete('Test');
@@ -299,7 +299,7 @@ describe('ClaudeLLMClient', () => {
       try {
         await client.complete('Test');
         throw new Error('Should have thrown');
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('TIMEOUT');
       }

@@ -67,10 +67,10 @@ async function findOrCreateEntity(
   data: {
     name?: string;
     entity_type: 'lead' | 'customer' | 'churned';
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
   }
 ): Promise<StitchEntity> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Try to find existing entity by email
   const { data: existingEntity, error: findError } = await supabase
@@ -124,9 +124,9 @@ async function moveEntityToNode(
   nodeId: string,
   entityType?: 'lead' | 'customer' | 'churned'
 ): Promise<void> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
-  const updateData: any = {
+  const updateData: unknown = {
     current_node_id: nodeId,
     current_edge_id: null,
     edge_progress: null,
@@ -182,7 +182,7 @@ export async function POST(
     
     // Get the BMC canvas ID
     // For Clockwork Canvas, we use the most recent BMC canvas
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     const { data: bmcCanvases, error: canvasError } = await supabase
       .from('stitch_flows')
       .select('id, name, canvas_type, created_at')
@@ -292,7 +292,7 @@ export async function POST(
           description: `💰 +${amountFormatted}/mo MRR from ${entity.name}`,
           timestamp: new Date().toISOString(),
         });
-      } catch (err) {
+      } catch (_err) {
         console.error('[Financial Update] Failed:', err);
       }
     }
@@ -308,7 +308,7 @@ export async function POST(
       { status: 200 }
     );
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Webhook processing error:', error);
     return NextResponse.json(
       {

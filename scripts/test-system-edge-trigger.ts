@@ -15,7 +15,7 @@ import { getAdminClient } from '../src/lib/supabase/client';
 async function testSystemEdgeTrigger() {
   console.log('🧪 Testing System Edge Trigger Logic\n');
 
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   try {
     // Find the BMC canvas (get the most recent one)
@@ -37,7 +37,7 @@ async function testSystemEdgeTrigger() {
 
     // Count system edges
     const systemEdges = bmcCanvas.graph.edges.filter(
-      (edge: any) => edge.type === 'system'
+      (edge: unknown) => edge.type === 'system'
     );
     console.log(`📊 Total system edges in BMC: ${systemEdges.length}\n`);
 
@@ -59,7 +59,7 @@ async function testSystemEdgeTrigger() {
 
     // Find system edges for this node
     const nodeSystemEdges = systemEdges.filter(
-      (edge: any) => edge.source === testEntity.current_node_id
+      (edge: unknown) => edge.source === testEntity.current_node_id
     );
 
     if (nodeSystemEdges.length === 0) {
@@ -69,7 +69,7 @@ async function testSystemEdgeTrigger() {
       // Try a node that should have system edges
       const testNodeId = 'item-linkedin-ads';
       const testNodeEdges = systemEdges.filter(
-        (edge: any) => edge.source === testNodeId
+        (edge: unknown) => edge.source === testNodeId
       );
       
       if (testNodeEdges.length > 0) {
@@ -81,7 +81,7 @@ async function testSystemEdgeTrigger() {
         console.log('✅ System edges triggered successfully!\n');
         
         console.log('📋 System edges that were triggered:');
-        testNodeEdges.forEach((edge: any) => {
+        testNodeEdges.forEach((edge: unknown) => {
           console.log(`   - ${edge.id}: ${edge.source} -> ${edge.target} (${edge.data?.systemAction})`);
         });
       } else {
@@ -93,13 +93,13 @@ async function testSystemEdgeTrigger() {
       console.log('✅ System edges triggered successfully!\n');
       
       console.log('📋 System edges that were triggered:');
-      nodeSystemEdges.forEach((edge: any) => {
+      nodeSystemEdges.forEach((edge: unknown) => {
         console.log(`   - ${edge.id}: ${edge.source} -> ${edge.target} (${edge.data?.systemAction})`);
       });
     }
 
     console.log('\n✅ Test completed successfully!');
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Test failed:', error);
     process.exit(1);
   }

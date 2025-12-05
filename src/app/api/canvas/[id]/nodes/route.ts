@@ -31,7 +31,7 @@ interface CreateNodeRequest {
     uptime?: {
       enabled: boolean;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   };
   position?: { x: number; y: number };
 }
@@ -44,7 +44,7 @@ interface CreateNodeResponse {
   label: string;
   type: string;
   position: { x: number; y: number };
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   webhookUrl: string;
   uptimeUrl: string;
 }
@@ -112,7 +112,7 @@ async function createNodeHandler(
     }
 
     // Check if canvas exists (Requirement 1.1)
-    const flow = await getFlow(canvasId, true);
+    const _flow = await getFlow(canvasId, true);
     if (!flow) {
       throw new APIError(
         'NOT_FOUND',
@@ -124,8 +124,8 @@ async function createNodeHandler(
     // Get current visual graph
     let currentGraph: VisualGraph;
 
-    if (flow.current_version_id && (flow as any).current_version?.visual_graph) {
-      currentGraph = (flow as any).current_version.visual_graph;
+    if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
+      currentGraph = (flow as unknown).current_version.visual_graph;
     } else {
       // Fallback to legacy graph format - convert to VisualGraph
       currentGraph = {
@@ -194,7 +194,7 @@ async function createNodeHandler(
 
     return NextResponse.json(response, { status: 201 });
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }

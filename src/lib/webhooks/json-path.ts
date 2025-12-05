@@ -23,7 +23,7 @@
  * extractValue(data, "customer"); // "customer" (static value)
  */
 export function extractValue(
-  payload: Record<string, any>,
+  payload: Record<string, unknown>,
   pathOrValue: string
 ): any {
   // If it doesn't start with $., treat it as a static value
@@ -38,7 +38,7 @@ export function extractValue(
   const segments = parsePath(path);
   
   // Walk through the object following the path
-  let current: any = payload;
+  let current: unknown = payload;
   
   for (const segment of segments) {
     if (current === null || current === undefined) {

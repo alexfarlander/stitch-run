@@ -3,7 +3,7 @@
  * Tests: Requirements 2.2
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { processWebhook } from '../processor';
 import { createWebhookConfig, deleteWebhookConfig } from '../../db/webhook-configs';
 import { getWebhookEventById } from '../../db/webhook-events';
@@ -44,11 +44,11 @@ describe('Webhook Processing Orchestration', () => {
 
   afterEach(async () => {
     // Clean up entities
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     for (const entityId of testEntityIds) {
       try {
         await supabase.from('stitch_entities').delete().eq('id', entityId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -58,7 +58,7 @@ describe('Webhook Processing Orchestration', () => {
     for (const runId of testRunIds) {
       try {
         await deleteRun(runId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -68,7 +68,7 @@ describe('Webhook Processing Orchestration', () => {
     if (testWebhookConfigId) {
       try {
         await deleteWebhookConfig(testWebhookConfigId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -77,14 +77,14 @@ describe('Webhook Processing Orchestration', () => {
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
     if (testCanvasId) {
       try {
         await deleteFlow(testCanvasId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
@@ -156,7 +156,7 @@ describe('Webhook Processing Orchestration', () => {
       expect(webhookEvent?.error).toBeNull();
 
       // Verify entity was created
-      const supabase = getAdminClient();
+      const _supabase = getAdminClient();
       const { data: entity } = await supabase
         .from('stitch_entities')
         .select('*')
@@ -200,7 +200,7 @@ describe('Webhook Processing Orchestration', () => {
       testWebhookConfigId = webhookConfig.id;
 
       // Create initial entity
-      const supabase = getAdminClient();
+      const _supabase = getAdminClient();
       const { data: initialEntity } = await supabase
         .from('stitch_entities')
         .insert({
