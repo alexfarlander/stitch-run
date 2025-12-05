@@ -1,7 +1,7 @@
 /**
  * Run Status Overlay Component
  * Renders status indicators for all nodes in an active run
- * Requirements: 1.1, 1.2, 1.3, 1.5, 8.2, 8.3, 8.4
+ * Requirements: 1.1, 1.2, 1.3, 1.5, 6.1, 6.2, 6.3, 6.4, 6.5, 8.2, 8.3, 8.4
  */
 
 'use client';
@@ -10,6 +10,7 @@ import { useNodes, useViewport, Panel } from '@xyflow/react';
 import { useRunStatus } from '@/hooks/useRunStatus';
 import { NodeStatusIndicator } from './nodes/NodeStatusIndicator';
 import { useNodeStatus } from './hooks/useNodeStatus';
+import { useEffect } from 'react';
 
 interface RunStatusOverlayProps {
   runId?: string;
@@ -25,11 +26,71 @@ export function RunStatusOverlay({ runId }: RunStatusOverlayProps) {
   const viewport = useViewport();
   const { nodeStates, loading, error } = useRunStatus(runId);
 
-  // Don't render if no run is active or still loading
-  if (!runId || loading || error || !nodeStates) {
-    if (runId) {
-      console.log('[RunStatusOverlay] Not rendering:', { runId, loading, error, hasNodeStates: !!nodeStates });
+  // Log errors for debugging (Requirement 6.4)
+  useEffect(() => {
+    if (error) {
+      console.error('[RunStatusOverlay] Error loading run status:', {
+        runId,
+        error,
+        timestamp: new Date().toISOString(),
+      });
     }
+  }, [error, runId]);
+
+  // Don't render if no run is active
+  if (!runId) {
+    return null;
+  }
+
+  // Display error message if run status fails to load (Requirements 6.1, 6.2, 6.3)
+  if (error) {
+    return (
+      <Panel position="top-center" className="m-4">
+        <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 shadow-lg max-w-md">
+          <div className="flex items-start gap-3">
+            {/* Error Icon */}
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-6 h-6 text-white"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+            
+            {/* Error Content */}
+            <div className="flex-1">
+              <h3 className="text-red-900 font-semibold text-lg mb-1">
+                Failed to Load Run Status
+              </h3>
+              <p className="text-red-800 text-sm mb-2">
+                {error}
+              </p>
+              <p className="text-red-700 text-xs">
+                Please check your connection and try refreshing the page. If the problem persists, contact support.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Panel>
+    );
+  }
+
+  // Show loading state
+  if (loading) {
+    return null;
+  }
+
+  // Don't render if no node states available
+  if (!nodeStates) {
     return null;
   }
 

@@ -263,7 +263,8 @@ export async function getRunsForFlow(flowId: string): Promise<StitchRun[]> {
  * Update a single node's state atomically
  * Uses database RPC function to prevent race conditions when multiple workers complete simultaneously
  * Uses admin client to bypass RLS and auth issues for webhook callbacks
- * Validates: Requirements 11.2, 11.5
+ * Validates status transitions before updating
+ * Validates: Requirements 7.2, 7.5, 11.2, 11.5
  */
 export async function updateNodeState(
   runId: string,
@@ -272,6 +273,27 @@ export async function updateNodeState(
 ): Promise<StitchRun> {
   // Use Admin Client to bypass RLS and Auth issues for webhooks
   const supabase = getAdminClient();
+
+  // Get current run state to validate transition
+  const currentRun = await getRunAdmin(runId);
+  if (!currentRun) {
+    throw new Error(`Run not found: ${runId}`);
+  }
+
+  // Validate status transition if node already exists
+  const currentNodeState = currentRun.node_states[nodeId];
+  if (currentNodeState) {
+    const { validateTransition } = await import('../engine/status-transitions');
+    try {
+      validateTransition(currentNodeState.status, state.status);
+    } catch (error) {
+      // Re-throw with context about which node failed
+      if (error instanceof Error) {
+        throw new Error(`Node ${nodeId}: ${error.message}`);
+      }
+      throw error;
+    }
+  }
 
   const { data, error } = await supabase.rpc('update_node_state', {
     p_run_id: runId,
@@ -304,7 +326,8 @@ export async function updateNodeState(
  * For bulk updates (e.g., initializing parallel paths), we use the admin client
  * Note: This still has a read-modify-write pattern, but it's typically used in
  * single-threaded scenarios (like splitter initialization) rather than concurrent callbacks
- * Validates: Requirements 11.2, 11.5
+ * Validates status transitions before updating
+ * Validates: Requirements 7.2, 7.5, 11.2, 11.5
  */
 export async function updateNodeStates(
   runId: string,
@@ -314,9 +337,26 @@ export async function updateNodeStates(
   const supabase = getAdminClient();
 
   // Read current run state
-  const run = await getRun(runId);
+  const run = await getRunAdmin(runId);
   if (!run) {
     throw new Error(`Run not found: ${runId}`);
+  }
+
+  // Validate all status transitions before applying updates
+  const { validateTransition } = await import('../engine/status-transitions');
+  for (const [nodeId, newState] of Object.entries(updates)) {
+    const currentNodeState = run.node_states[nodeId];
+    if (currentNodeState) {
+      try {
+        validateTransition(currentNodeState.status, newState.status);
+      } catch (error) {
+        // Re-throw with context about which node failed
+        if (error instanceof Error) {
+          throw new Error(`Node ${nodeId}: ${error.message}`);
+        }
+        throw error;
+      }
+    }
   }
 
   // Merge updates with existing state

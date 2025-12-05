@@ -1,0 +1,86 @@
+```mermaid
+sequenceDiagram
+    participant UI as UI/Canvas Editor
+    participant API as API Endpoint
+    participant VM as Version Manager
+    participant Compiler as OEG Compiler
+    participant Validator as Graph Validator
+    participant DB as Database
+
+    Note over UI,DB: Version Creation Flow
+
+    UI->>API: POST /api/canvas<br/>(save visual graph)
+    API->>VM: createVersion(flowId, visualGraph, commitMessage)
+    
+    Note over VM,Compiler: Step 1: Compilation & Validation
+    VM->>Compiler: compileToOEG(visualGraph)
+    
+    Compiler->>Validator: validateGraph(visualGraph)
+    
+    Note over Validator: Validation Checks:<br/>1. Cycle detection<br/>2. Required inputs<br/>3. Worker types<br/>4. Edge mappings<br/>5. Splitter/Collector pairs<br/>6. Entity movement
+    
+    alt Validation Fails
+        Validator-->>Compiler: ValidationError[]
+        Compiler-->>VM: { success: false, errors }
+        VM-->>API: throw ValidationFailureError
+        API-->>UI: 400 Bad Request<br/>(validation errors)
+    else Validation Succeeds
+        Validator-->>Compiler: [] (no errors)
+        
+        Note over Compiler: Step 2: Optimization<br/>Build adjacency map<br/>Index nodes by ID<br/>Index edge data
+        
+        Note over Compiler: Step 3: Stripping<br/>Remove UI properties:<br/>- position<br/>- style<br/>- label<br/>- width/height
+        
+        Note over Compiler: Step 4: Computation<br/>Compute entry nodes<br/>Compute terminal nodes
+        
+        Compiler-->>VM: { success: true, executionGraph }
+        
+        Note over VM,DB: Step 5: Database Persistence
+        VM->>DB: INSERT INTO stitch_flow_versions<br/>(visual_graph, execution_graph)
+        DB-->>VM: version { id, ... }
+        
+        VM->>DB: UPDATE stitch_flows<br/>SET current_version_id = version.id
+        DB-->>VM: success
+        
+        VM-->>API: { versionId, executionGraph }
+        API-->>UI: 200 OK<br/>(version created)
+    end
+
+    Note over UI,DB: Auto-Versioning on Run
+
+    UI->>API: POST /api/canvas/[id]/run<br/>(start workflow)
+    API->>VM: autoVersionOnRun(flowId, currentGraph)
+    
+    VM->>DB: SELECT current_version_id<br/>FROM stitch_flows
+    DB-->>VM: current_version_id
+    
+    alt No Version Exists
+        VM->>VM: createVersion(flowId, currentGraph,<br/>"Initial version")
+        VM-->>API: versionId (new)
+    else Version Exists
+        VM->>DB: SELECT visual_graph<br/>FROM stitch_flow_versions
+        DB-->>VM: saved visual_graph
+        
+        Note over VM: Deep equality check:<br/>Compare currentGraph<br/>with saved visual_graph
+        
+        alt Changes Detected
+            VM->>VM: createVersion(flowId, currentGraph,<br/>"Auto-versioned on run")
+            VM-->>API: versionId (new)
+        else No Changes
+            VM-->>API: versionId (existing)
+        end
+    end
+    
+    API->>API: startRun(flowId, versionId, inputs)
+    API-->>UI: 200 OK<br/>(run started)
+
+    Note over UI,DB: Visual Graph → Execution Graph Transformation
+
+    rect rgb(240, 248, 255)
+        Note over Compiler: BEFORE: Visual Graph<br/>{<br/>  nodes: [{<br/>    id: "worker1",<br/>    position: { x: 100, y: 200 },<br/>    style: { ... },<br/>    data: {<br/>      label: "Claude Worker",<br/>      worker_type: "claude",<br/>      config: { ... },<br/>      inputs: { ... }<br/>    }<br/>  }],<br/>  edges: [...]<br/>}
+    end
+
+    rect rgb(240, 255, 240)
+        Note over Compiler: AFTER: Execution Graph (OEG)<br/>{<br/>  nodes: {<br/>    "worker1": {<br/>      id: "worker1",<br/>      type: "worker",<br/>      worker_type: "claude",<br/>      config: { ... },<br/>      inputs: { ... }<br/>    }<br/>  },<br/>  adjacency: {<br/>    "worker1": ["worker2"]<br/>  },<br/>  edgeData: {<br/>    "worker1->worker2": { mapping }<br/>  },<br/>  entryNodes: ["worker1"],<br/>  terminalNodes: ["worker2"]<br/>}
+    end
+```

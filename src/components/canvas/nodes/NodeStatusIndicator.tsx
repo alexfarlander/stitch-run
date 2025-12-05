@@ -1,12 +1,12 @@
 /**
  * Node Status Indicator Component
  * Displays visual feedback for node execution status
- * Requirements: 1.5, 8.2, 8.3, 8.4, 8.5
+ * Requirements: 1.5, 6.3, 6.4, 8.1, 8.2, 8.3, 8.4, 8.5
  */
 
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { NodeStatus } from '@/types/stitch';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
@@ -24,6 +24,17 @@ interface NodeStatusIndicatorProps {
  * - Failed: Red indicator with error icon
  */
 export function NodeStatusIndicator({ nodeId, status, error }: NodeStatusIndicatorProps) {
+  // Log errors for debugging (Requirement 6.4)
+  useEffect(() => {
+    if (status === 'failed' && error) {
+      console.error('[NodeStatusIndicator] Node execution failed:', {
+        nodeId,
+        error,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }, [status, error, nodeId]);
+
   const statusStyles = useMemo(() => {
     switch (status) {
       case 'running':
@@ -68,24 +79,29 @@ export function NodeStatusIndicator({ nodeId, status, error }: NodeStatusIndicat
   return (
     <div
       className={`absolute inset-0 pointer-events-none rounded-lg border-2 ${statusStyles.className}`}
+      role="status"
+      aria-label={`Node status: ${status}`}
+      aria-live="polite"
       style={{
         borderColor: statusStyles.borderColor,
         backgroundColor: statusStyles.backgroundColor,
         boxShadow: statusStyles.boxShadow,
       }}
     >
-      {/* Error icon with tooltip for failed nodes */}
+      {/* Error icon with tooltip for failed nodes (Requirements 6.2, 6.3) */}
       {status === 'failed' && (
         <Tooltip>
           <TooltipTrigger asChild>
             <div
               className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center pointer-events-auto cursor-help hover:bg-red-600 transition-colors"
+              aria-label="Error details"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 className="w-4 h-4 text-white"
+                aria-hidden="true"
               >
                 <path
                   fillRule="evenodd"
@@ -106,6 +122,7 @@ export function NodeStatusIndicator({ nodeId, status, error }: NodeStatusIndicat
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 className="w-4 h-4 flex-shrink-0 mt-0.5"
+                aria-hidden="true"
               >
                 <path
                   fillRule="evenodd"
@@ -116,7 +133,7 @@ export function NodeStatusIndicator({ nodeId, status, error }: NodeStatusIndicat
               <div className="flex-1">
                 <div className="font-semibold text-sm mb-1">Node Execution Failed</div>
                 <div className="text-xs opacity-90">
-                  {error || 'An error occurred during node execution'}
+                  {error || 'An error occurred during node execution. Please check the logs for more details.'}
                 </div>
               </div>
             </div>

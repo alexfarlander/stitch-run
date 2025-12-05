@@ -55,7 +55,7 @@ export function getEntityNodePosition(
 
 /**
  * Get position for entity traveling on edge
- * Uses linear interpolation between source and target nodes
+ * Tries to use SVG path interpolation for accuracy, falls back to linear interpolation
  * 
  * IMPORTANT: This returns canvas coordinates (not screen coordinates).
  * The caller must apply viewport transform. This function handles parent node positions.
@@ -67,6 +67,20 @@ export function getEntityEdgePosition(
   progress: number, // 0.0 to 1.0
   nodes: Node[]
 ): Position {
+  // Clamp progress to valid range [0, 1]
+  const clampedProgress = Math.max(0, Math.min(1, progress));
+  
+  // Try to use SVG path interpolation first
+  const pathElement = getEdgePathElement(edge.id);
+  if (pathElement) {
+    try {
+      return getEntityEdgePositionFromPath(pathElement, clampedProgress);
+    } catch (error) {
+      console.warn(`Failed to use SVG path for edge ${edge.id}, falling back to linear interpolation:`, error);
+    }
+  }
+
+  // Fall back to linear interpolation if path is not available
   // Calculate absolute positions for source and target by recursively summing parent positions
   let sourceAbsoluteX = sourceNode.position.x;
   let sourceAbsoluteY = sourceNode.position.y;
@@ -101,8 +115,8 @@ export function getEntityEdgePosition(
   };
 
   return {
-    x: sourcePos.x + (targetPos.x - sourcePos.x) * progress - 14,
-    y: sourcePos.y + (targetPos.y - sourcePos.y) * progress - 14
+    x: sourcePos.x + (targetPos.x - sourcePos.x) * clampedProgress - 14,
+    y: sourcePos.y + (targetPos.y - sourcePos.y) * clampedProgress - 14
   };
 }
 
@@ -114,13 +128,40 @@ export function getEntityEdgePositionFromPath(
   pathElement: SVGPathElement,
   progress: number
 ): Position {
+  // Clamp progress to valid range [0, 1]
+  const clampedProgress = Math.max(0, Math.min(1, progress));
+  
   const totalLength = pathElement.getTotalLength();
-  const point = pathElement.getPointAtLength(totalLength * progress);
+  const point = pathElement.getPointAtLength(totalLength * clampedProgress);
 
   return {
     x: point.x - 14,
     y: point.y - 14
   };
+}
+
+/**
+ * Get SVG path element for an edge
+ * Returns null if the edge element or path is not found
+ * 
+ * Note: React Flow edges contain multiple paths (interaction hitbox, visual path, arrowheads).
+ * We specifically target the visual path using the .react-flow__edge-path class.
+ */
+export function getEdgePathElement(edgeId: string): SVGPathElement | null {
+  try {
+    // React Flow renders edges with data-id attribute
+    const edgeElement = document.querySelector(`[data-id="${edgeId}"]`);
+    if (!edgeElement) {
+      return null;
+    }
+
+    // Target the specific visual path, not the interaction hitbox or arrowheads
+    const pathElement = edgeElement.querySelector('path.react-flow__edge-path');
+    return pathElement as SVGPathElement | null;
+  } catch (error) {
+    console.warn(`Failed to get path element for edge ${edgeId}:`, error);
+    return null;
+  }
 }
 
 /**

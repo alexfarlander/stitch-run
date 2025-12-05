@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { StitchEntity } from '@/types/entity';
 import { animateEntityTravel } from '@/lib/entities/travel';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 interface UseEntitiesResult {
   entities: StitchEntity[];
@@ -36,58 +37,52 @@ export function useEntities(canvasId: string): UseEntitiesResult {
     fetchEntities();
   }, [canvasId]);
 
-  // Real-time subscription
-  useEffect(() => {
-    const subscription = supabase
-      .channel(`entities:${canvasId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'stitch_entities',
-          filter: `canvas_id=eq.${canvasId}`
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setEntities((prev) => [...prev, payload.new as StitchEntity]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updated = payload.new as StitchEntity;
-            const old = payload.old as StitchEntity;
+  // Real-time subscription using centralized subscription
+  useRealtimeSubscription<{
+    eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+    new: StitchEntity;
+    old: StitchEntity;
+  }>(
+    {
+      table: 'stitch_entities',
+      filter: `canvas_id=eq.${canvasId}`,
+      event: '*',
+    },
+    (payload) => {
+      if (payload.eventType === 'INSERT') {
+        setEntities((prev) => [...prev, payload.new as StitchEntity]);
+      } else if (payload.eventType === 'UPDATE') {
+        const updated = payload.new as StitchEntity;
+        const old = payload.old as StitchEntity;
 
-            setEntities((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+        setEntities((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
 
-            // Detect if entity started traveling
-            if (updated.current_edge_id && !old.current_edge_id) {
-              // Start local animation
-              animateEntityTravel({
-                entityId: updated.id,
-                edgeId: updated.current_edge_id,
-                destinationNodeId: updated.destination_node_id!,
-                duration: 2,
-                onProgress: (progress) => {
-                  setEntityProgress((prev) => new Map(prev).set(updated.id, progress));
-                },
-                onComplete: () => {
-                  setEntityProgress((prev) => {
-                    const next = new Map(prev);
-                    next.delete(updated.id);
-                    return next;
-                  });
-                }
+        // Detect if entity started traveling
+        if (updated.current_edge_id && !old.current_edge_id) {
+          // Start local animation
+          animateEntityTravel({
+            entityId: updated.id,
+            edgeId: updated.current_edge_id,
+            destinationNodeId: updated.destination_node_id!,
+            duration: 2,
+            onProgress: (progress) => {
+              setEntityProgress((prev) => new Map(prev).set(updated.id, progress));
+            },
+            onComplete: () => {
+              setEntityProgress((prev) => {
+                const next = new Map(prev);
+                next.delete(updated.id);
+                return next;
               });
             }
-          } else if (payload.eventType === 'DELETE') {
-            setEntities((prev) => prev.filter((e) => e.id !== payload.old.id));
-          }
+          });
         }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [canvasId]);
+      } else if (payload.eventType === 'DELETE') {
+        setEntities((prev) => prev.filter((e) => e.id !== payload.old.id));
+      }
+    },
+    true
+  );
 
   return { entities, isLoading, error, entityProgress };
 }

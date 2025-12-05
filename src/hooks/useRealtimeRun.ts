@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { StitchRun } from '@/types/stitch';
-import { supabase } from '@/lib/supabase/client';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 interface UseRealtimeRunResult {
   run: StitchRun | null;
@@ -18,10 +18,10 @@ export function useRealtimeRun(runId: string): UseRealtimeRunResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch initial state
   useEffect(() => {
     let mounted = true;
 
-    // Fetch initial state
     async function fetchInitialState() {
       try {
         const response = await fetch(`/api/stitch/status/${runId}`);
@@ -46,30 +46,33 @@ export function useRealtimeRun(runId: string): UseRealtimeRunResult {
 
     fetchInitialState();
 
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel(`run:${runId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'stitch_runs',
-          filter: `id=eq.${runId}`,
-        },
-        (payload) => {
-          if (mounted) {
-            setRun(payload.new as StitchRun);
-          }
-        }
-      )
-      .subscribe();
-
     return () => {
       mounted = false;
-      supabase.removeChannel(channel);
     };
   }, [runId]);
+
+  // Subscribe to real-time updates using centralized subscription
+  const { error: subscriptionError } = useRealtimeSubscription<{
+    new: StitchRun;
+    old: StitchRun;
+  }>(
+    {
+      table: 'stitch_runs',
+      filter: `id=eq.${runId}`,
+      event: 'UPDATE',
+    },
+    (payload) => {
+      setRun(payload.new as StitchRun);
+    },
+    true
+  );
+
+  // Update error state if subscription fails
+  useEffect(() => {
+    if (subscriptionError && !error) {
+      setError(subscriptionError);
+    }
+  }, [subscriptionError, error]);
 
   return { run, loading, error };
 }

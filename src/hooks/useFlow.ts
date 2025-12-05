@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { StitchFlow } from '@/types/stitch';
 import { supabase } from '@/lib/supabase/client';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 interface UseFlowResult {
   flow: StitchFlow | null;
@@ -18,6 +19,7 @@ export function useFlow(flowId: string | null, realtime = false): UseFlowResult 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch initial flow
   useEffect(() => {
     if (!flowId) {
       setFlow(null);
@@ -27,7 +29,6 @@ export function useFlow(flowId: string | null, realtime = false): UseFlowResult 
 
     let mounted = true;
 
-    // Fetch initial flow
     async function fetchFlow() {
       try {
         const { data, error: fetchError } = await supabase
@@ -54,36 +55,33 @@ export function useFlow(flowId: string | null, realtime = false): UseFlowResult 
 
     fetchFlow();
 
-    // Subscribe to real-time updates if enabled
-    if (realtime) {
-      const channel = supabase
-        .channel(`flow:${flowId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'stitch_flows',
-            filter: `id=eq.${flowId}`,
-          },
-          (payload) => {
-            if (mounted) {
-              setFlow(payload.new as StitchFlow);
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        mounted = false;
-        supabase.removeChannel(channel);
-      };
-    }
-
     return () => {
       mounted = false;
     };
-  }, [flowId, realtime]);
+  }, [flowId]);
+
+  // Subscribe to real-time updates using centralized subscription
+  const { error: subscriptionError } = useRealtimeSubscription<{
+    new: StitchFlow;
+    old: StitchFlow;
+  }>(
+    {
+      table: 'stitch_flows',
+      filter: `id=eq.${flowId}`,
+      event: 'UPDATE',
+    },
+    (payload) => {
+      setFlow(payload.new as StitchFlow);
+    },
+    realtime && !!flowId // Only subscribe if realtime is enabled and flowId exists
+  );
+
+  // Update error state if subscription fails
+  useEffect(() => {
+    if (subscriptionError && !error) {
+      setError(subscriptionError);
+    }
+  }, [subscriptionError, error]);
 
   return { flow, loading, error };
 }

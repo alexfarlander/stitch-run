@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { JourneyEvent } from '@/types/stitch';
 import { supabase } from '@/lib/supabase/client';
+import { DatabaseJourneyEvent, normalizeJourneyEvent } from '@/types/journey-event';
 
 interface UseJourneyHistoryResult {
-  events: JourneyEvent[];
+  events: DatabaseJourneyEvent[];
   loading: boolean;
   error: string | null;
 }
@@ -17,7 +17,7 @@ interface UseJourneyHistoryResult {
  * Requirements: 10.1, 10.2, 10.3, 10.5
  */
 export function useJourneyHistory(entityId: string | null): UseJourneyHistoryResult {
-  const [events, setEvents] = useState<JourneyEvent[]>([]);
+  const [events, setEvents] = useState<DatabaseJourneyEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +47,11 @@ export function useJourneyHistory(entityId: string | null): UseJourneyHistoryRes
         }
 
         if (mounted) {
-          setEvents((data || []) as JourneyEvent[]);
+          // Normalize raw database events to typed events
+          const typedEvents = (data || []).map(raw => 
+            normalizeJourneyEvent(raw) as DatabaseJourneyEvent
+          );
+          setEvents(typedEvents);
         }
       } catch (err) {
         if (mounted) {

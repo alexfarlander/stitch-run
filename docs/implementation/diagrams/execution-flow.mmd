@@ -1,0 +1,262 @@
+sequenceDiagram
+    participant User
+    participant API as API Layer<br/>/api/runs/create
+    participant EdgeWalker as Edge Walker
+    participant NodeHandler as Node Handler
+    participant DB as Database
+    participant Worker as External Worker
+    participant Callback as Callback API<br/>/api/stitch/callback
+    participant Realtime as Supabase Realtime
+
+    Note over User,Realtime: Workflow Execution Flow with Edge-Walking Pattern
+
+    %% Initial Run Creation
+    User->>API: POST /api/runs/create<br/>{flowId, entityId?, input}
+    activate API
+    
+    API->>DB: Create run record<br/>status: 'running'
+    DB-->>API: run created
+    
+    API->>DB: Load flow version<br/>Get execution graph
+    DB-->>API: execution_graph
+    
+    Note over API: Identify entry nodes<br/>(nodes with no inbound edges)
+    
+    API->>EdgeWalker: startRun(executionGraph, run)
+    activate EdgeWalker
+    
+    %% Fire Entry Nodes
+    loop For each entry node
+        EdgeWalker->>NodeHandler: fireNode(nodeId, executionGraph, run)
+        activate NodeHandler
+        
+        NodeHandler->>DB: Update node state<br/>status: 'running'
+        DB->>Realtime: Broadcast node update
+        Realtime->>User: WebSocket: node running
+        
+        alt Worker Node (Async Pattern)
+            NodeHandler->>Worker: POST webhook<br/>{runId, nodeId, config, input, callbackUrl}
+            Note over NodeHandler,Worker: Fire and forget<br/>Node stays 'running'
+            NodeHandler-->>EdgeWalker: Node fired (async)
+            
+        else UX Node (Human-in-the-Loop)
+            NodeHandler->>DB: Update node state<br/>status: 'waiting_for_user'
+            DB->>Realtime: Broadcast node update
+            Realtime->>User: WebSocket: waiting for input
+            NodeHandler-->>EdgeWalker: Node waiting
+            
+        else Splitter Node (Parallel Execution)
+            Note over NodeHandler: Extract array from input<br/>Create parallel instances
+            NodeHandler->>DB: Create parallel node states<br/>worker_0, worker_1, worker_2...<br/>status: 'pending'
+            NodeHandler->>DB: Update splitter<br/>status: 'completed'
+            DB->>Realtime: Broadcast updates
+            NodeHandler-->>EdgeWalker: Splitter completed
+        end
+        
+        deactivate NodeHandler
+    end
+    
+    EdgeWalker-->>API: Entry nodes fired
+    deactivate EdgeWalker
+    API-->>User: 200 OK {runId}
+    deactivate API
+
+    %% Worker Callback (Async Resume)
+    Note over Worker: Worker processes request<br/>(may take seconds/minutes)
+    
+    Worker->>Callback: POST /api/stitch/callback/{runId}/{nodeId}<br/>{status: 'completed', output}
+    activate Callback
+    
+    Callback->>DB: Update node state<br/>status: 'completed'<br/>output: {...}
+    DB->>Realtime: Broadcast node update
+    Realtime->>User: WebSocket: node completed
+    
+    Callback->>EdgeWalker: walkEdges(completedNodeId, run)
+    activate EdgeWalker
+    
+    %% Edge-Walking Process
+    Note over EdgeWalker: Load execution graph<br/>Strip parallel suffix from nodeId
+    
+    EdgeWalker->>EdgeWalker: Check if terminal node<br/>(no outbound edges)
+    
+    alt Is Terminal Node
+        Note over EdgeWalker: Stop walking<br/>No downstream nodes
+        EdgeWalker-->>Callback: Walking complete
+        
+    else Has Downstream Nodes
+        Note over EdgeWalker: Use adjacency map<br/>O(1) edge lookup
+        
+        loop For each downstream node
+            EdgeWalker->>EdgeWalker: Check upstream dependencies<br/>All completed?
+            
+            alt Dependencies Not Met
+                Note over EdgeWalker: Skip this node<br/>Wait for other paths
+                
+            else Dependencies Met
+                EdgeWalker->>EdgeWalker: Check for parallel instances<br/>(nodeId_0, nodeId_1...)
+                
+                alt Has Parallel Instances
+                    loop For each parallel instance
+                        EdgeWalker->>NodeHandler: fireNode(parallelNodeId, executionGraph, run)
+                        activate NodeHandler
+                        
+                        NodeHandler->>DB: Update node state<br/>status: 'running'
+                        DB->>Realtime: Broadcast update
+                        
+                        alt Worker Node
+                            NodeHandler->>Worker: POST webhook<br/>{runId, nodeId_i, config, input, callbackUrl}
+                            NodeHandler-->>EdgeWalker: Fired async
+                            
+                        else UX Node
+                            NodeHandler->>DB: status: 'waiting_for_user'
+                            DB->>Realtime: Broadcast update
+                            NodeHandler-->>EdgeWalker: Waiting
+                        end
+                        
+                        deactivate NodeHandler
+                    end
+                    
+                else Static Node (No Parallel)
+                    EdgeWalker->>NodeHandler: fireNode(nodeId, executionGraph, run)
+                    activate NodeHandler
+                    
+                    Note over NodeHandler: Merge upstream outputs<br/>Apply edge data mappings
+                    
+                    alt Collector Node
+                        NodeHandler->>NodeHandler: Count completed upstream paths<br/>Check if all parallel paths done
+                        
+                        alt All Paths Complete
+                            Note over NodeHandler: Merge parallel outputs<br/>Preserve order by index
+                            NodeHandler->>DB: Update collector<br/>status: 'completed'<br/>output: [merged array]
+                            DB->>Realtime: Broadcast update
+                            NodeHandler-->>EdgeWalker: Collector completed
+                            
+                        else Paths Still Running
+                            Note over NodeHandler: Collector stays 'pending'<br/>Wait for more completions
+                            NodeHandler-->>EdgeWalker: Not ready yet
+                        end
+                        
+                    else Regular Node
+                        NodeHandler->>DB: Update node state<br/>status: 'running'
+                        DB->>Realtime: Broadcast update
+                        
+                        alt Worker Node
+                            NodeHandler->>Worker: POST webhook
+                            NodeHandler-->>EdgeWalker: Fired async
+                            
+                        else UX Node
+                            NodeHandler->>DB: status: 'waiting_for_user'
+                            DB->>Realtime: Broadcast update
+                            NodeHandler-->>EdgeWalker: Waiting
+                        end
+                    end
+                    
+                    deactivate NodeHandler
+                end
+            end
+        end
+        
+        EdgeWalker-->>Callback: Walking complete
+    end
+    
+    deactivate EdgeWalker
+    Callback-->>Worker: 200 OK
+    deactivate Callback
+
+    %% Recursive Edge-Walking
+    Note over Worker,Callback: Each worker callback triggers<br/>another round of edge-walking<br/>Recursion continues until<br/>all paths reach terminal nodes
+
+    %% User Input for UX Node
+    rect rgb(240, 248, 255)
+        Note over User,Realtime: Human-in-the-Loop Flow (UX Node)
+        
+        User->>API: POST /api/runs/{runId}/nodes/{nodeId}/complete<br/>{userInput}
+        activate API
+        
+        API->>DB: Update node state<br/>status: 'completed'<br/>output: {userInput}
+        DB->>Realtime: Broadcast update
+        Realtime->>User: WebSocket: node completed
+        
+        API->>EdgeWalker: walkEdges(nodeId, run)
+        activate EdgeWalker
+        Note over EdgeWalker: Resume edge-walking<br/>from UX node
+        EdgeWalker-->>API: Walking complete
+        deactivate EdgeWalker
+        
+        API-->>User: 200 OK
+        deactivate API
+    end
+
+    %% Parallel Execution Example
+    rect rgb(255, 250, 240)
+        Note over EdgeWalker,Realtime: Parallel Execution (M-Shape Pattern)
+        
+        Note over EdgeWalker: Splitter completes<br/>Creates worker_0, worker_1, worker_2
+        
+        par Parallel Path 0
+            Worker->>Callback: Callback for worker_0
+            Callback->>DB: Update worker_0: 'completed'
+            DB->>Realtime: Broadcast
+        and Parallel Path 1
+            Worker->>Callback: Callback for worker_1
+            Callback->>DB: Update worker_1: 'completed'
+            DB->>Realtime: Broadcast
+        and Parallel Path 2
+            Worker->>Callback: Callback for worker_2
+            Callback->>DB: Update worker_2: 'completed'
+            DB->>Realtime: Broadcast
+        end
+        
+        Note over Callback: Last parallel path completes<br/>Triggers edge-walking to Collector
+        
+        Callback->>EdgeWalker: walkEdges(worker_2, run)
+        activate EdgeWalker
+        
+        EdgeWalker->>NodeHandler: fireNode(collector, executionGraph, run)
+        activate NodeHandler
+        
+        Note over NodeHandler: Check all upstream paths<br/>worker_0, worker_1, worker_2<br/>All completed ✓
+        
+        NodeHandler->>NodeHandler: Merge outputs<br/>[output_0, output_1, output_2]
+        
+        NodeHandler->>DB: Update collector<br/>status: 'completed'<br/>output: [merged]
+        DB->>Realtime: Broadcast update
+        
+        NodeHandler-->>EdgeWalker: Collector completed
+        deactivate NodeHandler
+        
+        Note over EdgeWalker: Continue walking<br/>to downstream nodes
+        
+        EdgeWalker-->>Callback: Walking complete
+        deactivate EdgeWalker
+    end
+
+    %% Run Completion
+    rect rgb(240, 255, 240)
+        Note over EdgeWalker,DB: Run Completion
+        
+        Note over EdgeWalker: All paths reach terminal nodes<br/>No more edges to walk
+        
+        EdgeWalker->>DB: Update run<br/>status: 'completed'<br/>completed_at: timestamp
+        DB->>Realtime: Broadcast run completion
+        Realtime->>User: WebSocket: run completed
+    end
+
+    %% Error Handling
+    rect rgb(255, 240, 240)
+        Note over Worker,Callback: Error Handling Flow
+        
+        Worker->>Callback: POST callback<br/>{status: 'failed', error: 'message'}
+        activate Callback
+        
+        Callback->>DB: Update node state<br/>status: 'failed'<br/>error: 'message'
+        DB->>Realtime: Broadcast failure
+        Realtime->>User: WebSocket: node failed
+        
+        Note over Callback: Edge-walking stops<br/>for this path<br/>Other parallel paths continue
+        
+        Callback-->>Worker: 200 OK
+        deactivate Callback
+        
+        Note over User: User can retry failed node<br/>or investigate error
+    end

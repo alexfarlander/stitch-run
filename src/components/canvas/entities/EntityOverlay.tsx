@@ -1,12 +1,11 @@
 'use client';
 
 import { useCallback, useState, useMemo } from 'react';
-import { useReactFlow, useViewport } from '@xyflow/react';
 import { EntityDot } from './EntityDot';
 import { EntityDetailPanel } from '@/components/panels/EntityDetailPanel';
 import { StitchEntity } from '@/types/entity';
-import { getEntityNodePosition, getEntityEdgePosition } from '@/lib/entities/position';
 import { useEntities } from '@/hooks/useEntities';
+import { useEntityPositions } from '@/hooks/useEntityPosition';
 
 interface Props {
   canvasId: string;
@@ -15,65 +14,24 @@ interface Props {
 export function EntityOverlay({ canvasId }: Props) {
   const { entities, isLoading } = useEntities(canvasId);
   const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
-  const { getNodes, getEdges, getNode } = useReactFlow();
-  const viewport = useViewport();
+  
+  // Use optimized position calculation hook with per-entity memoization
+  // This separates viewport transformation from position calculation
+  // and only recalculates positions for entities that have changed
+  const entityPositions = useEntityPositions(entities || []);
 
-  // Memoize the position calculation function
-  const calculatePosition = useCallback(
-    (entity: StitchEntity) => {
-      const nodes = getNodes();
-      const edges = getEdges();
-
-      if (entity.current_node_id) {
-        // Entity is at a node
-        const node = getNode(entity.current_node_id);
-        if (!node) return null;
-
-        // Count entities at this node for positioning
-        const entitiesAtNode = entities.filter((e) => e.current_node_id === entity.current_node_id);
-        const index = entitiesAtNode.findIndex((e) => e.id === entity.id);
-
-        return getEntityNodePosition(node, index, entitiesAtNode.length, nodes);
-      }
-
-      if (entity.current_edge_id && entity.edge_progress !== undefined) {
-        // Entity is traveling on edge
-        const edge = edges.find((e) => e.id === entity.current_edge_id);
-        if (!edge) return null;
-
-        const sourceNode = getNode(edge.source);
-        const targetNode = getNode(edge.target);
-        if (!sourceNode || !targetNode) return null;
-
-        return getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
-      }
-
-      return null;
-    },
-    [getNodes, getEdges, getNode, entities]
-  );
-
-  // Memoize screen coordinate transformation
-  const toScreenCoords = useCallback(
-    (pos: { x: number; y: number }) => ({
-      x: pos.x * viewport.zoom + viewport.x,
-      y: pos.y * viewport.zoom + viewport.y,
-    }),
-    [viewport.zoom, viewport.x, viewport.y]
-  );
-
-  // Memoize entity positions to prevent recalculation on every render
-  const entityPositions = useMemo(() => {
+  // Build array of entities with their positions for rendering
+  const entitiesWithPositions = useMemo(() => {
     if (!entities) return [];
     
-    return entities.map((entity) => {
-      const canvasPos = calculatePosition(entity);
-      if (!canvasPos) return null;
-      
-      const screenPos = toScreenCoords(canvasPos);
-      return { entity, screenPos };
-    }).filter((item): item is { entity: StitchEntity; screenPos: { x: number; y: number } } => item !== null);
-  }, [entities, calculatePosition, toScreenCoords]);
+    return entities
+      .map((entity) => {
+        const screenPos = entityPositions.get(entity.id);
+        if (!screenPos) return null;
+        return { entity, screenPos };
+      })
+      .filter((item): item is { entity: StitchEntity; screenPos: { x: number; y: number } } => item !== null);
+  }, [entities, entityPositions]);
 
   // Get the selected entity object
   const selectedEntity = useMemo(() => {
@@ -99,7 +57,7 @@ export function EntityOverlay({ canvasId }: Props) {
   return (
     <>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {entityPositions.map(({ entity, screenPos }) => (
+        {entitiesWithPositions.map(({ entity, screenPos }) => (
           <div key={entity.id} className="pointer-events-auto">
             <EntityDot
               entity={entity}

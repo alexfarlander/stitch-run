@@ -6,7 +6,8 @@
  */
 
 import { createServerClient } from '../supabase/server';
-import type { SectionNode, StitchEdge } from '../../types/stitch';
+import type { StitchEdge } from '../../types/stitch';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Converts a section name to a safe, slugified node ID
@@ -174,10 +175,11 @@ export function generateBMCGraph(): { nodes: any[]; edges: StitchEdge[] } {
  * Creates 3 test entities (Monica, Ross, Rachel) at different workflow nodes
  * 
  * @param canvasId - The BMC canvas ID to seed entities for
+ * @param supabase - Optional Supabase client (uses createServerClient if not provided)
  * @throws Error if database operations fail
  */
-async function seedEntities(canvasId: string): Promise<void> {
-  const supabase = createServerClient();
+async function seedEntities(canvasId: string, supabase?: SupabaseClient): Promise<void> {
+  const client = supabase || createServerClient();
   
   const entities = [
     // Monica - at LinkedIn Ads (Marketing section)
@@ -235,7 +237,7 @@ async function seedEntities(canvasId: string): Promise<void> {
     }
   ];
 
-  const { error } = await supabase.from('stitch_entities').insert(entities);
+  const { error } = await client.from('stitch_entities').insert(entities);
   if (error) throw error;
 }
 
@@ -243,14 +245,15 @@ async function seedEntities(canvasId: string): Promise<void> {
  * Seeds the default BMC canvas into the database
  * Implements idempotency - returns existing BMC if one already exists
  * 
+ * @param supabase - Optional Supabase client (uses createServerClient if not provided)
  * @returns Promise resolving to the BMC canvas ID
  * @throws Error if database operations fail
  */
-export async function seedDefaultBMC(): Promise<string> {
-  const supabase = createServerClient();
+export async function seedDefaultBMC(supabase?: SupabaseClient): Promise<string> {
+  const client = supabase || createServerClient();
   
   // Check if a BMC already exists (idempotency check)
-  const { data: existingBMC, error: queryError } = await supabase
+  const { data: existingBMC, error: queryError } = await client
     .from('stitch_flows')
     .select('id')
     .eq('canvas_type', 'bmc')
@@ -271,7 +274,7 @@ export async function seedDefaultBMC(): Promise<string> {
   const graph = generateBMCGraph();
   
   // Insert the new BMC canvas
-  const { data: newBMC, error: insertError } = await supabase
+  const { data: newBMC, error: insertError } = await client
     .from('stitch_flows')
     .insert({
       name: 'Default Business Model Canvas',
@@ -291,7 +294,7 @@ export async function seedDefaultBMC(): Promise<string> {
   }
   
   // Seed demo entities
-  await seedEntities(newBMC.id);
+  await seedEntities(newBMC.id, client);
   
   return newBMC.id;
 }

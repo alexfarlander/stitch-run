@@ -2,9 +2,22 @@
 
 import { Clock, MapPin, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { JourneyEvent } from '@/types/stitch';
 import { useJourneyHistory } from '@/hooks/useJourneyHistory';
 import { supabase } from '@/lib/supabase/client';
+import {
+  TypedJourneyEvent,
+  FallbackJourneyEvent,
+  DatabaseJourneyEvent,
+  normalizeJourneyEvent,
+  isDatabaseEvent,
+  getEventType,
+  getNodeId,
+  getEdgeId,
+  getTimestamp,
+  getMetadata,
+  getNote,
+  getProgress,
+} from '@/types/journey-event';
 
 interface Props {
   entityId: string | null;
@@ -25,8 +38,8 @@ interface Props {
  * Requirements: 10.3
  */
 function calculateDwellTime(
-  currentEvent: JourneyEvent,
-  events: JourneyEvent[],
+  currentEvent: DatabaseJourneyEvent,
+  events: DatabaseJourneyEvent[],
   currentIndex: number
 ): number | null {
   // Only calculate dwell time for node_arrival events
@@ -193,9 +206,14 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
     return null;
   }
 
+  // Normalize fallback journey to typed events
+  const normalizedFallback: FallbackJourneyEvent[] = (fallbackJourney || []).map(raw =>
+    normalizeJourneyEvent(raw) as FallbackJourneyEvent
+  );
+
   // Use fallback journey if no events found in database
-  const displayEvents = events.length > 0 ? events : (fallbackJourney || []);
-  const usingFallback = events.length === 0 && fallbackJourney && fallbackJourney.length > 0;
+  const displayEvents: TypedJourneyEvent[] = events.length > 0 ? events : normalizedFallback;
+  const usingFallback = events.length === 0 && normalizedFallback.length > 0;
 
   // Fetch node and edge labels
   useEffect(() => {
@@ -213,9 +231,9 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
       const nodeIds = new Set<string>();
       const edgeIds = new Set<string>();
 
-      displayEvents.forEach((event: any) => {
-        const nodeId = event.node_id;
-        const edgeId = event.edge_id;
+      displayEvents.forEach((event) => {
+        const nodeId = getNodeId(event);
+        const edgeId = getEdgeId(event);
         if (nodeId) nodeIds.add(nodeId);
         if (edgeId) edgeIds.add(edgeId);
       });
@@ -240,22 +258,26 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
             const edgeLabelsMap: Record<string, string> = {};
 
             // Extract node labels
-            canvas.graph.nodes?.forEach((node: any) => {
-              if (nodeIds.has(node.id)) {
-                labels[node.id] = node.data?.label || node.id;
-              }
-            });
+            if (canvas.graph.nodes) {
+              canvas.graph.nodes.forEach((node: { id: string; data?: { label?: string } }) => {
+                if (nodeIds.has(node.id)) {
+                  labels[node.id] = node.data?.label || node.id;
+                }
+              });
+            }
 
             // Extract edge labels (use source -> target as label)
-            canvas.graph.edges?.forEach((edge: any) => {
-              if (edgeIds.has(edge.id)) {
-                const sourceNode = canvas.graph.nodes?.find((n: any) => n.id === edge.source);
-                const targetNode = canvas.graph.nodes?.find((n: any) => n.id === edge.target);
-                const sourceLabel = sourceNode?.data?.label || edge.source;
-                const targetLabel = targetNode?.data?.label || edge.target;
-                edgeLabelsMap[edge.id] = `${sourceLabel} → ${targetLabel}`;
-              }
-            });
+            if (canvas.graph.edges) {
+              canvas.graph.edges.forEach((edge: { id: string; source: string; target: string }) => {
+                if (edgeIds.has(edge.id)) {
+                  const sourceNode = canvas.graph.nodes?.find((n: { id: string; data?: { label?: string } }) => n.id === edge.source);
+                  const targetNode = canvas.graph.nodes?.find((n: { id: string; data?: { label?: string } }) => n.id === edge.target);
+                  const sourceLabel = sourceNode?.data?.label || edge.source;
+                  const targetLabel = targetNode?.data?.label || edge.target;
+                  edgeLabelsMap[edge.id] = `${sourceLabel} → ${targetLabel}`;
+                }
+              });
+            }
 
             setNodeLabels(labels);
             setEdgeLabels(edgeLabelsMap);
@@ -305,20 +327,22 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
               Showing journey from entity record (legacy format)
             </div>
           )}
-          {displayEvents.map((event: any, index: number) => {
-            // Handle both database format and fallback format
-            const eventType = event.event_type || event.type;
-            const nodeId = event.node_id;
-            const edgeId = event.edge_id;
-            const timestamp = event.timestamp;
-            const eventId = event.id || `${index}`;
-            const note = event.note;
+          {displayEvents.map((event: TypedJourneyEvent, index: number) => {
+            // Use type-safe accessors
+            const eventType = getEventType(event);
+            const nodeId = getNodeId(event);
+            const edgeId = getEdgeId(event);
+            const timestamp = getTimestamp(event);
+            const eventId = isDatabaseEvent(event) ? event.id : `fallback-${index}`;
+            const note = getNote(event);
+            const metadata = getMetadata(event);
+            const progress = getProgress(event);
             
             // Get human-readable labels
             const nodeLabel = nodeId ? (nodeLabels[nodeId] || nodeId) : null;
             const edgeLabel = edgeId ? (edgeLabels[edgeId] || edgeId) : null;
             
-            const dwellTime = usingFallback ? null : calculateDwellTime(event, events, index);
+            const dwellTime = isDatabaseEvent(event) ? calculateDwellTime(event, events, index) : null;
             const eventColor = getEventColor(eventType);
 
             return (
@@ -350,27 +374,27 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
                       )}
 
                       {/* Metadata - display meaningful business context */}
-                      {event.metadata && Object.keys(event.metadata).length > 0 && (
+                      {metadata && Object.keys(metadata).length > 0 && (
                         <div className="text-xs text-gray-400 mt-1 space-y-0.5">
-                          {event.metadata.started_date && (
+                          {metadata.started_date && (
                             <div>
-                              Started: {new Date(event.metadata.started_date).toLocaleDateString('en-US', {
+                              Started: {new Date(metadata.started_date).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                               })}
                             </div>
                           )}
-                          {event.metadata.ends_date && (
+                          {metadata.ends_date && (
                             <div>
-                              Ends: {new Date(event.metadata.ends_date).toLocaleDateString('en-US', {
+                              Ends: {new Date(metadata.ends_date).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                               })}
                             </div>
                           )}
-                          {event.metadata.scheduled_date && (
+                          {metadata.scheduled_date && (
                             <div>
-                              Scheduled: {new Date(event.metadata.scheduled_date).toLocaleString('en-US', {
+                              Scheduled: {new Date(metadata.scheduled_date).toLocaleString('en-US', {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -379,32 +403,32 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
                               })}
                             </div>
                           )}
-                          {event.metadata.account_manager && (
-                            <div>Account Manager: {event.metadata.account_manager}</div>
+                          {metadata.account_manager && (
+                            <div>Account Manager: {metadata.account_manager}</div>
                           )}
-                          {event.metadata.assigned_to && (
-                            <div>Assigned to: {event.metadata.assigned_to}</div>
+                          {metadata.assigned_to && (
+                            <div>Assigned to: {metadata.assigned_to}</div>
                           )}
-                          {event.metadata.campaign && (
-                            <div>Campaign: {event.metadata.campaign}</div>
+                          {metadata.campaign && (
+                            <div>Campaign: {metadata.campaign}</div>
                           )}
-                          {event.metadata.source && (
-                            <div>Source: {event.metadata.source}</div>
+                          {metadata.source && (
+                            <div>Source: {metadata.source}</div>
                           )}
-                          {event.metadata.plan && (
-                            <div>Plan: {event.metadata.plan}</div>
+                          {metadata.plan && (
+                            <div>Plan: {metadata.plan}</div>
                           )}
-                          {event.metadata.amount !== undefined && (
-                            <div>Amount: ${event.metadata.amount}</div>
+                          {metadata.amount !== undefined && (
+                            <div>Amount: ${metadata.amount}</div>
                           )}
-                          {event.metadata.status && (
-                            <div>Status: {event.metadata.status}</div>
+                          {metadata.status && (
+                            <div>Status: {metadata.status}</div>
                           )}
-                          {event.metadata.note && (
-                            <div className="italic">{event.metadata.note}</div>
+                          {metadata.note && (
+                            <div className="italic">{metadata.note}</div>
                           )}
                           {/* Show other metadata fields that aren't in the special list */}
-                          {Object.entries(event.metadata)
+                          {Object.entries(metadata)
                             .filter(([key]) => !['started_date', 'ends_date', 'scheduled_date', 'account_manager', 'assigned_to', 'campaign', 'source', 'plan', 'amount', 'status', 'note', 'completion_status', 'movement_type', 'entity_type_changed'].includes(key))
                             .map(([key, value]) => (
                               <div key={key}>
@@ -420,9 +444,9 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
                       )}
 
                       {/* Progress for edge events (only for database events) */}
-                      {!usingFallback && event.progress !== null && event.progress !== undefined && (
+                      {progress !== null && progress !== undefined && (
                         <p className="text-xs text-gray-400 mt-1">
-                          Progress: {Math.round(event.progress * 100)}%
+                          Progress: {Math.round(progress * 100)}%
                         </p>
                       )}
 

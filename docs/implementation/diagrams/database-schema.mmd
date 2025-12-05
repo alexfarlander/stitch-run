@@ -1,0 +1,162 @@
+erDiagram
+    %% Core Flow and Run Tables
+    stitch_flows ||--o{ stitch_runs : "executes"
+    stitch_flows ||--o{ stitch_flows : "parent_of"
+    stitch_flows ||--o{ stitch_flow_versions : "has_versions"
+    stitch_flows ||--o| stitch_flow_versions : "current_version"
+    stitch_flows ||--o{ stitch_entities : "tracks"
+    stitch_flows ||--o{ stitch_webhook_configs : "receives_webhooks"
+    
+    %% Run and Version Relationship
+    stitch_runs }o--|| stitch_flow_versions : "executed_version"
+    
+    %% Entity Relationships
+    stitch_entities ||--o{ stitch_journey_events : "generates"
+    stitch_entities ||--o{ stitch_runs : "triggers"
+    stitch_entities ||--o{ stitch_webhook_events : "created_from"
+    
+    %% Webhook System
+    stitch_webhook_configs ||--o{ stitch_webhook_events : "receives"
+    stitch_webhook_events }o--|| stitch_runs : "triggers"
+    
+    %% Media Library
+    stitch_media ||--o{ stitch_media : "style_reference"
+    stitch_media ||--o{ stitch_media : "source_image"
+    
+    %% ========================================================================
+    %% Table: stitch_flows
+    %% Purpose: Stores all canvases (BMC and Workflows)
+    %% ========================================================================
+    stitch_flows {
+        uuid id PK "Primary key"
+        text name "Canvas name"
+        jsonb graph "Visual graph structure"
+        text canvas_type "bmc or workflow"
+        uuid parent_id FK "Parent canvas for hierarchy"
+        uuid current_version_id FK "Latest version"
+        timestamptz created_at "Creation timestamp"
+        timestamptz updated_at "Last update timestamp"
+    }
+    
+    %% ========================================================================
+    %% Table: stitch_flow_versions
+    %% Purpose: Immutable snapshots of canvas versions
+    %% ========================================================================
+    stitch_flow_versions {
+        uuid id PK "Primary key"
+        uuid flow_id FK "Parent flow"
+        jsonb visual_graph "UI graph with positions"
+        jsonb execution_graph "Optimized runtime graph"
+        text commit_message "Version description"
+        timestamptz created_at "Version creation time"
+    }
+    
+    %% ========================================================================
+    %% Table: stitch_runs
+    %% Purpose: Tracks workflow execution instances
+    %% ========================================================================
+    stitch_runs {
+        uuid id PK "Primary key"
+        uuid flow_id FK "Flow being executed"
+        uuid flow_version_id FK "Specific version executed"
+        uuid entity_id FK "Entity triggering run"
+        jsonb node_states "Current state of all nodes"
+        jsonb trigger "Trigger metadata"
+        timestamptz created_at "Run start time"
+        timestamptz updated_at "Last state update"
+    }
+    
+    %% ========================================================================
+    %% Table: stitch_entities
+    %% Purpose: Tracks customers/leads moving through canvas
+    %% ========================================================================
+    stitch_entities {
+        uuid id PK "Primary key"
+        uuid canvas_id FK "Canvas entity belongs to"
+        text name "Entity name"
+        text avatar_url "Avatar image URL"
+        text entity_type "customer, lead, churned"
+        text current_node_id "Current node position"
+        text current_edge_id "Current edge if traveling"
+        numeric edge_progress "Position on edge 0.0-1.0"
+        jsonb journey "Journey history array"
+        jsonb metadata "Additional entity data"
+        timestamptz created_at "Entity creation time"
+        timestamptz updated_at "Last position update"
+    }
+    
+    %% ========================================================================
+    %% Table: stitch_journey_events
+    %% Purpose: Detailed event log of entity movements
+    %% ========================================================================
+    stitch_journey_events {
+        uuid id PK "Primary key"
+        uuid entity_id FK "Entity generating event"
+        text event_type "Event type identifier"
+        text node_id "Related node if applicable"
+        text edge_id "Related edge if applicable"
+        numeric progress "Progress value 0.0-1.0"
+        jsonb metadata "Event-specific data"
+        timestamptz timestamp "Event occurrence time"
+    }
+    
+    %% ========================================================================
+    %% Table: stitch_webhook_configs
+    %% Purpose: Webhook endpoint configurations
+    %% ========================================================================
+    stitch_webhook_configs {
+        uuid id PK "Primary key"
+        uuid canvas_id FK "Canvas receiving webhooks"
+        text name "Config name"
+        text source "stripe, typeform, calendly"
+        text endpoint_slug UK "Unique URL slug"
+        text secret "Webhook signature secret"
+        uuid workflow_id FK "Workflow to trigger"
+        text entry_edge_id "Edge to inject entity"
+        jsonb entity_mapping "Field mapping config"
+        boolean is_active "Enable/disable webhook"
+        timestamptz created_at "Config creation time"
+        timestamptz updated_at "Last config update"
+    }
+    
+    %% ========================================================================
+    %% Table: stitch_webhook_events
+    %% Purpose: Log of received webhook events
+    %% ========================================================================
+    stitch_webhook_events {
+        uuid id PK "Primary key"
+        uuid webhook_config_id FK "Config that received event"
+        timestamptz received_at "Event receipt time"
+        jsonb payload "Raw webhook payload"
+        uuid entity_id FK "Created entity"
+        uuid workflow_run_id FK "Triggered run"
+        text status "pending, processed, failed"
+        text error "Error message if failed"
+        timestamptz processed_at "Processing completion time"
+    }
+    
+    %% ========================================================================
+    %% Table: stitch_media
+    %% Purpose: Centralized media asset library
+    %% ========================================================================
+    stitch_media {
+        uuid id PK "Primary key"
+        text name "Asset name"
+        text description "Asset description"
+        text media_type "image, video, audio, etc"
+        text storage_path "Storage bucket path"
+        text url "Public URL"
+        text thumbnail_path "Thumbnail storage path"
+        text thumbnail_url "Thumbnail public URL"
+        integer file_size "File size in bytes"
+        text mime_type "MIME type"
+        numeric duration_seconds "Duration for audio/video"
+        jsonb dimensions "Width and height"
+        jsonb metadata "Additional metadata"
+        text[] tags "Searchable tags array"
+        uuid style_reference_id FK "Style reference asset"
+        uuid source_image_id FK "Source image asset"
+        uuid user_id FK "Owner user ID"
+        timestamptz created_at "Asset creation time"
+        timestamptz updated_at "Last asset update"
+    }

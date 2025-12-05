@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { StitchRun, NodeState } from '@/types/stitch';
+import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 interface UseRunStatusResult {
   nodeStates: Record<string, NodeState> | null;
@@ -26,6 +27,7 @@ export function useRunStatus(runId?: string): UseRunStatusResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Initial fetch
   useEffect(() => {
     if (!runId) {
       setNodeStates(null);
@@ -35,7 +37,6 @@ export function useRunStatus(runId?: string): UseRunStatusResult {
 
     let mounted = true;
 
-    // Initial fetch
     const fetchRun = async () => {
       try {
         const { data, error: fetchError } = await supabase
@@ -70,41 +71,34 @@ export function useRunStatus(runId?: string): UseRunStatusResult {
 
     fetchRun();
 
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel(`run:${runId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'stitch_runs',
-          filter: `id=eq.${runId}`,
-        },
-        (payload) => {
-          if (!mounted) return;
-          const updatedRun = payload.new as StitchRun;
-          setNodeStates(updatedRun.node_states);
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to run updates: ${runId}`);
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error(`Subscription error for run: ${runId}`);
-          if (mounted) {
-            setError('Real-time subscription failed');
-          }
-        }
-      });
-
-    // Cleanup function
     return () => {
       mounted = false;
-      channel.unsubscribe();
-      console.log(`Unsubscribed from run updates: ${runId}`);
     };
   }, [runId]);
+
+  // Subscribe to real-time changes using centralized subscription
+  const { status: subscriptionStatus, error: subscriptionError } = useRealtimeSubscription<{
+    new: StitchRun;
+    old: StitchRun;
+  }>(
+    {
+      table: 'stitch_runs',
+      filter: `id=eq.${runId}`,
+      event: 'UPDATE',
+    },
+    (payload) => {
+      const updatedRun = payload.new as StitchRun;
+      setNodeStates(updatedRun.node_states);
+    },
+    !!runId // Only subscribe if runId exists
+  );
+
+  // Update error state if subscription fails
+  useEffect(() => {
+    if (subscriptionError && !error) {
+      setError(subscriptionError);
+    }
+  }, [subscriptionError, error]);
 
   return { nodeStates, loading, error };
 }
