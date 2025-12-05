@@ -1,21 +1,49 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { StitchCanvas, BMCCanvas } from '@/components/canvas';
-import { Navigation } from '@/components/Navigation';
 import { supabase } from '@/lib/supabase/client';
 import { StitchFlow } from '@/types/stitch';
+import { getCanvasNavigation } from '@/lib/navigation/canvas-navigation';
 
 export default function CanvasPage() {
   const params = useParams();
+  const router = useRouter();
   const canvasId = params.id as string;
   const [canvas, setCanvas] = useState<StitchFlow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync navigation state with URL and handle drill-down navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const navigation = getCanvasNavigation();
+    const breadcrumbs = navigation.getBreadcrumbs();
+    
+    // Check if URL canvas is in the breadcrumb stack
+    const canvasIndex = breadcrumbs.findIndex(b => b.id === canvasId);
+    
+    if (canvasIndex >= 0 && canvasIndex < breadcrumbs.length - 1) {
+      // User navigated back via browser - sync the stack
+      navigation.navigateTo(canvasIndex);
+    }
+    
+    // Subscribe to navigation changes (for drill-down)
+    const unsubscribe = navigation.subscribe(() => {
+      const newCanvasId = navigation.getCurrentCanvasId();
+      if (newCanvasId && newCanvasId !== canvasId) {
+        router.push(`/canvas/${newCanvasId}`);
+      }
+    });
+    
+    return unsubscribe;
+  }, [canvasId, router]);
+
   useEffect(() => {
     const fetchCanvas = async () => {
+      setLoading(true);
       try {
         const { data, error } = await supabase
           .from('stitch_flows')
@@ -62,11 +90,7 @@ export default function CanvasPage() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-950">
-      <Navigation />
-      <div className="border-b border-slate-800 bg-slate-900 px-6 py-4">
-        <h1 className="text-2xl font-bold text-white">{canvas.name}</h1>
-        <p className="text-sm text-slate-400 mt-1">Living Business Model Canvas</p>
-      </div>
+      {/* Navigation and header hidden for clean canvas view */}
       <div className="flex-1">
         {canvas.canvas_type === 'bmc' ? (
           <BMCCanvas flow={canvas} />

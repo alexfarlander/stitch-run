@@ -32,11 +32,12 @@ export function SystemEdge({
   targetPosition,
   data,
   markerEnd,
+  style,
 }: EdgeProps) {
   const [isPulsing, setIsPulsing] = useState(false);
-  
+
   const edgeData = data as SystemEdgeData | undefined;
-  
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -58,7 +59,7 @@ export function SystemEdge({
         }
       })
       .subscribe();
-    
+
     return () => {
       channel.unsubscribe();
     };
@@ -66,9 +67,10 @@ export function SystemEdge({
 
   // Force visibility when pulsing to override parent opacity: 0 style
   const shouldForceVisible = isPulsing;
+  const { opacity = 1 } = style || {};
 
   return (
-    <g style={{ opacity: shouldForceVisible ? 1 : undefined }}>
+    <g style={{ opacity: shouldForceVisible ? 1 : opacity }}>
       {/* Main dashed path */}
       <BaseEdge
         id={id}
@@ -78,6 +80,7 @@ export function SystemEdge({
           stroke: '#64748b',
           strokeWidth: 2,
           strokeDasharray: '5 5',
+          ...style, // apply other styles but opacity works on the group
         }}
       />
 

@@ -27,25 +27,46 @@ interface Props {
  * - 4.5: Handle real-time updates to cluster counts
  */
 export function EntityOverlay({ canvasId }: Props) {
-  const { entities, isLoading } = useEntities(canvasId);
+  // Destructure entityProgress to use for smooth animations
+  const { entities, isLoading, entityProgress } = useEntities(canvasId);
   const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>();
   const [draggingEntityId, setDraggingEntityId] = useState<string | null>(null);
   const { getNodes, getEdges } = useReactFlow();
-  
+
+  // Merge database entities with local animation progress
+  const animatedEntities = useMemo(() => {
+    if (!entities) return [];
+
+    return entities.map(entity => {
+      // If we have a local animation progress, override the database value
+      const progress = entityProgress.get(entity.id);
+      if (progress !== undefined) {
+        return {
+          ...entity,
+          edge_progress: progress,
+          // Ensure we have an edge ID if we have progress
+          current_edge_id: entity.current_edge_id
+        };
+      }
+      return entity;
+    });
+  }, [entities, entityProgress]);
+
   // Use optimized position calculation hook with per-entity memoization
   // This separates viewport transformation from position calculation
   // and only recalculates positions for entities that have changed
-  const entityPositions = useEntityPositions(entities || []);
+  // Pass the ANIMATED entities here, not the raw database ones
+  const entityPositions = useEntityPositions(animatedEntities);
 
   // Handle drop on node
   const handleNodeDrop = useCallback(async (e: React.DragEvent, targetNodeId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
       const { entityId, sourceNodeId } = data;
-      
+
       if (!entityId) {
         return;
       }
@@ -69,9 +90,9 @@ export function EntityOverlay({ canvasId }: Props) {
         const edges = getEdges();
         const connectingEdge = edges.find(
           e => (e.source === sourceNodeId && e.target === targetNodeId) ||
-               (e.source === targetNodeId && e.target === sourceNodeId)
+            (e.source === targetNodeId && e.target === sourceNodeId)
         );
-        
+
         if (!connectingEdge) {
           toast.error('Invalid drop: No edge connects these nodes');
           return;
@@ -116,35 +137,21 @@ export function EntityOverlay({ canvasId }: Props) {
   // Group entities by current_node_id
   // Requirement 4.1, 4.4: Group entities to determine clustering
   const entitiesByNode = useMemo(() => {
-    if (!entities) return new Map<string, StitchEntity[]>();
-    
+    if (!animatedEntities) return new Map<string, StitchEntity[]>();
+
     const grouped = new Map<string, StitchEntity[]>();
-    entities.forEach((entity) => {
+    animatedEntities.forEach((entity) => {
       const nodeId = entity.current_node_id;
       if (!nodeId) return;
-      
+
       if (!grouped.has(nodeId)) {
         grouped.set(nodeId, []);
       }
       grouped.get(nodeId)!.push(entity);
     });
-    
+
     return grouped;
-  }, [entities]);
-
-  // Build array of entities with their positions for rendering individual dots
-  const entitiesWithPositions = useMemo(() => {
-    if (!entities) return [];
-    
-    return entities
-      .map((entity) => {
-        const screenPos = entityPositions.get(entity.id);
-        if (!screenPos) return null;
-        return { entity, screenPos };
-      })
-      .filter((item): item is { entity: StitchEntity; screenPos: { x: number; y: number } } => item !== null);
-  }, [entities, entityPositions]);
-
+  }, [animatedEntities]);
   // Get the selected entity object
   const selectedEntity = useMemo(() => {
     if (!selectedEntityId || !entities) return null;
@@ -178,16 +185,14 @@ export function EntityOverlay({ canvasId }: Props) {
   return (
     <>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Render clusters and individual entities */}
-        {Array.from(entitiesByNode.entries()).map(([nodeId, nodeEntities]) => {
-          // Get position for the first entity in the group (they're all at the same node)
-          const firstEntity = nodeEntities[0];
-          const position = entityPositions.get(firstEntity.id);
-          
-          if (!position) return null;
+        {/* Render clusters for nodes with >5 entities */}
+        {Array.from(entitiesByNode.entries())
+          .filter(([, nodeEntities]) => nodeEntities.length > 5)
+          .map(([nodeId, nodeEntities]) => {
+            const firstEntity = nodeEntities[0];
+            const position = entityPositions.get(firstEntity.id);
+            if (!position) return null;
 
-          // Requirement 4.1: Cluster if more than 5 entities
-          if (nodeEntities.length > 5) {
             return (
               <div key={`cluster-${nodeId}`} className="pointer-events-auto">
                 <EntityCluster
@@ -203,26 +208,36 @@ export function EntityOverlay({ canvasId }: Props) {
                 />
               </div>
             );
+          })}
+
+        {/* Render all individual entities (at nodes or traveling) in a single loop for consistent keys */}
+        {animatedEntities.map(entity => {
+          // Skip entities in clusters (nodes with >5 entities)
+          if (entity.current_node_id) {
+            const nodeEntities = entitiesByNode.get(entity.current_node_id);
+            if (nodeEntities && nodeEntities.length > 5) {
+              return null; // Rendered as cluster above
+            }
           }
 
-          // Requirement 4.4: Show individual dots when 5 or fewer entities
-          return nodeEntities.map((entity) => {
-            const entityPos = entityPositions.get(entity.id);
-            if (!entityPos) return null;
+          const entityPos = entityPositions.get(entity.id);
+          if (!entityPos) return null;
 
-            return (
-              <div key={entity.id} className="pointer-events-auto">
-                <EntityDot
-                  entity={entity}
-                  position={entityPos}
-                  isSelected={entity.id === selectedEntityId}
-                  onClick={() => setSelectedEntityId(entity.id)}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                />
-              </div>
-            );
-          });
+          const isMoving = !!entity.current_edge_id;
+
+          return (
+            <div key={entity.id} className="pointer-events-auto">
+              <EntityDot
+                entity={entity}
+                position={entityPos}
+                isSelected={entity.id === selectedEntityId}
+                onClick={() => setSelectedEntityId(entity.id)}
+                // Traveling entities cannot be dragged
+                onDragStart={isMoving ? undefined : handleDragStart}
+                onDragEnd={isMoving ? undefined : handleDragEnd}
+              />
+            </div>
+          );
         })}
       </div>
 

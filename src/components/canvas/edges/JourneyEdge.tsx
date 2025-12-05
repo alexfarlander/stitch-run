@@ -33,11 +33,12 @@ export function JourneyEdge({
   targetPosition,
   data,
   markerEnd,
+  style,
 }: EdgeProps) {
   const [isHovered, setIsHovered] = useState(false);
-  
+
   const edgeData = data as JourneyEdgeData | undefined;
-  
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -50,6 +51,8 @@ export function JourneyEdge({
   const intensity = edgeData?.intensity ?? 0.6;
   const glowColor = `rgba(6, 182, 212, ${intensity})`;
   const glowIntensity = intensity * 0.5;
+
+  const { opacity = 1 } = style || {};
 
   return (
     <>
@@ -69,13 +72,14 @@ export function JourneyEdge({
         fill="none"
         stroke={glowColor}
         strokeWidth={12}
-        opacity={0.3}
+        opacity={Number(opacity) * 0.3}
         style={{
           filter: `blur(${glowIntensity * 6}px)`,
+          transition: 'opacity 0.3s ease-in-out',
         }}
       />
 
-      {/* Main path */}
+      {/* Main path - BaseEdge handles its own style including opacity */}
       <BaseEdge
         id={id}
         path={edgePath}
@@ -84,6 +88,7 @@ export function JourneyEdge({
           stroke: '#06b6d4',
           strokeWidth: 2,
           filter: `url(#glow-${id})`,
+          ...style, // BaseEdge will apply the opacity from style
         }}
       />
 
@@ -95,6 +100,11 @@ export function JourneyEdge({
         strokeWidth={2}
         strokeDasharray="8 4"
         className="journey-edge-animated"
+        opacity={opacity}
+        style={{
+          transition: 'opacity 0.3s ease-in-out',
+          pointerEvents: 'none',
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       />
@@ -116,15 +126,17 @@ export function JourneyEdge({
             strokeWidth={4}
             strokeDasharray="12 6"
             className="edge-traversal-pulse"
+            opacity={opacity} // Pulse also fades with edge
             style={{
               filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))',
+              transition: 'opacity 0.3s ease-in-out',
             }}
           />
         </>
       )}
 
-      {/* Tooltip on hover */}
-      {isHovered && edgeData?.stats && (
+      {/* Tooltip on hover - only visible if edge is visible (opacity > 0) */}
+      {isHovered && edgeData?.stats && Number(opacity) > 0 && (
         <g transform={`translate(${labelX}, ${labelY})`}>
           <rect
             x={-60}

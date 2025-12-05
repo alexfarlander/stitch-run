@@ -74,6 +74,8 @@ export function EntityDot({
       style={{ 
         zIndex: 40 // Below EntityDetailPanel (z-50) but above canvas elements
       }}
+      // Use initial to prevent animation from (0,0) on first render
+      initial={{ left: position.x, top: position.y }}
       animate={{
         left: position.x,
         top: position.y,

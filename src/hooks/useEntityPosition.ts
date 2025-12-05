@@ -45,13 +45,26 @@ export function useEntityPosition(
     if (entity.current_edge_id && entity.edge_progress !== undefined) {
       // Entity is traveling on edge
       const edge = edges.find((e) => e.id === entity.current_edge_id);
-      if (!edge) return null;
-
-      const sourceNode = getNode(edge.source);
-      const targetNode = getNode(edge.target);
-      if (!sourceNode || !targetNode) return null;
-
-      return getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
+      
+      if (edge) {
+        const sourceNode = getNode(edge.source);
+        const targetNode = getNode(edge.target);
+        
+        if (sourceNode && targetNode) {
+          return getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
+        } else if (sourceNode) {
+          // Fallback: If target node not found, position at source node
+          const entitiesAtNode = entities.filter((e) => e.current_node_id === edge.source);
+          return getEntityNodePosition(sourceNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
+        }
+      } else if (entity.destination_node_id) {
+        // Fallback: If edge not found but we have destination, position at destination
+        const destNode = getNode(entity.destination_node_id);
+        if (destNode) {
+          const entitiesAtNode = entities.filter((e) => e.current_node_id === entity.destination_node_id);
+          return getEntityNodePosition(destNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
+        }
+      }
     }
 
     return null;
@@ -120,13 +133,27 @@ export function useEntityPositions(entities: StitchEntity[]): Map<string, Positi
       } else if (entity.current_edge_id && entity.edge_progress !== undefined) {
         // Entity is traveling on edge
         const edge = edges.find((e) => e.id === entity.current_edge_id);
-        if (!edge) continue;
-
-        const sourceNode = getNode(edge.source);
-        const targetNode = getNode(edge.target);
-        if (!sourceNode || !targetNode) continue;
-
-        canvasPos = getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
+        
+        if (edge) {
+          const sourceNode = getNode(edge.source);
+          const targetNode = getNode(edge.target);
+          
+          if (sourceNode && targetNode) {
+            canvasPos = getEntityEdgePosition(edge, sourceNode, targetNode, entity.edge_progress, nodes);
+          } else if (sourceNode) {
+            // Fallback: If target node not found, position at source node
+            const entitiesAtNode = entities.filter((e) => e.current_node_id === edge.source);
+            canvasPos = getEntityNodePosition(sourceNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
+          }
+        } else if (entity.destination_node_id) {
+          // Fallback: If edge not found but we have destination, try to find source from journey
+          // Position at destination node as fallback
+          const destNode = getNode(entity.destination_node_id);
+          if (destNode) {
+            const entitiesAtNode = entities.filter((e) => e.current_node_id === entity.destination_node_id);
+            canvasPos = getEntityNodePosition(destNode, entitiesAtNode.length, entitiesAtNode.length + 1, nodes);
+          }
+        }
       }
 
       if (canvasPos) {

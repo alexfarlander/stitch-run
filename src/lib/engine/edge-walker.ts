@@ -22,6 +22,7 @@ import { getFlow } from '../db/flows';
 import { getVersion } from '../canvas/version-manager';
 import { moveEntityToSection } from '../db/entities';
 import { getAdminClient } from '../supabase/client';
+import { ENTITY_TRAVEL_DURATION_MS } from '../canvas/animation-config';
 import { 
   logEdgeWalking, 
   logExecutionError, 
@@ -286,39 +287,81 @@ async function executeJourneyEdge(
 ): Promise<void> {
   const supabase = getAdminClient();
   
-  // Move entity to target node
-  const { error } = await supabase
+  // Step 1: Start entity traveling on the edge (animated movement)
+  const { error: startError } = await supabase
     .from('stitch_entities')
     .update({
-      current_node_id: edge.target,
-      current_edge_id: null,
-      edge_progress: null,
+      current_node_id: null,
+      current_edge_id: edge.id,
+      edge_progress: 0,
+      destination_node_id: edge.target,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', entityId);
   
-  if (error) {
-    throw new Error(`Failed to move entity along journey edge: ${error.message}`);
+  if (startError) {
+    throw new Error(`Failed to start entity travel on edge: ${startError.message}`);
   }
   
-  // Create journey event
-  const { error: eventError } = await supabase
+  // Step 2: Create edge_start journey event (triggers animation)
+  const { error: startEventError } = await supabase
     .from('stitch_journey_events')
     .insert({
       entity_id: entityId,
-      event_type: 'node_arrival',
-      node_id: edge.target,
+      canvas_id: canvasId,
+      event_type: 'edge_start',
+      edge_id: edge.id,
       metadata: {
-        edge_id: edge.id,
         source_node: edge.source,
+        target_node: edge.target,
       },
     });
   
-  if (eventError) {
-    console.warn('Failed to create journey event:', eventError);
-    // Don't throw - event logging failure shouldn't block movement
+  if (startEventError) {
+    console.warn('Failed to create edge_start event:', startEventError);
   }
   
-  console.log(`[Journey Edge] Entity ${entityId} moved: ${edge.source} -> ${edge.target}`);
+  console.log(`[Journey Edge] Entity ${entityId} started traveling: ${edge.source} -> ${edge.target}`);
+  
+  // Step 3: Schedule arrival after animation duration (imported from animation-config)
+  setTimeout(async () => {
+    // Move entity to target node
+    const { error: arrivalError } = await supabase
+      .from('stitch_entities')
+      .update({
+        current_node_id: edge.target,
+        current_edge_id: null,
+        edge_progress: null,
+        destination_node_id: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', entityId);
+    
+    if (arrivalError) {
+      console.error(`Failed to complete entity arrival: ${arrivalError.message}`);
+      return;
+    }
+    
+    // Create node_arrival journey event
+    const { error: arrivalEventError } = await supabase
+      .from('stitch_journey_events')
+      .insert({
+        entity_id: entityId,
+        canvas_id: canvasId,
+        event_type: 'node_arrival',
+        node_id: edge.target,
+        metadata: {
+          edge_id: edge.id,
+          source_node: edge.source,
+        },
+      });
+    
+    if (arrivalEventError) {
+      console.warn('Failed to create node_arrival event:', arrivalEventError);
+    }
+    
+    console.log(`[Journey Edge] Entity ${entityId} arrived at: ${edge.target}`);
+  }, ENTITY_TRAVEL_DURATION_MS);
 }
 
 /**

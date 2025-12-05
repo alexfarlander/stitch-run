@@ -19,7 +19,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   Node,
   Edge,
   NodeTypes,
@@ -49,6 +48,7 @@ import { SplitterNode } from './nodes/SplitterNode';
 import { MediaSelectNode } from './nodes/MediaSelectNode';
 import { JourneyEdge } from './edges/JourneyEdge';
 import { RunStatusOverlay } from './RunStatusOverlay';
+import { CanvasBreadcrumbs } from './CanvasBreadcrumbs';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { VersionHistory } from './VersionHistory';
 import { FlowVersion } from '@/lib/canvas/version-manager';
@@ -340,6 +340,13 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
   
   return (
     <div className="w-full h-full bg-slate-950 relative">
+      {/* Canvas Breadcrumbs - Floating in top-left */}
+      <CanvasBreadcrumbs 
+        canvasId={flow.id} 
+        canvasName={flow.name} 
+        canvasType={flow.canvas_type as 'bmc' | 'workflow'} 
+      />
+
       {/* Versioning Controls (only in editable mode) */}
       {editable && (
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
@@ -461,25 +468,6 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
       >
         <Background color="#1e293b" gap={16} />
         <Controls />
-        <MiniMap
-          nodeColor={(node) => {
-            // Color minimap nodes based on status
-            const nodeStates = run?.node_states;
-            if (!nodeStates) return '#475569';
-            
-            const state = nodeStates[node.id];
-            if (!state) return '#475569';
-            
-            switch (state.status) {
-              case 'completed': return '#00ff99';
-              case 'running': return '#fbbf24';
-              case 'failed': return '#ef4444';
-              case 'waiting_for_user': return '#3b82f6';
-              default: return '#475569';
-            }
-          }}
-          maskColor="rgba(15, 23, 42, 0.8)"
-        />
         <EntityOverlay canvasId={flow.id} />
         
         {/* Run Status Indicators */}

@@ -10,7 +10,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   Node,
   Edge,
   NodeTypes,
@@ -227,26 +226,6 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
           />
           <Controls 
             className="bg-slate-900 border-slate-700"
-          />
-          
-          {/* Minimap */}
-          <MiniMap
-            position="bottom-right"
-            nodeColor={(node) => {
-              const status = (node.data as any)?.node_states?.[node.id]?.status;
-              switch (status) {
-                case 'completed': return '#00ff99';
-                case 'running': return '#fbbf24';
-                case 'failed': return '#ef4444';
-                case 'waiting_for_user': return '#3b82f6';
-                default: return '#475569';
-              }
-            }}
-            maskColor="rgba(15, 23, 42, 0.8)"
-            style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.95)',
-              border: '1px solid #334155',
-            }}
           />
         </ReactFlow>
         
