@@ -53,7 +53,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
 - [ ] 4.1 Implement node creation API route
-  - Write `src/app/api/canvas/[canvasId]/nodes/route.ts`
+  - Write `src/app/api/canvas/[id]/nodes/route.ts`
   - Protect with MCP authentication middleware
   - Validate canvas exists
   - Validate node type against allowed values

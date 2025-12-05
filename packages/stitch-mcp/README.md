@@ -179,7 +179,7 @@ The Stitch platform exposes the following endpoints for MCP integration:
 
 ### Node Creation
 ```
-POST /api/canvas/[canvasId]/nodes
+POST /api/canvas/[id]/nodes
 Authorization: Bearer <STITCH_API_KEY>
 ```
 

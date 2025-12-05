@@ -64,8 +64,11 @@ export function SystemEdge({
     };
   }, [id]);
 
+  // Force visibility when pulsing to override parent opacity: 0 style
+  const shouldForceVisible = isPulsing;
+
   return (
-    <>
+    <g style={{ opacity: shouldForceVisible ? 1 : undefined }}>
       {/* Main dashed path */}
       <BaseEdge
         id={id}
@@ -144,6 +147,6 @@ export function SystemEdge({
           animation: system-pulse 1000ms ease-out forwards;
         }
       `}</style>
-    </>
+    </g>
   );
 }

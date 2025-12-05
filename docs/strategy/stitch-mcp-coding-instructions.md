@@ -149,7 +149,7 @@ Implement the endpoint that updates the node's status when *it* calls home (or w
 
 ### Task 4.3: Node Creation Endpoint
 
-**File:** `src/app/api/canvas/[canvasId]/nodes/route.ts`
+**File:** `src/app/api/canvas/[id]/nodes/route.ts`
 
 If this endpoint doesn't exist, create it to support `stitch_create_node`.
 1.  Accept `POST` with node data.

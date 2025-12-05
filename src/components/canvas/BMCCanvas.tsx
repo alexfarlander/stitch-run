@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -63,6 +63,10 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
   
   // Handle AI graph updates using shared hook
   const handleGraphUpdate = useCanvasGraphUpdate(flow.id);
+  
+  // Edge visibility state management
+  const [showAllEdges, setShowAllEdges] = useState<boolean>(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   
   // Memoize nodeTypes so React Flow doesn't re-render constantly
   const nodeTypes = useMemo<NodeTypes>(() => ({
@@ -180,21 +184,43 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     return sortNodesForRendering(transformedNodes);
   }, [flow.graph.nodes]);
 
-  // Transform flow edges with traversal state
+  // Transform flow edges with visibility calculation logic
   const edges: Edge[] = useMemo(() => {
-    return flow.graph.edges.map((edge) => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      type: 'journey',
-      animated: true, // Force animation
-      style: { stroke: '#06b6d4', strokeWidth: 2 }, // Default style backup
-      data: { 
-        intensity: 0.8,
-        isTraversing: traversingEdges.get(edge.id) || false,
-      },
-    }));
-  }, [flow.graph.edges, traversingEdges]);
+    return flow.graph.edges.map((edge) => {
+      // Calculate visibility conditions
+      const isTraversing = traversingEdges.get(edge.id) || false;
+      const isConnectedToSelected = selectedNodeId && 
+        (edge.source === selectedNodeId || edge.target === selectedNodeId);
+      
+      // Determine if edge should be visible
+      const isVisible = showAllEdges || isTraversing || isConnectedToSelected;
+      
+      // Determine edge type with fallback to 'journey'
+      const edgeType = edge.type || 'journey';
+      
+      // Apply stroke color based on edge type
+      const strokeColor = edgeType === 'system' ? '#64748b' : '#06b6d4';
+      
+      return {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edgeType,
+        animated: isTraversing,
+        style: { 
+          stroke: strokeColor,
+          strokeWidth: 2,
+          opacity: isVisible ? 1 : 0,
+          transition: 'opacity 0.3s ease-in-out',
+          pointerEvents: isVisible ? 'auto' : 'none',
+        },
+        data: { 
+          intensity: 0.8,
+          isTraversing,
+        },
+      };
+    });
+  }, [flow.graph.edges, traversingEdges, showAllEdges, selectedNodeId]);
 
   // Handle section double-clicks for drill-down
   const handleNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -233,8 +259,32 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // Handle selection change for edge visibility
+  const handleSelectionChange = useCallback(({ nodes }: { nodes: Node[] }) => {
+    if (nodes.length === 1) {
+      setSelectedNodeId(nodes[0].id);
+    } else {
+      setSelectedNodeId(null);
+    }
+  }, []);
+
   return (
     <div className="w-full h-full bg-[#0a0f1a] text-white relative">
+      {/* Edge Visibility Toggle - Floating in top-right */}
+      <div className="absolute top-4 right-32 z-50">
+        <button
+          onClick={() => setShowAllEdges(prev => !prev)}
+          className={`px-3 py-2 rounded-lg border transition-colors ${
+            showAllEdges 
+              ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' 
+              : 'bg-slate-800/50 border-slate-700/50 text-slate-400'
+          }`}
+          title={showAllEdges ? 'Hide edges' : 'Show all edges'}
+        >
+          {showAllEdges ? '👁 Edges' : '👁‍🗨 Edges'}
+        </button>
+      </div>
+      
       {/* Demo Mode Button - Floating in top-right */}
       <div className="absolute top-4 right-4 z-50">
         <DemoModeButton canvasId={flow.id} />
@@ -249,6 +299,7 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
         onNodeDoubleClick={handleNodeDoubleClick}
         onNodeDrop={onNodeDrop}
         onNodeDragOver={onNodeDragOver}
+        onSelectionChange={handleSelectionChange}
         fitView
         minZoom={0.5}
         maxZoom={2}

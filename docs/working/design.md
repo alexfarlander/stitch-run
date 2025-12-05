@@ -172,7 +172,7 @@ interface CreateNodeResponse {
 **Implementation**:
 1. Validate input parameters using Zod schema
 2. Construct VisualNode object with default position if not provided
-3. Call POST `/api/canvas/[canvasId]/nodes` endpoint
+3. Call POST `/api/canvas/[id]/nodes` endpoint
 4. Return node ID and generated URLs
 
 ### Tool: Get Stitching Code
@@ -421,7 +421,7 @@ Correctness Properties
 - 404: Node ID does not exist
 - 500: Database or internal server error
 
-**Node Creation Endpoint** (`/api/canvas/[canvasId]/nodes`):
+**Node Creation Endpoint** (`/api/canvas/[id]/nodes`):
 - 400: Invalid node data or missing required fields
 - 401: Missing or invalid authentication
 - 404: Canvas ID does not exist
@@ -494,7 +494,7 @@ Property-based tests will use `fast-check` library to generate random inputs and
 
 ## API Endpoints
 
-### POST /api/canvas/[canvasId]/nodes
+### POST /api/canvas/[id]/nodes
 
 Creates a new node on the specified canvas.
 
