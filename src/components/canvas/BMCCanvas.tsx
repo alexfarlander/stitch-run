@@ -16,6 +16,7 @@ import '@xyflow/react/dist/style.css';
 import { StitchFlow, StitchEntity } from '@/types/stitch';
 import { SectionNode } from './nodes/SectionNode';
 import { SectionItemNode } from './nodes/SectionItemNode';
+import { FinancialItemNode } from './nodes/FinancialItemNode';
 import { WorkerNode } from './nodes/WorkerNode';
 import { CollectorNode } from './nodes/CollectorNode';
 import { UXNode } from './nodes/UXNode';
@@ -26,9 +27,11 @@ import { RevenueSectionNode } from './nodes/RevenueSectionNode';
 import { FallbackNode } from './nodes/FallbackNode';
 import { IntegrationItem, PersonItem, CodeItem, DataItem } from './items';
 import { JourneyEdge } from './edges/JourneyEdge';
+import { SystemEdge } from './edges/SystemEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { RunStatusOverlay } from './RunStatusOverlay';
 import { DemoModeButton } from './DemoModeButton';
+import { DemoControlPanel } from './DemoControlPanel';
 import { AIAssistantPanel } from '@/components/panels/AIAssistantPanel';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 import { useEdgeTraversal } from '@/hooks/useEdgeTraversal';
@@ -68,6 +71,7 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     
     // Items inside sections (CRM, API, etc.)
     'section-item': SectionItemNode,
+    'financial-item': FinancialItemNode,
     
     // Production-side items
     'integration-item': IntegrationItem,
@@ -92,6 +96,7 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
 
   const edgeTypes = useMemo<EdgeTypes>(() => ({
     journey: JourneyEdge,
+    system: SystemEdge,
   }), []);
 
   // Transform flow nodes to ReactFlow nodes
@@ -100,6 +105,7 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     const registeredTypes = new Set([
       'section',
       'section-item',
+      'financial-item',
       'integration-item',
       'person-item',
       'code-item',
@@ -117,6 +123,7 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
       const isSection = node.type === 'section';
       const isFinancialSection = node.type === 'costs-section' || node.type === 'revenue-section';
       const isItem = node.type === 'section-item' || 
+                     node.type === 'financial-item' ||
                      node.type === 'integration-item' || 
                      node.type === 'person-item' || 
                      node.type === 'code-item' || 
@@ -278,6 +285,9 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
         canvasId={flow.id}
         onGraphUpdate={handleGraphUpdate}
       />
+      
+      {/* Demo Control Panel - Fixed at bottom-left */}
+      <DemoControlPanel />
     </div>
   );
 }

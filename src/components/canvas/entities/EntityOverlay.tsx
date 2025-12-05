@@ -37,67 +37,6 @@ export function EntityOverlay({ canvasId }: Props) {
   // and only recalculates positions for entities that have changed
   const entityPositions = useEntityPositions(entities || []);
 
-  // Listen for entity drop events from nodes
-  useEffect(() => {
-    const handleEntityDrop = (event: any) => {
-      const { targetNodeId, event: dragEvent } = event.detail;
-      handleNodeDrop(dragEvent, targetNodeId);
-    };
-
-    window.addEventListener('entity-drop', handleEntityDrop as EventListener);
-    return () => {
-      window.removeEventListener('entity-drop', handleEntityDrop as EventListener);
-    };
-  }, [handleNodeDrop]);
-
-  // Group entities by current_node_id
-  // Requirement 4.1, 4.4: Group entities to determine clustering
-  const entitiesByNode = useMemo(() => {
-    if (!entities) return new Map<string, StitchEntity[]>();
-    
-    const grouped = new Map<string, StitchEntity[]>();
-    entities.forEach((entity) => {
-      const nodeId = entity.current_node_id;
-      if (!nodeId) return;
-      
-      if (!grouped.has(nodeId)) {
-        grouped.set(nodeId, []);
-      }
-      grouped.get(nodeId)!.push(entity);
-    });
-    
-    return grouped;
-  }, [entities]);
-
-  // Build array of entities with their positions for rendering individual dots
-  const entitiesWithPositions = useMemo(() => {
-    if (!entities) return [];
-    
-    return entities
-      .map((entity) => {
-        const screenPos = entityPositions.get(entity.id);
-        if (!screenPos) return null;
-        return { entity, screenPos };
-      })
-      .filter((item): item is { entity: StitchEntity; screenPos: { x: number; y: number } } => item !== null);
-  }, [entities, entityPositions]);
-
-  // Get the selected entity object
-  const selectedEntity = useMemo(() => {
-    if (!selectedEntityId || !entities) return null;
-    return entities.find((e) => e.id === selectedEntityId) || null;
-  }, [selectedEntityId, entities]);
-
-  // Handler to close the panel
-  const handleClosePanel = useCallback(() => {
-    setSelectedEntityId(undefined);
-  }, []);
-
-  // Handle drag start
-  const handleDragStart = useCallback((entityId: string) => {
-    setDraggingEntityId(entityId);
-  }, []);
-
   // Handle drop on node
   const handleNodeDrop = useCallback(async (e: React.DragEvent, targetNodeId: string) => {
     e.preventDefault();
@@ -160,6 +99,67 @@ export function EntityOverlay({ canvasId }: Props) {
       setDraggingEntityId(null);
     }
   }, [entities, getNodes, getEdges]);
+
+  // Listen for entity drop events from nodes
+  useEffect(() => {
+    const handleEntityDrop = (event: any) => {
+      const { targetNodeId, event: dragEvent } = event.detail;
+      handleNodeDrop(dragEvent, targetNodeId);
+    };
+
+    window.addEventListener('entity-drop', handleEntityDrop as EventListener);
+    return () => {
+      window.removeEventListener('entity-drop', handleEntityDrop as EventListener);
+    };
+  }, [handleNodeDrop]);
+
+  // Group entities by current_node_id
+  // Requirement 4.1, 4.4: Group entities to determine clustering
+  const entitiesByNode = useMemo(() => {
+    if (!entities) return new Map<string, StitchEntity[]>();
+    
+    const grouped = new Map<string, StitchEntity[]>();
+    entities.forEach((entity) => {
+      const nodeId = entity.current_node_id;
+      if (!nodeId) return;
+      
+      if (!grouped.has(nodeId)) {
+        grouped.set(nodeId, []);
+      }
+      grouped.get(nodeId)!.push(entity);
+    });
+    
+    return grouped;
+  }, [entities]);
+
+  // Build array of entities with their positions for rendering individual dots
+  const entitiesWithPositions = useMemo(() => {
+    if (!entities) return [];
+    
+    return entities
+      .map((entity) => {
+        const screenPos = entityPositions.get(entity.id);
+        if (!screenPos) return null;
+        return { entity, screenPos };
+      })
+      .filter((item): item is { entity: StitchEntity; screenPos: { x: number; y: number } } => item !== null);
+  }, [entities, entityPositions]);
+
+  // Get the selected entity object
+  const selectedEntity = useMemo(() => {
+    if (!selectedEntityId || !entities) return null;
+    return entities.find((e) => e.id === selectedEntityId) || null;
+  }, [selectedEntityId, entities]);
+
+  // Handler to close the panel
+  const handleClosePanel = useCallback(() => {
+    setSelectedEntityId(undefined);
+  }, []);
+
+  // Handle drag start
+  const handleDragStart = useCallback((entityId: string) => {
+    setDraggingEntityId(entityId);
+  }, []);
 
   // Handle drag end (cleanup)
   const handleDragEnd = useCallback((entityId: string, targetNodeId: string | null) => {

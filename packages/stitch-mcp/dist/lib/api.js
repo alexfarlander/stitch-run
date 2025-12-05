@@ -1,0 +1,92 @@
+const STITCH_URL = process.env.STITCH_URL || "http://localhost:3000";
+const STITCH_API_KEY = process.env.STITCH_API_KEY;
+/**
+ * Custom error class for Stitch API errors
+ * Includes status code and detailed error information
+ */
+export class StitchAPIError extends Error {
+    statusCode;
+    statusText;
+    responseBody;
+    url;
+    constructor(statusCode, statusText, responseBody, url) {
+        super(`Stitch API error (${statusCode} ${statusText}): ${responseBody}`);
+        this.statusCode = statusCode;
+        this.statusText = statusText;
+        this.responseBody = responseBody;
+        this.url = url;
+        this.name = "StitchAPIError";
+    }
+}
+/**
+ * Custom error class for network errors
+ * Provides user-friendly messages for connection issues
+ */
+export class StitchNetworkError extends Error {
+    url;
+    originalError;
+    constructor(url, originalError) {
+        super(`Network error connecting to Stitch at ${url}: ${originalError.message}`);
+        this.url = url;
+        this.originalError = originalError;
+        this.name = "StitchNetworkError";
+    }
+}
+/**
+ * Make an authenticated request to the Stitch API
+ *
+ * @param path - API endpoint path (e.g., "/api/canvas/123/nodes")
+ * @param options - Fetch options (method, body, headers, etc.)
+ * @returns Parsed JSON response
+ * @throws {Error} If STITCH_API_KEY is not set
+ * @throws {StitchAPIError} If the API returns an error response
+ * @throws {StitchNetworkError} If a network error occurs
+ */
+export async function stitchRequest(path, options = {}) {
+    if (!STITCH_API_KEY) {
+        throw new Error("STITCH_API_KEY environment variable is not set. " +
+            "Please configure your API key in the MCP server environment.");
+    }
+    const url = `${STITCH_URL}${path}`;
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${STITCH_API_KEY}`,
+                ...options.headers,
+            },
+        });
+        if (!response.ok) {
+            // Try to parse error response as JSON first
+            let errorBody;
+            const contentType = response.headers.get("content-type");
+            if (contentType?.includes("application/json")) {
+                try {
+                    const errorJson = await response.json();
+                    errorBody = JSON.stringify(errorJson, null, 2);
+                }
+                catch {
+                    errorBody = await response.text();
+                }
+            }
+            else {
+                errorBody = await response.text();
+            }
+            throw new StitchAPIError(response.status, response.statusText, errorBody, url);
+        }
+        return response.json();
+    }
+    catch (error) {
+        // If it's already a StitchAPIError, re-throw it
+        if (error instanceof StitchAPIError) {
+            throw error;
+        }
+        // If it's a network error (fetch failed), wrap it
+        if (error instanceof Error) {
+            throw new StitchNetworkError(url, error);
+        }
+        // Unknown error type
+        throw new Error(`Unexpected error calling Stitch API: ${String(error)}`);
+    }
+}

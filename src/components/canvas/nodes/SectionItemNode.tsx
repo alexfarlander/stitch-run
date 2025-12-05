@@ -103,16 +103,20 @@ const SectionItemNodeComponent = memo(({ id, data }: NodeProps) => {
           <div className={`w-2 h-2 rounded-full ${statusStyles[nodeData.status]}`} />
         </div>
 
-        {/* Drill-down indicator */}
+        {/* Drill-down indicator - always visible when node is drillable */}
         {hasLinkedContent && (
           <div className="absolute bottom-1 right-1">
-            <ExternalLinkIcon 
-              className={`
-                w-3 h-3 text-cyan-400
-                transition-opacity duration-200
-                ${isHovered ? 'opacity-100' : 'opacity-0'}
-              `}
-            />
+            <div className={`
+              flex items-center justify-center
+              w-4 h-4 rounded-full
+              bg-cyan-500/20 border border-cyan-400/50
+              transition-all duration-200
+              ${isHovered ? 'bg-cyan-500/40 border-cyan-400 scale-110' : ''}
+            `}>
+              <ExternalLinkIcon 
+                className="w-2.5 h-2.5 text-cyan-400"
+              />
+            </div>
           </div>
         )}
       </div>

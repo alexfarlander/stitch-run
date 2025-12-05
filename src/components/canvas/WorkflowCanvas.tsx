@@ -14,6 +14,7 @@ import {
   Node,
   Edge,
   NodeTypes,
+  EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowLeft } from 'lucide-react';
@@ -24,6 +25,8 @@ import { CollectorNode } from './nodes/CollectorNode';
 import { UXNode } from './nodes/UXNode';
 import { SplitterNode } from './nodes/SplitterNode';
 import { MediaSelectNode } from './nodes/MediaSelectNode';
+import { JourneyEdge } from './edges/JourneyEdge';
+import { SystemEdge } from './edges/SystemEdge';
 import { AIAssistantPanel } from '@/components/panels/AIAssistantPanel';
 import { NodeConfigPanel } from '@/components/panels/NodeConfigPanel';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
@@ -46,6 +49,12 @@ const nodeTypes: NodeTypes = {
   UX: UXNode as any,
   Splitter: SplitterNode as any,
   MediaSelect: MediaSelectNode as any,
+};
+
+// Edge type registry for workflow edges
+const edgeTypes: EdgeTypes = {
+  journey: JourneyEdge,
+  system: SystemEdge,
 };
 
 export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
@@ -203,6 +212,7 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodeClick={handleNodeClick}
           fitView
           minZoom={0.1}

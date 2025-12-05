@@ -21,13 +21,20 @@ export default function CanvasPage() {
           .from('stitch_flows')
           .select('*')
           .eq('id', canvasId)
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
-        if (!data) throw new Error('Canvas not found');
+        if (error) {
+          console.error('[Canvas Page] Supabase error:', error);
+          throw new Error(`Database error: ${error.message}`);
+        }
+
+        if (!data) {
+          throw new Error('Canvas not found');
+        }
 
         setCanvas(data as StitchFlow);
       } catch (err: any) {
+        console.error('[Canvas Page] Fetch error:', err);
         setError(err.message);
       } finally {
         setLoading(false);

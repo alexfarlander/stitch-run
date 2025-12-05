@@ -21,6 +21,7 @@ import { createRun } from '../db/runs';
 import { getFlow } from '../db/flows';
 import { getVersion } from '../canvas/version-manager';
 import { moveEntityToSection } from '../db/entities';
+import { getAdminClient } from '../supabase/client';
 import { 
   logEdgeWalking, 
   logExecutionError, 
@@ -163,6 +164,212 @@ export async function walkEdges(
       // Dependencies satisfied, fire the node (Requirement 9.4)
       await fireNodeWithGraph(targetNodeId, executionGraph, run);
     }
+  }
+}
+
+/**
+ * Walks both journey edges and system edges in parallel when a BMC node completes
+ * This is specifically for the Clockwork Canvas where nodes can have both:
+ * - Journey edges (solid, for entity travel)
+ * - System edges (dashed, for background processes)
+ * 
+ * Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5
+ * 
+ * @param nodeId - The ID of the BMC node that completed
+ * @param entityId - The ID of the entity (for journey edges)
+ * @param canvasId - The ID of the BMC canvas
+ * @returns Object with results from both journey and system edge execution
+ */
+export async function walkParallelEdges(
+  nodeId: string,
+  entityId: string,
+  canvasId: string
+): Promise<{
+  journeyEdges: { success: boolean; error?: string }[];
+  systemEdges: { success: boolean; error?: string }[];
+}> {
+  const supabase = getAdminClient();
+  
+  // Load the BMC canvas
+  const { data: flow, error: flowError } = await supabase
+    .from('stitch_flows')
+    .select('graph')
+    .eq('id', canvasId)
+    .single();
+  
+  if (flowError || !flow) {
+    console.error('Failed to load canvas for parallel edge walking:', flowError);
+    return { journeyEdges: [], systemEdges: [] };
+  }
+  
+  // Find all edges from this node
+  const allEdges = flow.graph.edges.filter((edge: any) => edge.source === nodeId);
+  
+  // Separate journey edges and system edges
+  const journeyEdges = allEdges.filter((edge: any) => edge.type === 'journey' || !edge.type);
+  const systemEdges = allEdges.filter((edge: any) => edge.type === 'system');
+  
+  console.log(`[Parallel Edge Walking] Node ${nodeId}:`, {
+    journeyEdgeCount: journeyEdges.length,
+    systemEdgeCount: systemEdges.length,
+  });
+  
+  // Execute journey edges and system edges in parallel (Requirement 12.1)
+  // Use Promise.allSettled to handle failures independently (Requirement 12.3)
+  const [journeyResults, systemResults] = await Promise.allSettled([
+    // Journey edge execution (entity movement)
+    Promise.allSettled(
+      journeyEdges.map(async (edge: any) => {
+        try {
+          await executeJourneyEdge(edge, entityId, canvasId);
+          return { success: true };
+        } catch (error) {
+          console.error(`Journey edge ${edge.id} failed:`, error);
+          return { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          };
+        }
+      })
+    ),
+    
+    // System edge execution (background processes)
+    Promise.allSettled(
+      systemEdges.map(async (edge: any) => {
+        try {
+          await executeSystemEdgeInternal(edge, entityId, canvasId);
+          return { success: true };
+        } catch (error) {
+          console.error(`System edge ${edge.id} failed:`, error);
+          return { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          };
+        }
+      })
+    ),
+  ]);
+  
+  // Extract results (Requirement 12.5 - log all edge execution results)
+  const journeyEdgeResults = journeyResults.status === 'fulfilled' 
+    ? journeyResults.value.map(r => r.status === 'fulfilled' ? r.value : { success: false, error: 'Promise rejected' })
+    : [];
+    
+  const systemEdgeResults = systemResults.status === 'fulfilled'
+    ? systemResults.value.map(r => r.status === 'fulfilled' ? r.value : { success: false, error: 'Promise rejected' })
+    : [];
+  
+  // Log execution results (Requirement 12.5)
+  console.log(`[Parallel Edge Walking] Results for node ${nodeId}:`, {
+    journeyEdges: journeyEdgeResults,
+    systemEdges: systemEdgeResults,
+  });
+  
+  return {
+    journeyEdges: journeyEdgeResults,
+    systemEdges: systemEdgeResults,
+  };
+}
+
+/**
+ * Executes a journey edge (entity movement along visual edge)
+ * Requirement 12.2 - Entity movement should not be blocked by system edge execution
+ * 
+ * @param edge - The journey edge to execute
+ * @param entityId - The ID of the entity to move
+ * @param canvasId - The ID of the canvas
+ */
+async function executeJourneyEdge(
+  edge: any,
+  entityId: string,
+  canvasId: string
+): Promise<void> {
+  const supabase = getAdminClient();
+  
+  // Move entity to target node
+  const { error } = await supabase
+    .from('stitch_entities')
+    .update({
+      current_node_id: edge.target,
+      current_edge_id: null,
+      edge_progress: null,
+    })
+    .eq('id', entityId);
+  
+  if (error) {
+    throw new Error(`Failed to move entity along journey edge: ${error.message}`);
+  }
+  
+  // Create journey event
+  const { error: eventError } = await supabase
+    .from('stitch_journey_events')
+    .insert({
+      entity_id: entityId,
+      event_type: 'node_arrival',
+      node_id: edge.target,
+      metadata: {
+        edge_id: edge.id,
+        source_node: edge.source,
+      },
+    });
+  
+  if (eventError) {
+    console.warn('Failed to create journey event:', eventError);
+    // Don't throw - event logging failure shouldn't block movement
+  }
+  
+  console.log(`[Journey Edge] Entity ${entityId} moved: ${edge.source} -> ${edge.target}`);
+}
+
+/**
+ * Executes a system edge (background process)
+ * This is an internal version that doesn't import from system-edge-trigger
+ * to avoid circular dependencies
+ * 
+ * Requirement 12.4 - Multiple system edges execute concurrently
+ * 
+ * @param edge - The system edge to execute
+ * @param entityId - The ID of the entity (for context)
+ * @param canvasId - The ID of the canvas
+ */
+async function executeSystemEdgeInternal(
+  edge: any,
+  entityId: string,
+  canvasId: string
+): Promise<void> {
+  const supabase = getAdminClient();
+  
+  try {
+    // Broadcast 'edge_fired' event for pulse animation
+    const channel = supabase.channel(`canvas-${canvasId}`);
+    await channel.send({
+      type: 'broadcast',
+      event: 'edge_fired',
+      payload: {
+        edge_id: edge.id,
+        entity_id: entityId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    
+    // Execute the system action
+    const systemAction = edge.data?.systemAction;
+    if (!systemAction) {
+      console.warn(`System edge ${edge.id} has no systemAction defined`);
+      return;
+    }
+    
+    // Log the system action (actual execution would happen here)
+    console.log(`[System Edge] ${edge.source} -> ${edge.target}: ${systemAction}`, {
+      entity_id: entityId,
+      timestamp: new Date().toISOString(),
+    });
+    
+    // In production, this would execute the actual system action
+    // For now, we just log it
+  } catch (error) {
+    console.error(`Failed to execute system edge ${edge.id}:`, error);
+    throw error;
   }
 }
 

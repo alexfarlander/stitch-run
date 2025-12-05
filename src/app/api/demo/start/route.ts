@@ -1,81 +1,100 @@
 /**
- * Demo Mode API Endpoint
- * Spawns demo entities and triggers workflows with staggered delays
+ * Demo Start API Endpoint
  * 
- * Uses DemoManager for idempotent demo session management.
+ * Executes the Clockwork Canvas demo script by firing a sequence of webhook
+ * events with timed delays. This simulates real-world business events flowing
+ * through the canvas.
  * 
- * Requirements: 3.1, 3.2, 3.3, 3.4, 6.1, 6.2, 6.3, 13.1, 13.2, 13.3
+ * The demo uses setTimeout to schedule webhook calls, allowing the server to
+ * return immediately while events fire in the background.
+ * 
+ * Requirements: 6.1, 6.4
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { DemoManager, type DemoEntityConfig } from '@/lib/demo/demo-manager';
-
-interface StartDemoRequest {
-  canvasId: string;
-  entities?: DemoEntityConfig[];
-  staggerDelay?: number; // milliseconds between entity spawns
-}
-
-interface StartDemoResponse {
-  sessionId: string;
-  status: 'running';
-  entityIds: string[];
-  runIds: string[];
-}
+import { NextResponse } from 'next/server';
+import { 
+  CLOCKWORK_DEMO_SCRIPT, 
+  getDemoScriptDuration, 
+  getDemoScriptEventCount 
+} from '@/lib/demo/demo-script';
 
 /**
  * POST /api/demo/start
  * 
- * Starts a demo session using DemoManager for idempotent cleanup.
+ * Starts the demo orchestrator by executing the scripted sequence of webhook calls.
  * 
- * Requirements: 3.1, 3.2, 3.3, 6.1, 6.2, 6.3, 13.1, 13.2, 13.3
+ * Requirement 6.1: Execute scripted sequence of webhook calls with timed delays
+ * Requirement 6.4: Use same webhook endpoints as production
+ * 
+ * @returns Success response with event count and duration
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const body: StartDemoRequest = await request.json();
-    const { canvasId, entities, staggerDelay = 2000 } = body;
-
-    // Validate required fields (Requirement 13.1)
-    if (!canvasId) {
-      return NextResponse.json(
-        { error: 'canvasId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Use DemoManager for idempotent demo session management
-    // Requirements: 3.1, 3.2, 3.3
-    const demoManager = new DemoManager();
-    const session = await demoManager.startDemo({
-      canvasId,
-      entities,
-      staggerDelay,
-    });
-
-    // Return demo session info (Requirement 13.3)
-    const response: StartDemoResponse = {
-      sessionId: session.sessionId,
-      status: 'running',
-      entityIds: session.entityIds,
-      runIds: session.runIds,
-    };
-
-    return NextResponse.json(response, { status: 200 });
-  } catch (error) {
-    console.error('Demo mode error:', error);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     
-    // Handle specific error cases
-    if (error instanceof Error && error.message === 'Canvas not found') {
+    if (!baseUrl) {
+      console.error('NEXT_PUBLIC_BASE_URL not configured');
       return NextResponse.json(
-        { error: 'Canvas not found' },
-        { status: 404 }
+        { error: 'Server configuration error: Base URL not set' },
+        { status: 500 }
       );
     }
-
+    
+    console.log('Starting Clockwork Canvas demo...');
+    console.log(`Base URL: ${baseUrl}`);
+    console.log(`Events: ${getDemoScriptEventCount()}`);
+    console.log(`Duration: ${getDemoScriptDuration()}ms`);
+    
+    // Schedule all demo events (Requirement 6.1)
+    for (const event of CLOCKWORK_DEMO_SCRIPT) {
+      setTimeout(async () => {
+        try {
+          console.log(`[Demo Event] ${event.description}`);
+          console.log(`  -> ${event.endpoint}`);
+          console.log(`  -> Payload:`, event.payload);
+          
+          // Requirement 6.4: Use same webhook endpoints as production
+          const response = await fetch(`${baseUrl}${event.endpoint}`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'User-Agent': 'Clockwork-Demo-Orchestrator/1.0',
+            },
+            body: JSON.stringify(event.payload),
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[Demo Event Failed] ${event.description}:`, errorText);
+          } else {
+            const result = await response.json();
+            console.log(`[Demo Event Success] ${event.description}:`, result);
+          }
+        } catch (error) {
+          console.error(`[Demo Event Error] ${event.description}:`, error);
+          // Continue with other events even if one fails
+        }
+      }, event.delay);
+    }
+    
+    // Return immediately while events fire in background
+    return NextResponse.json({
+      success: true,
+      message: 'Demo started successfully',
+      events: getDemoScriptEventCount(),
+      duration: getDemoScriptDuration(),
+      script: CLOCKWORK_DEMO_SCRIPT.map(e => ({
+        delay: e.delay,
+        description: e.description,
+      })),
+    });
+    
+  } catch (error) {
+    console.error('Failed to start demo:', error);
     return NextResponse.json(
       { 
-        error: 'Failed to start demo mode',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to start demo',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
