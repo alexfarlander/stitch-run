@@ -24,10 +24,10 @@ interface MoveEntityRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { entityId: string } }
+  { params }: { params: Promise<{ entityId: string }> }
 ) {
   try {
-    const { entityId } = params;
+    const { entityId } = await params;
     const body: MoveEntityRequest = await request.json();
     const { targetNodeId } = body;
 

@@ -23,7 +23,7 @@ export async function startJourney(
   entityId: string,
   edgeId: string
 ): Promise<StitchEntity> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   const { data, error } = await supabase.rpc('start_journey', {
     p_entity_id: entityId,
@@ -54,7 +54,7 @@ export async function moveAlongEdge(
   entityId: string,
   progress: number
 ): Promise<StitchEntity> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   // Validate progress is between 0.0 and 1.0
   if (progress < 0.0 || progress > 1.0) {
@@ -111,7 +111,7 @@ export async function arriveAtNode(
   entityId: string,
   nodeId: string
 ): Promise<StitchEntity> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   const { data, error } = await supabase.rpc('arrive_at_node', {
     p_entity_id: entityId,
@@ -140,7 +140,7 @@ export async function getEntitiesAtNode(
   canvasId: string,
   nodeId: string
 ): Promise<StitchEntity[]> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_entities')
@@ -169,7 +169,7 @@ export async function getEntitiesOnEdge(
   canvasId: string,
   edgeId: string
 ): Promise<StitchEntity[]> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_entities')
@@ -195,7 +195,7 @@ export async function getEntitiesOnEdge(
 export async function getJourneyHistory(
   entityId: string
 ): Promise<JourneyEvent[]> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_journey_events')
@@ -230,7 +230,7 @@ export async function createJourneyEvent(
   progress?: number | null,
   metadata?: Record<string, unknown>
 ): Promise<JourneyEvent> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_journey_events')
@@ -272,7 +272,7 @@ export async function moveEntityToSection(
   metadata?: Record<string, unknown>,
   setEntityType?: 'customer' | 'churned' | 'lead'
 ): Promise<StitchEntity> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   // Build update payload
   const updatePayload: unknown = {

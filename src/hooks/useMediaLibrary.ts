@@ -193,6 +193,7 @@ export function useMediaLibrary(
   // Single effect to handle loading on mount AND when filter changes
   useEffect(() => {
     if (autoLoad) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       refresh();
     }
   }, [autoLoad, refresh]);

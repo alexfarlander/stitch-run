@@ -146,10 +146,10 @@ function reconstructEntityPositions(events: JourneyEvent[]): Record<string, Enti
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { runId: string } }
+  { params }: { params: Promise<{ runId: string }> }
 ) {
   try {
-    const { runId } = params;
+    const { runId } = await params;
     const { searchParams } = new URL(request.url);
     
     const timestamp = searchParams.get('timestamp');

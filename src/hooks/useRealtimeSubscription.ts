@@ -21,6 +21,7 @@ interface SubscriptionCallback<T> {
 interface SubscriptionEntry {
   channel: RealtimeChannel;
   refCount: number;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   callbacks: Set<Function>;
 }
 
@@ -56,6 +57,7 @@ export function useRealtimeSubscription<T = any>(
 
   useEffect(() => {
     if (!enabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus('connected');
       return;
     }

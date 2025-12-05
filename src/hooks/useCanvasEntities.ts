@@ -21,7 +21,9 @@ export function useCanvasEntities(canvasId: string | undefined, enabled: boolean
     let cancelled = false;
 
     if (!enabled || !canvasId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEntities([]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }

@@ -4,6 +4,11 @@ import { memo, useState } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import * as LucideIcons from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 import { StitchEntity } from '@/types/entity';
 
@@ -45,6 +50,7 @@ const SectionItemNodeComponent = memo(({ id, data, selected }: NodeProps) => {
   };
 
   const entityCount = nodeData.entityCount || 0;
+  const entities = nodeData.entities || [];
 
   return (
     <div className="relative">
@@ -77,17 +83,52 @@ const SectionItemNodeComponent = memo(({ id, data, selected }: NodeProps) => {
       >
         {/* Icon */}
         <IconComponent className="w-4 h-4 text-slate-400 flex-shrink-0" />
-        
+
         {/* Label */}
         <span className="text-sm text-slate-200 font-medium">
           {nodeData.label}
         </span>
 
-        {/* Entity count bubble */}
+        {/* Entity count bubble with Popover */}
         {entityCount > 0 && (
-          <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-cyan-500 text-white text-xs font-semibold flex items-center justify-center">
-            {entityCount}
-          </span>
+          <div onClick={(e) => e.stopPropagation()}>
+            <Popover>
+              <PopoverTrigger asChild>
+                <span
+                  className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-cyan-500 text-white text-xs font-semibold flex items-center justify-center hover:bg-cyan-400 hover:scale-110 transition-all cursor-pointer"
+                >
+                  {entityCount}
+                </span>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2 bg-slate-900 border-slate-700 text-slate-200" side="right" align="center">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-xs uppercase tracking-wider text-slate-500 mb-2">Entities at {nodeData.label}</h4>
+                  <div className="max-h-[200px] overflow-y-auto space-y-1">
+                    {entities.map((entity) => (
+                      <div
+                        key={entity.id}
+                        className="flex items-center gap-2 p-2 rounded hover:bg-slate-800 cursor-pointer transition-colors"
+                        onClick={() => {
+                          if (nodeData.onEntitySelect) {
+                            nodeData.onEntitySelect(entity.id);
+                          }
+                        }}
+                      >
+                        <div className="w-6 h-6 rounded-full bg-cyan-900/50 flex items-center justify-center text-xs text-cyan-400 font-bold border border-cyan-800">
+                          {entity.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate text-slate-200">{entity.name}</p>
+                          <p className="text-xs text-slate-500 truncate capitalize">{entity.entity_type}</p>
+                        </div>
+                        <LucideIcons.ChevronRight className="w-3 h-3 text-slate-600" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         )}
 
         {/* Drill-down indicator */}

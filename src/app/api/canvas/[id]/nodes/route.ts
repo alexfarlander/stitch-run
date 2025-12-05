@@ -56,10 +56,10 @@ interface CreateNodeResponse {
  */
 async function createNodeHandler(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
   try {
-    const { id: canvasId } = params;
+    const { id: canvasId } = await params;
 
     // Validate canvas ID (Requirement 1.1)
     validateCanvasId(canvasId);

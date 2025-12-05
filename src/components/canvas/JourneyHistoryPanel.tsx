@@ -202,10 +202,6 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
   const [edgeLabels, setEdgeLabels] = useState<Record<string, string>>({});
   const [labelsLoading, setLabelsLoading] = useState(true);
 
-  if (!entityId) {
-    return null;
-  }
-
   // Normalize fallback journey to typed events
   const normalizedFallback: FallbackJourneyEvent[] = (fallbackJourney || []).map(raw =>
     normalizeJourneyEvent(raw) as FallbackJourneyEvent
@@ -296,6 +292,10 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
       mounted = false;
     };
   }, [entityId, displayEvents.length]);
+
+  if (!entityId) {
+    return null;
+  }
 
   return (
     <div className="space-y-4">

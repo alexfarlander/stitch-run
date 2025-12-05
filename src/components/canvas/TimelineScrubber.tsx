@@ -112,32 +112,6 @@ export function TimelineScrubber({ runId, onTimestampChange }: TimelineScrubberP
   };
 
   // Don't render if no events
-  if (isLoading) {
-    return (
-      <div className="timeline-scrubber border-t bg-background p-4">
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4 animate-spin" />
-          Loading timeline...
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="timeline-scrubber border-t bg-background p-4">
-        <div className="flex items-center justify-center gap-2 text-sm text-destructive">
-          <X className="h-4 w-4" />
-          {error}
-        </div>
-      </div>
-    );
-  }
-
-  if (events.length === 0) {
-    return null; // Don't show timeline if no events
-  }
-
   // Calculate current slider value
   const currentValue = selectedIndex !== null ? selectedIndex : events.length - 1;
 
@@ -189,6 +163,32 @@ export function TimelineScrubber({ runId, onTimestampChange }: TimelineScrubberP
 
     return clusters;
   }, [events]);
+
+  if (isLoading) {
+    return (
+      <div className="timeline-scrubber border-t bg-background p-4">
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Clock className="h-4 w-4 animate-spin" />
+          Loading timeline...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="timeline-scrubber border-t bg-background p-4">
+        <div className="flex items-center justify-center gap-2 text-sm text-destructive">
+          <X className="h-4 w-4" />
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (events.length === 0) {
+    return null; // Don't show timeline if no events
+  }
 
   return (
     <div className="timeline-scrubber border-t bg-background p-4">

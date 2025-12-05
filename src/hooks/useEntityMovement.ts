@@ -24,40 +24,6 @@ export function useEntityMovement({
   // Track active animations to prevent memory leaks or conflicts
   const activeAnimations = useRef<Map<string, { stop: () => void }>>(new Map());
 
-  // Subscribe to entity updates using centralized subscription
-  useRealtimeSubscription<{
-    new: StitchEntity;
-    old: StitchEntity;
-  }>(
-    {
-      table: 'stitch_entities',
-      filter: `canvas_id=eq.${canvasId}`,
-      event: 'UPDATE',
-    },
-    (payload) => {
-      const entity = payload.new as StitchEntity;
-      const oldEntity = payload.old as StitchEntity;
-
-      // Case 1: Started traveling (Node -> Edge)
-      if (entity.current_edge_id && !oldEntity.current_edge_id) {
-        handleStartTravel(entity);
-      }
-
-      // Case 2: Arrived at node (Edge -> Node)
-      if (entity.current_node_id && !oldEntity.current_node_id) {
-        handleArrival(entity);
-      }
-    },
-    true
-  );
-
-  // Cleanup animations on unmount
-  useEffect(() => {
-    return () => {
-      activeAnimations.current.forEach(anim => anim.stop());
-    };
-  }, []);
-
   const handleStartTravel = (entity: StitchEntity) => {
     if (!entity.current_edge_id) return;
 
@@ -111,4 +77,38 @@ export function useEntityMovement({
       onEntityPositionUpdate(entity.id, { x, y });
     }
   };
+
+  // Subscribe to entity updates using centralized subscription
+  useRealtimeSubscription<{
+    new: StitchEntity;
+    old: StitchEntity;
+  }>(
+    {
+      table: 'stitch_entities',
+      filter: `canvas_id=eq.${canvasId}`,
+      event: 'UPDATE',
+    },
+    (payload) => {
+      const entity = payload.new as StitchEntity;
+      const oldEntity = payload.old as StitchEntity;
+
+      // Case 1: Started traveling (Node -> Edge)
+      if (entity.current_edge_id && !oldEntity.current_edge_id) {
+        handleStartTravel(entity);
+      }
+
+      // Case 2: Arrived at node (Edge -> Node)
+      if (entity.current_node_id && !oldEntity.current_node_id) {
+        handleArrival(entity);
+      }
+    },
+    true
+  );
+
+  // Cleanup animations on unmount
+  useEffect(() => {
+    return () => {
+      activeAnimations.current.forEach(anim => anim.stop());
+    };
+  }, []);
 }

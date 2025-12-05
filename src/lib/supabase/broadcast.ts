@@ -25,12 +25,12 @@ export async function broadcastToCanvas(
   event: string,
   payload: BroadcastPayload
 ): Promise<void> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   const channelName = `canvas-${canvasId}`;
-  
+
   try {
     const channel = supabase.channel(channelName);
-    
+
     // Subscribe first, then send
     await new Promise<void>((resolve, reject) => {
       channel
@@ -57,14 +57,14 @@ export async function broadcastToCanvas(
             reject(new Error('Channel subscription failed'));
           }
         });
-      
+
       // Timeout after 5 seconds
       setTimeout(() => {
         supabase.removeChannel(channel);
         reject(new Error('Broadcast timeout'));
       }, 5000);
     });
-  } catch (_error) {
+  } catch (error) {
     console.warn(`[Broadcast] Failed to broadcast ${event} to ${channelName}:`, error);
   }
 }

@@ -77,7 +77,9 @@ export function RightSidePanel({
   // Switch to entity tab when an entity is selected
   useEffect(() => {
     if (selectedEntity) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveTab('entity');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsOpen(true);
     }
   }, [selectedEntity]);

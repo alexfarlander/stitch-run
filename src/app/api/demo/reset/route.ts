@@ -28,10 +28,10 @@ import { resetFinancialMetrics } from '@/lib/metrics/financial-updates';
  */
 export async function POST() {
   try {
-    const _supabase = getAdminClient();
-    
+    const supabase = getAdminClient();
+
     console.log('Resetting Clockwork Canvas demo to blank state...');
-    
+
     // Get the BMC canvas ID
     const { data: bmcList, error: bmcError } = await supabase
       .from('stitch_flows')
@@ -39,7 +39,7 @@ export async function POST() {
       .eq('canvas_type', 'bmc')
       .order('created_at', { ascending: false })
       .limit(1);
-    
+
     if (bmcError || !bmcList || bmcList.length === 0) {
       console.error('Failed to find BMC canvas:', bmcError);
       return NextResponse.json(
@@ -47,9 +47,9 @@ export async function POST() {
         { status: 404 }
       );
     }
-    
+
     const canvasId = bmcList[0].id;
-    
+
     // Hide ALL entities by setting their position to null
     // This creates a blank slate - no entities visible
     const { data: updatedEntities, error: updateError } = await supabase
@@ -63,7 +63,7 @@ export async function POST() {
       })
       .eq('canvas_id', canvasId)
       .select('id');
-    
+
     if (updateError) {
       console.error('Failed to reset entities:', updateError);
       return NextResponse.json(
@@ -71,25 +71,25 @@ export async function POST() {
         { status: 500 }
       );
     }
-    
+
     const entitiesReset = updatedEntities?.length || 0;
     console.log(`Reset ${entitiesReset} entities to hidden state`);
-    
+
     // Requirement 9.5: Reset financial metrics to initial values
     await resetFinancialMetrics();
     console.log('Financial metrics reset to initial values');
-    
+
     return NextResponse.json({
       success: true,
       message: 'Demo reset to blank state',
       entities_hidden: entitiesReset,
       financial_metrics_reset: true,
     });
-    
-  } catch (_error) {
+
+  } catch (error) {
     console.error('Failed to reset demo:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to reset demo',
         details: error instanceof Error ? error.message : 'Unknown error',
       },

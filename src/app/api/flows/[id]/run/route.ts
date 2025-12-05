@@ -43,10 +43,10 @@ import { getFlow } from '@/lib/db/flows';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const flowId = params.id;
+    const { id: flowId } = await params;
 
     // Validate flow exists
     const _flow = await getFlow(flowId);

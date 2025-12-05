@@ -155,8 +155,10 @@ export function useEntityPositions(entities: StitchEntity[]): Map<string, Positi
     }
 
     return positionsMap;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     // Serialize entity position data for dependency tracking
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     entities.map(e => `${e.id}:${e.current_node_id}:${e.current_edge_id}:${e.edge_progress}`).join(','),
     viewport.zoom,
     viewport.x,

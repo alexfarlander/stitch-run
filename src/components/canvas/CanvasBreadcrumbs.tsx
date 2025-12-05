@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ChevronRight, Home, ArrowLeft } from 'lucide-react';
 import { getCanvasNavigation, type CanvasStackItem } from '@/lib/navigation/canvas-navigation';
 import { useRouter } from 'next/navigation';
@@ -20,6 +20,7 @@ interface CanvasBreadcrumbsProps {
 export function CanvasBreadcrumbs({ canvasId, canvasName, canvasType }: CanvasBreadcrumbsProps) {
   const [breadcrumbs, setBreadcrumbs] = useState<CanvasStackItem[]>([]);
   const router = useRouter();
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     // Only run on client
@@ -36,13 +37,17 @@ export function CanvasBreadcrumbs({ canvasId, canvasName, canvasType }: CanvasBr
       });
     }
     
-    // Initial breadcrumbs
-    setBreadcrumbs(navigation.getBreadcrumbs());
-
     // Subscribe to navigation changes
     const unsubscribe = navigation.subscribe(() => {
       setBreadcrumbs(navigation.getBreadcrumbs());
     });
+
+    // Trigger initial update via subscription
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBreadcrumbs(navigation.getBreadcrumbs());
+    }
 
     return unsubscribe;
   }, [canvasId, canvasName, canvasType]);

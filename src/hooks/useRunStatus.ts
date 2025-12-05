@@ -30,7 +30,9 @@ export function useRunStatus(runId?: string): UseRunStatusResult {
   // Initial fetch
   useEffect(() => {
     if (!runId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNodeStates(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }
@@ -96,6 +98,7 @@ export function useRunStatus(runId?: string): UseRunStatusResult {
   // Update error state if subscription fails
   useEffect(() => {
     if (subscriptionError && !error) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(subscriptionError);
     }
   }, [subscriptionError, error]);

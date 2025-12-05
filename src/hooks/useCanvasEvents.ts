@@ -60,8 +60,8 @@ export function useCanvasEvents(canvasId: string) {
     const channel = supabase
       .channel(`canvas-${canvasId}`)
       .on('broadcast', { event: 'demo_event' }, (payload) => {
-        const _data = payload.payload;
-        
+        const data = payload.payload;
+
         addEvent({
           type: 'demo_event',
           emoji: extractEmoji(data.description) || '🎬',
@@ -83,13 +83,13 @@ export function useCanvasEvents(canvasId: string) {
  */
 function formatNodeName(nodeId: string): string {
   if (!nodeId) return 'Unknown';
-  
+
   // Remove common prefixes
   const name = nodeId
     .replace('item-', '')
     .replace('section-', '')
     .replace(/-/g, ' ');
-  
+
   // Capitalize words
   return name
     .split(' ')

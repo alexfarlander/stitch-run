@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import * as LucideIcons from 'lucide-react';
 import { DataItemProps } from './types';
@@ -41,7 +41,7 @@ const DataItemComponent = memo(({ id, data }: NodeProps) => {
     }
   };
   
-  const TypeIcon = getTypeIcon();
+  const Icon = useMemo(() => getTypeIcon(), [dataType]);
   
   return (
     <div className="relative" data-node-id={id}>
@@ -73,7 +73,7 @@ const DataItemComponent = memo(({ id, data }: NodeProps) => {
       >
         {/* Header: Icon + Label */}
         <div className="flex items-center gap-2">
-          <TypeIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <Icon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <p className="text-xs font-semibold text-slate-200 truncate flex-1">
             {label}
           </p>

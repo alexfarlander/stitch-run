@@ -26,27 +26,27 @@ function determineEntityType(source: string): 'lead' | 'customer' | 'churned' {
   if (source === 'stripe-churn') {
     return 'churned';
   }
-  
+
   // Subscription events mark entities as customers (Requirement 11.4)
   if (source.startsWith('stripe-subscription')) {
     return 'customer';
   }
-  
+
   // Trial and demo are still leads
   if (source === 'stripe-trial' || source === 'calendly-demo') {
     return 'lead';
   }
-  
+
   // Marketing touchpoints create leads (Requirement 11.1)
   if (source.includes('linkedin') || source.includes('youtube') || source.includes('seo')) {
     return 'lead';
   }
-  
+
   // Support tickets maintain current type
   if (source === 'zendesk-ticket') {
     return 'customer'; // Assume support tickets are from customers
   }
-  
+
   // Default to lead
   return 'lead';
 }
@@ -70,8 +70,8 @@ async function findOrCreateEntity(
     metadata: Record<string, unknown>;
   }
 ): Promise<StitchEntity> {
-  const _supabase = getAdminClient();
-  
+  const supabase = getAdminClient();
+
   // Try to find existing entity by email
   const { data: existingEntity, error: findError } = await supabase
     .from('stitch_entities')
@@ -79,16 +79,16 @@ async function findOrCreateEntity(
     .eq('canvas_id', canvasId)
     .eq('email', email)
     .maybeSingle();
-  
+
   if (findError) {
     throw new Error(`Failed to query entity: ${findError.message}`);
   }
-  
+
   // If entity exists, return it
   if (existingEntity) {
     return existingEntity as StitchEntity;
   }
-  
+
   // Create new entity
   const { data: newEntity, error: createError } = await supabase
     .from('stitch_entities')
@@ -102,11 +102,11 @@ async function findOrCreateEntity(
     })
     .select()
     .single();
-  
+
   if (createError || !newEntity) {
     throw new Error(`Failed to create entity: ${createError?.message}`);
   }
-  
+
   return newEntity as StitchEntity;
 }
 
@@ -124,24 +124,24 @@ async function moveEntityToNode(
   nodeId: string,
   entityType?: 'lead' | 'customer' | 'churned'
 ): Promise<void> {
-  const _supabase = getAdminClient();
-  
+  const supabase = getAdminClient();
+
   const updateData: unknown = {
     current_node_id: nodeId,
     current_edge_id: null,
     edge_progress: null,
   };
-  
+
   // Update entity type if specified (for churn events)
   if (entityType) {
     updateData.entity_type = entityType;
   }
-  
+
   const { error } = await supabase
     .from('stitch_entities')
     .update(updateData)
     .eq('id', entityId);
-  
+
   if (error) {
     throw new Error(`Failed to move entity to node: ${error.message}`);
   }
@@ -159,10 +159,10 @@ export async function POST(
   try {
     // Extract source from params (Requirement 5.1)
     const { source } = await params;
-    
+
     // Parse request payload
     const payload = await request.json();
-    
+
     // Validate required fields
     if (!payload.email) {
       return NextResponse.json(
@@ -170,7 +170,7 @@ export async function POST(
         { status: 400 }
       );
     }
-    
+
     // 1. Map source to target node (Requirement 5.1)
     const targetNodeId = mapWebhookSourceToNode(source);
     if (!targetNodeId) {
@@ -179,20 +179,20 @@ export async function POST(
         { status: 400 }
       );
     }
-    
+
     // Get the BMC canvas ID
     // For Clockwork Canvas, we use the most recent BMC canvas
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     const { data: bmcCanvases, error: canvasError } = await supabase
       .from('stitch_flows')
       .select('id, name, canvas_type, created_at')
       .eq('canvas_type', 'bmc')
       .order('created_at', { ascending: false })
       .limit(1);
-    
+
     if (canvasError || !bmcCanvases || bmcCanvases.length === 0) {
       return NextResponse.json(
-        { 
+        {
           error: 'BMC canvas not found. Please run the seed script first.',
           debug: {
             canvasError: canvasError?.message,
@@ -201,14 +201,14 @@ export async function POST(
         { status: 404 }
       );
     }
-    
+
     const bmcCanvas = bmcCanvases[0];
-    
+
     const canvasId = bmcCanvas.id;
-    
+
     // Determine entity type based on source
     const entityType = determineEntityType(source);
-    
+
     // 2. Find or create entity (Requirement 5.2)
     const entity = await findOrCreateEntity(
       canvasId,
@@ -223,10 +223,10 @@ export async function POST(
         },
       }
     );
-    
+
     // 3. Move entity to target node (Requirement 5.3)
     await moveEntityToNode(entity.id, targetNodeId, entityType);
-    
+
     // 3.5 Broadcast node activation event for visual feedback
     // This triggers the green flash on the node
     try {
@@ -241,7 +241,7 @@ export async function POST(
     } catch (broadcastError) {
       console.warn('[Webhook] Failed to broadcast node activation:', broadcastError);
     }
-    
+
     // 4. Create journey event (Requirement 5.4)
     await createJourneyEvent(
       entity.id,
@@ -259,12 +259,12 @@ export async function POST(
         },
       }
     );
-    
+
     // 5. Walk parallel edges - journey edges and system edges fire simultaneously
     // (Requirements 12.1, 12.2, 12.3, 12.4, 12.5)
     const { walkParallelEdges } = await import('@/lib/engine/edge-walker');
     const edgeResults = await walkParallelEdges(targetNodeId, entity.id, canvasId);
-    
+
     // Log edge execution results (Requirement 12.5)
     console.log(`[Webhook] Parallel edge execution completed:`, {
       source,
@@ -275,7 +275,7 @@ export async function POST(
       journeySuccess: edgeResults.journeyEdges.filter(r => r.success).length,
       systemSuccess: edgeResults.systemEdges.filter(r => r.success).length,
     });
-    
+
     // 6. Update financial metrics if subscription webhook (Requirement 5.6)
     if (source.startsWith('stripe-subscription')) {
       try {
@@ -284,7 +284,7 @@ export async function POST(
           plan: payload.plan,
           amount: payload.amount,
         });
-        
+
         // Broadcast revenue event
         const { broadcastToCanvasAsync } = await import('@/lib/supabase/broadcast');
         const amountFormatted = `$${((payload.amount || 0) / 100).toFixed(0)}`;
@@ -292,11 +292,11 @@ export async function POST(
           description: `💰 +${amountFormatted}/mo MRR from ${entity.name}`,
           timestamp: new Date().toISOString(),
         });
-      } catch (_err) {
+      } catch (err) {
         console.error('[Financial Update] Failed:', err);
       }
     }
-    
+
     // 7. Return success response (Requirement 5.7)
     return NextResponse.json(
       {
@@ -307,8 +307,8 @@ export async function POST(
       },
       { status: 200 }
     );
-    
-  } catch (_error) {
+
+  } catch (error) {
     console.error('Webhook processing error:', error);
     return NextResponse.json(
       {

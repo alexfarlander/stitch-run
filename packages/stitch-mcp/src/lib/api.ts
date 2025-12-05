@@ -90,12 +90,12 @@ export async function stitchRequest(path: string, options: RequestInit = {}) {
         return response.json();
     } catch (_error) {
         // If it's already a StitchAPIError, re-throw it
-        if (error instanceof StitchAPIError) {
-            throw error;
+        if (_error instanceof StitchAPIError) {
+            throw _error;
         }
         
         // If it's a network error (fetch failed), wrap it
-        if (error instanceof Error) {
+        if (_error instanceof Error) {
             throw new StitchNetworkError(url, error);
         }
         

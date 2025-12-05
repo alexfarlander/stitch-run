@@ -23,11 +23,11 @@ import { getVersion } from '../canvas/version-manager';
 import { moveEntityToSection } from '../db/entities';
 import { getAdminClient } from '../supabase/client';
 import { ENTITY_TRAVEL_DURATION_MS } from '../canvas/animation-config';
-import { 
-  logEdgeWalking, 
-  logExecutionError, 
+import {
+  logEdgeWalking,
+  logExecutionError,
   logNodeExecution,
-  logParallelInstanceCreation 
+  logParallelInstanceCreation
 } from './logger';
 
 /**
@@ -58,12 +58,12 @@ export async function startRun(
   if (!run.flow_version_id) {
     throw new Error(`Run has no flow_version_id: ${run.id}`);
   }
-  
+
   const version = await getVersion(run.flow_version_id);
   if (!version) {
     throw new Error(`Flow version not found: ${run.flow_version_id}`);
   }
-  
+
   const executionGraph = version.execution_graph;
 
   // 3. Use entry nodes from execution graph (pre-computed)
@@ -83,7 +83,7 @@ export async function startRun(
     if (node.type === 'UX') {
       // UX nodes start in 'waiting_for_user'
       await fireUXNode(run.id, node.id, node.config || {}, options.input || {});
-      
+
       // If we have an entity, move it to this node immediately
       if (options.entityId) {
         await moveEntityToSection(options.entityId, node.id, 'neutral');
@@ -112,23 +112,23 @@ export async function walkEdges(
   if (!run.flow_version_id) {
     throw new Error(`Run has no flow_version_id: ${run.id}`);
   }
-  
+
   const version = await getVersion(run.flow_version_id);
   if (!version) {
     throw new Error(`Flow version not found: ${run.flow_version_id}`);
   }
-  
+
   const executionGraph = version.execution_graph;
 
   // --- Handle Entity Movement ---
   if (run.entity_id) {
     try {
       const { handleNodeCompletion } = await import('../../stitch/engine/entity-movement');
-      
+
       // Get the output of the completed node
       const nodeState = run.node_states[completedNodeId];
       const output = nodeState?.output;
-      
+
       // Check for movement (Success case)
       // Note: walkEdges is only called on success, so success=true
       await handleNodeCompletion(run, completedNodeId, output, true);
@@ -189,32 +189,32 @@ export async function walkParallelEdges(
   journeyEdges: { success: boolean; error?: string }[];
   systemEdges: { success: boolean; error?: string }[];
 }> {
-  const _supabase = getAdminClient();
-  
+  const supabase = getAdminClient();
+
   // Load the BMC canvas
   const { data: flow, error: flowError } = await supabase
     .from('stitch_flows')
     .select('graph')
     .eq('id', canvasId)
     .single();
-  
+
   if (flowError || !flow) {
     console.error('Failed to load canvas for parallel edge walking:', flowError);
     return { journeyEdges: [], systemEdges: [] };
   }
-  
+
   // Find all edges from this node
   const allEdges = flow.graph.edges.filter((edge: unknown) => edge.source === nodeId);
-  
+
   // Separate journey edges and system edges
   const journeyEdges = allEdges.filter((edge: unknown) => edge.type === 'journey' || !edge.type);
   const systemEdges = allEdges.filter((edge: unknown) => edge.type === 'system');
-  
+
   console.log(`[Parallel Edge Walking] Node ${nodeId}:`, {
     journeyEdgeCount: journeyEdges.length,
     systemEdgeCount: systemEdges.length,
   });
-  
+
   // Execute journey edges and system edges in parallel (Requirement 12.1)
   // Use Promise.allSettled to handle failures independently (Requirement 12.3)
   const [journeyResults, systemResults] = await Promise.allSettled([
@@ -226,14 +226,14 @@ export async function walkParallelEdges(
           return { success: true };
         } catch (_error) {
           console.error(`Journey edge ${edge.id} failed:`, error);
-          return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
           };
         }
       })
     ),
-    
+
     // System edge execution (background processes)
     Promise.allSettled(
       systemEdges.map(async (edge: unknown) => {
@@ -242,30 +242,30 @@ export async function walkParallelEdges(
           return { success: true };
         } catch (_error) {
           console.error(`System edge ${edge.id} failed:`, error);
-          return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
           };
         }
       })
     ),
   ]);
-  
+
   // Extract results (Requirement 12.5 - log all edge execution results)
-  const journeyEdgeResults = journeyResults.status === 'fulfilled' 
+  const journeyEdgeResults = journeyResults.status === 'fulfilled'
     ? journeyResults.value.map(r => r.status === 'fulfilled' ? r.value : { success: false, error: 'Promise rejected' })
     : [];
-    
+
   const systemEdgeResults = systemResults.status === 'fulfilled'
     ? systemResults.value.map(r => r.status === 'fulfilled' ? r.value : { success: false, error: 'Promise rejected' })
     : [];
-  
+
   // Log execution results (Requirement 12.5)
   console.log(`[Parallel Edge Walking] Results for node ${nodeId}:`, {
     journeyEdges: journeyEdgeResults,
     systemEdges: systemEdgeResults,
   });
-  
+
   return {
     journeyEdges: journeyEdgeResults,
     systemEdges: systemEdgeResults,
@@ -285,8 +285,8 @@ async function executeJourneyEdge(
   entityId: string,
   canvasId: string
 ): Promise<void> {
-  const _supabase = getAdminClient();
-  
+  const supabase = getAdminClient();
+
   // Step 1: Start entity traveling on the edge (animated movement)
   const { error: startError } = await supabase
     .from('stitch_entities')
@@ -298,11 +298,11 @@ async function executeJourneyEdge(
       updated_at: new Date().toISOString(),
     })
     .eq('id', entityId);
-  
+
   if (startError) {
     throw new Error(`Failed to start entity travel on edge: ${startError.message}`);
   }
-  
+
   // Step 1.5: Broadcast source node activation (departure)
   // This triggers the green flash on the source node
   try {
@@ -316,7 +316,7 @@ async function executeJourneyEdge(
   } catch (broadcastError) {
     console.warn('[Journey Edge] Failed to broadcast source node activation:', broadcastError);
   }
-  
+
   // Step 2: Create edge_start journey event (triggers animation)
   const { error: startEventError } = await supabase
     .from('stitch_journey_events')
@@ -330,13 +330,13 @@ async function executeJourneyEdge(
         target_node: edge.target,
       },
     });
-  
+
   if (startEventError) {
     console.warn('Failed to create edge_start event:', startEventError);
   }
-  
+
   console.log(`[Journey Edge] Entity ${entityId} started traveling on edge "${edge.id}": ${edge.source} -> ${edge.target}`);
-  
+
   // Step 3: Schedule arrival after animation duration (imported from animation-config)
   setTimeout(async () => {
     // Move entity to target node
@@ -350,26 +350,26 @@ async function executeJourneyEdge(
         updated_at: new Date().toISOString(),
       })
       .eq('id', entityId);
-    
+
     if (arrivalError) {
       console.error(`Failed to complete entity arrival: ${arrivalError.message}`);
       return;
     }
-    
+
     // Broadcast business event for the event log
     try {
       const { broadcastToCanvasAsync } = await import('../supabase/broadcast');
-      
+
       // Get entity name for the event description
       const { data: entity } = await supabase
         .from('stitch_entities')
         .select('name')
         .eq('id', entityId)
         .single();
-      
+
       const entityName = entity?.name || 'Someone';
       const nodeLabel = formatNodeLabel(edge.target);
-      
+
       broadcastToCanvasAsync(canvasId, 'demo_event', {
         description: `${entityName} ${nodeLabel}`,
         timestamp: new Date().toISOString(),
@@ -377,7 +377,7 @@ async function executeJourneyEdge(
     } catch (broadcastError) {
       console.warn('[Journey Edge] Failed to broadcast arrival event:', broadcastError);
     }
-    
+
     // Create node_arrival journey event
     const { error: arrivalEventError } = await supabase
       .from('stitch_journey_events')
@@ -391,11 +391,11 @@ async function executeJourneyEdge(
           source_node: edge.source,
         },
       });
-    
+
     if (arrivalEventError) {
       console.warn('Failed to create node_arrival event:', arrivalEventError);
     }
-    
+
     console.log(`[Journey Edge] Entity ${entityId} arrived at: ${edge.target}`);
   }, ENTITY_TRAVEL_DURATION_MS);
 }
@@ -424,20 +424,20 @@ async function executeSystemEdgeInternal(
       entityId: entityId,
       timestamp: new Date().toISOString(),
     });
-    
+
     // Execute the system action
     const systemAction = edge.data?.systemAction;
     if (!systemAction) {
       console.warn(`System edge ${edge.id} has no systemAction defined`);
       return;
     }
-    
+
     // Log the system action (actual execution would happen here)
     console.log(`[System Edge] ${edge.source} -> ${edge.target}: ${systemAction}`, {
       entity_id: entityId,
       timestamp: new Date().toISOString(),
     });
-    
+
     // In production, this would execute the actual system action
     // For now, we just log it
   } catch (_error) {
@@ -480,7 +480,7 @@ export async function fireNodeWithGraph(
   // If parallel instances exist, fire THEM instead of the static node
   if (parallelKeys.length > 0) {
     logParallelInstanceCreation(run.id, nodeId, parallelKeys);
-    
+
     // Fire all parallel instances concurrently
     await Promise.all(
       parallelKeys.map(async (parallelId) => {
@@ -511,7 +511,7 @@ export async function fireNodeWithGraph(
         }
       })
     );
-    
+
     return; // Stop here, don't fire the static node
   }
 
@@ -566,19 +566,19 @@ function areUpstreamDependenciesCompletedWithGraph(
 ): boolean {
   // Find all upstream nodes by checking adjacency map
   const upstreamNodeIds = getUpstreamNodeIds(nodeId, executionGraph);
-  
+
   // If no upstream nodes, dependencies are satisfied
   if (upstreamNodeIds.length === 0) {
     return true;
   }
-  
+
   // Check if all upstream nodes are completed
   for (const upstreamId of upstreamNodeIds) {
     // Check if there are parallel instances of this upstream node
     const parallelInstances = Object.keys(run.node_states).filter(
       key => key.startsWith(`${upstreamId}_`) && /_\d+$/.test(key)
     );
-    
+
     if (parallelInstances.length > 0) {
       // If parallel instances exist, ALL of them must be in a terminal state
       for (const parallelId of parallelInstances) {
@@ -595,7 +595,7 @@ function areUpstreamDependenciesCompletedWithGraph(
       }
     }
   }
-  
+
   return true;
 }
 
@@ -610,24 +610,24 @@ function mergeUpstreamOutputsWithGraph(
 ): any {
   // Find all upstream nodes
   const upstreamNodeIds = getUpstreamNodeIds(nodeId, executionGraph);
-  
+
   // If no upstream nodes, return empty object
   if (upstreamNodeIds.length === 0) {
     return {};
   }
-  
+
   // Merge all upstream outputs
   const mergedInput: unknown = {};
-  
+
   for (const upstreamId of upstreamNodeIds) {
     const upstreamState = run.node_states[upstreamId];
-    
+
     // Only merge if upstream has output
     if (upstreamState && upstreamState.output !== undefined) {
       // Check for edge data mapping (Requirement 3.6)
       const edgeKey = `${upstreamId}->${nodeId}`;
       const edgeMapping = executionGraph.edgeData[edgeKey];
-      
+
       if (edgeMapping) {
         // Apply data mapping
         for (const [targetInput, sourcePath] of Object.entries(edgeMapping)) {
@@ -645,7 +645,7 @@ function mergeUpstreamOutputsWithGraph(
       }
     }
   }
-  
+
   return mergedInput;
 }
 
@@ -654,14 +654,14 @@ function mergeUpstreamOutputsWithGraph(
  */
 function getUpstreamNodeIds(nodeId: string, executionGraph: ExecutionGraph): string[] {
   const upstreamIds: string[] = [];
-  
+
   // Check adjacency map to find nodes that point to this node
   for (const [sourceId, targetIds] of Object.entries(executionGraph.adjacency)) {
     if (targetIds.includes(nodeId)) {
       upstreamIds.push(sourceId);
     }
   }
-  
+
   return upstreamIds;
 }
 
@@ -674,18 +674,18 @@ function resolvePath(obj: any, path: string): any {
   if (!path.includes('.')) {
     return obj[path];
   }
-  
+
   // Split path and traverse object
   const parts = path.split('.');
   let current = obj;
-  
+
   for (const part of parts) {
     if (current === null || current === undefined) {
       return undefined;
     }
     current = current[part];
   }
-  
+
   return current;
 }
 
@@ -703,7 +703,7 @@ function formatNodeLabel(nodeId: string): string {
     'item-help-desk': 'opened support ticket',
     'item-lead-magnet': 'downloaded lead magnet',
   };
-  
+
   return nodeActions[nodeId] || `arrived at ${nodeId.replace('item-', '').replace(/-/g, ' ')}`;
 }
 
@@ -736,7 +736,7 @@ export async function fireNode(
   // If parallel instances exist, fire THEM instead of the static node
   if (parallelKeys.length > 0) {
     logParallelInstanceCreation(run.id, nodeId, parallelKeys);
-    
+
     await Promise.all(
       parallelKeys.map(async (parallelId) => {
         const state = run.node_states[parallelId];
@@ -762,7 +762,7 @@ export async function fireNode(
         }
       })
     );
-    
+
     return;
   }
 

@@ -56,10 +56,10 @@ interface UpdateNodeConfigResponse {
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; nodeId: string } }
+  { params }: { params: Promise<{ id: string; nodeId: string }> }
 ): Promise<NextResponse> {
   try {
-    const { id: canvasId, nodeId } = params;
+    const { id: canvasId, nodeId } = await params;
     
     // Validate canvas ID
     validateCanvasId(canvasId);

@@ -34,23 +34,6 @@ export default function WebhooksPage() {
 
   const [availableEdges, setAvailableEdges] = useState<Array<{ id: string; label: string }>>([]);
 
-  useEffect(() => {
-    fetchWebhooks();
-    fetchWorkflows();
-  }, [canvasId]);
-
-  useEffect(() => {
-    if (selectedWebhook) {
-      fetchRecentEvents(selectedWebhook.id);
-    }
-  }, [selectedWebhook]);
-
-  useEffect(() => {
-    if (formData.workflow_id) {
-      loadWorkflowEdges(formData.workflow_id);
-    }
-  }, [formData.workflow_id]);
-
   const fetchWebhooks = async () => {
     const { data } = await supabase
       .from('stitch_webhook_configs')
@@ -154,6 +137,23 @@ export default function WebhooksPage() {
     });
     setAvailableEdges([]);
   };
+
+  useEffect(() => {
+    fetchWebhooks();
+    fetchWorkflows();
+  }, [canvasId]);
+
+  useEffect(() => {
+    if (selectedWebhook) {
+      fetchRecentEvents(selectedWebhook.id);
+    }
+  }, [selectedWebhook]);
+
+  useEffect(() => {
+    if (formData.workflow_id) {
+      loadWorkflowEdges(formData.workflow_id);
+    }
+  }, [formData.workflow_id]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">

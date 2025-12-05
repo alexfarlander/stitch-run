@@ -65,7 +65,7 @@ export function RunStatusOverlay({ runId }: RunStatusOverlayProps) {
                 </svg>
               </div>
             </div>
-            
+
             {/* Error Content */}
             <div className="flex-1">
               <h3 className="text-red-900 font-semibold text-lg mb-1">
@@ -103,51 +103,60 @@ export function RunStatusOverlay({ runId }: RunStatusOverlayProps) {
       <div className="absolute top-4 right-4 bg-blue-500 text-white px-2 py-1 text-xs rounded pointer-events-auto z-50">
         Status Overlay Active
       </div>
-      
-      {nodes.map((node) => {
-        // Use the existing useNodeStatus hook to handle parallel instances
-        const { status } = useNodeStatus(node.id, nodeStates);
-        
-        // Get error message if node failed
-        const nodeState = nodeStates[node.id];
-        const errorMessage = nodeState?.error;
 
-        // Skip if node is pending (no indicator needed)
-        if (status === 'pending') {
-          return null;
-        }
+      {nodes.map((node) => (
+        <NodeStatusItem
+          key={`status-${node.id}`}
+          node={node}
+          nodeStates={nodeStates}
+          viewport={viewport}
+        />
+      ))}
+    </div>
+  );
+}
 
-        // Calculate position based on node position, dimensions, and viewport
-        const width = node.width || node.measured?.width || 200;
-        const height = node.height || node.measured?.height || 100;
-        
-        // Transform node position to screen coordinates
-        const screenX = node.position.x * viewport.zoom + viewport.x;
-        const screenY = node.position.y * viewport.zoom + viewport.y;
-        const screenWidth = width * viewport.zoom;
-        const screenHeight = height * viewport.zoom;
+interface NodeStatusItemProps {
+  node: Node;
+  nodeStates: Record<string, NodeState>;
+  viewport: { zoom: number; x: number; y: number };
+}
 
-        return (
-          <div
-            key={`status-${node.id}`}
-            style={{
-              position: 'absolute',
-              left: screenX,
-              top: screenY,
-              width: screenWidth,
-              height: screenHeight,
-              pointerEvents: 'auto', // Allow interaction with error tooltips
-              transform: 'translateZ(0)', // Force GPU acceleration
-            }}
-          >
-            <NodeStatusIndicator
-              nodeId={node.id}
-              status={status}
-              error={errorMessage}
-            />
-          </div>
-        );
-      })}
+function NodeStatusItem({ node, nodeStates, viewport }: NodeStatusItemProps) {
+  // Use the existing useNodeStatus hook to handle parallel instances
+  const { status } = useNodeStatus(node.id, nodeStates);
+
+  // Get error message if node failed
+  const nodeState = nodeStates[node.id];
+  const errorMessage = nodeState?.error;
+
+  // Skip if node is pending (no indicator needed)
+  if (status === 'pending') {
+    return null;
+  }
+
+  // Calculate position based on node position, dimensions, and viewport
+  const width = node.width || node.measured?.width || 200;
+  const height = node.height || node.measured?.height || 50;
+  const x = (node.position.x * viewport.zoom) + viewport.x;
+  const y = (node.position.y * viewport.zoom) + viewport.y;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        transform: `translate(${x}px, ${y}px) scale(${viewport.zoom})`,
+        width,
+        height,
+        transformOrigin: '0 0',
+        pointerEvents: 'none'
+      }}
+    >
+      <NodeStatusIndicator
+        nodeId={node.id}
+        status={status}
+        error={errorMessage}
+      />
     </div>
   );
 }
