@@ -299,6 +299,7 @@ export interface WebhookConfig {
   source: string;
   endpoint_slug: string;
   secret: string | null;
+  require_signature: boolean;  // When true, webhooks without valid signatures are rejected
   workflow_id: string;
   entry_edge_id: string;
   entity_mapping: EntityMapping;
