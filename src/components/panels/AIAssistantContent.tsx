@@ -54,18 +54,35 @@ export function AIAssistantContent({
     retryCount = 0
   ): Promise<AIResponse> => {
     try {
+      const payload: { request: string; canvasId?: string } = {
+        request: userInput,
+      };
+      
+      // Don't send canvasId - let the AI create new workflows
+      // The canvasId validation is too strict for BMC canvases
+      // Users can manually specify a canvas if needed in their request
+
       const response = await fetch('/api/ai-manager', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          request: userInput,
-          canvasId,
-          conversationHistory: messages,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`AI request failed with status ${response.status}`);
+        let errorMessage = `AI request failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error('AI Manager Error:', errorData);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          if (errorData.details) {
+            console.error('Error details:', errorData.details);
+          }
+        } catch {
+          const errorText = await response.text();
+          console.error('AI Manager Error (text):', errorText);
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       return await response.json();
@@ -85,7 +102,7 @@ export function AIAssistantContent({
     }
   };
 
-  const handleAIResponse = (data: AIResponse): void => {
+  const handleAIResponse = async (data: AIResponse): Promise<void> => {
     const action = data.action?.toLowerCase();
     
     if (action === AI_ACTIONS.CREATE_WORKFLOW || action === AI_ACTIONS.MODIFY_WORKFLOW) {
@@ -100,15 +117,62 @@ export function AIAssistantContent({
           };
           setMessages(prev => [...prev, errorMessage]);
         } else {
-          if (onGraphUpdate) {
-            onGraphUpdate(graph);
-          }
+          // Check if this is a link-generator workflow (single node, no edges)
+          const isLinkGenerator = graph.nodes?.length === 1 && 
+                                  graph.edges?.length === 0 &&
+                                  (graph.nodes[0]?.data?.worker_type === 'link-generator' || 
+                                   graph.nodes[0]?.data?.workerType === 'link-generator');
 
-          const assistantMessage: Message = {
-            role: 'assistant',
-            content: data.message || "Done! I've updated the workflow.",
-          };
-          setMessages(prev => [...prev, assistantMessage]);
+          if (isLinkGenerator) {
+            // For link generation, call the API directly to generate the link
+            try {
+              const node = graph.nodes[0];
+              const config = node.data?.config || {};
+              
+              const response = await fetch('/api/generate-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  utm_source: config.utm_source || 'direct',
+                  utm_campaign: config.utm_campaign,
+                  utm_medium: config.utm_medium,
+                  utm_content: config.utm_content,
+                  utm_term: config.utm_term,
+                  redirect_to: config.redirect_to || '/',
+                  canvas_id: canvasId,
+                  create_entity: config.create_entity !== false,
+                }),
+              });
+
+              if (response.ok) {
+                const result = await response.json();
+                const assistantMessage: Message = {
+                  role: 'assistant',
+                  content: `✅ Link ready!\n\n${result.tracking_url}\n\n🎯 Redirects: ${config.redirect_to || '/'}\n📊 Source: ${result.utm_params.source}${result.utm_params.campaign ? `\n📢 Campaign: ${result.utm_params.campaign}` : ''}\n\nShare this link and watch leads appear in your canvas!`,
+                };
+                setMessages(prev => [...prev, assistantMessage]);
+              } else {
+                throw new Error('Failed to generate link');
+              }
+            } catch (error) {
+              const errorMessage: Message = {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error generating the tracking link. Please try again.',
+              };
+              setMessages(prev => [...prev, errorMessage]);
+            }
+          } else {
+            // For other workflows, try to save if we have a canvas
+            if (onGraphUpdate) {
+              onGraphUpdate(graph);
+            }
+
+            const assistantMessage: Message = {
+              role: 'assistant',
+              content: data.message || "Done! I've updated the workflow.",
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+          }
         }
       } else {
         const assistantMessage: Message = {
@@ -137,7 +201,7 @@ export function AIAssistantContent({
 
     try {
       const data = await sendAIRequest(userInput);
-      handleAIResponse(data);
+      await handleAIResponse(data);
     } catch (error) {
       console.error('AI request failed after retries:', error);
       const errorMessage: Message = {

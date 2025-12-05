@@ -571,7 +571,43 @@ const EXAMPLES = `## Examples
 }
 \`\`\`
 
-### Example 5: Check Workflow Status
+### Example 5: Generate a Tracking Link
+
+**User Request:**
+"I need a link for LinkedIn post that leads to demo call"
+
+**Response:**
+\`\`\`json
+{
+  "action": "CREATE_WORKFLOW",
+  "payload": {
+    "name": "LinkedIn Demo Link Generator",
+    "canvas": {
+      "nodes": [
+        {
+          "id": "generate-link-1",
+          "type": "worker",
+          "data": {
+            "label": "Generate LinkedIn Demo Link",
+            "worker_type": "link-generator",
+            "config": {
+              "utm_source": "linkedin",
+              "utm_campaign": "demo_call",
+              "utm_medium": "social",
+              "redirect_to": "https://calendly.com/demo"
+            }
+          }
+        }
+      ],
+      "edges": []
+    }
+  }
+}
+\`\`\`
+
+**Note:** The link-generator worker creates tracking URLs with UTM parameters. The output includes \`tracking_url\`, \`tracking_id\`, and \`utm_params\`. Users can share the tracking_url on social media, emails, or ads.
+
+### Example 6: Check Workflow Status
 
 **User Request:**
 "What's the status of run abc-123?"

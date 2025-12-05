@@ -70,7 +70,8 @@ export function validateWorkerTypes(nodes: Node[]): ValidationResult {
   const errors: ValidationError[] = [];
 
   for (const node of nodes) {
-    const workerType = node.data?.workerType || node.data?.type;
+    // Accept both workerType (camelCase) and worker_type (snake_case)
+    const workerType = node.data?.workerType || node.data?.worker_type || node.data?.type;
     
     if (!workerType) {
       errors.push({

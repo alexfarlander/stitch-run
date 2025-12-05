@@ -2,11 +2,13 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createNodeTool } from "./create-node.js";
 import { getStitchingCodeTool } from "./get-stitching-code.js";
+import { generateTrackingLinkTool } from "./generate-tracking-link.js";
 
 // Registry of all available tools
 const tools = [
     createNodeTool,
-    getStitchingCodeTool
+    getStitchingCodeTool,
+    generateTrackingLinkTool
 ];
 
 export function registerTools(server: Server) {

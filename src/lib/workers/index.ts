@@ -22,6 +22,7 @@ export { SceneParserWorker } from './scene-parser';
 export { WireframeGeneratorWorker } from './wireframe-generator';
 export { ImageToVideoWorker } from './image-to-video';
 export { MediaLibraryWorker } from './media-library';
+export { LinkGeneratorWorker } from './link-generator';
 
 // Testing utilities
 export type { WorkerTestConfig, WorkerTestResult } from './testing';
@@ -43,6 +44,7 @@ import { SceneParserWorker } from './scene-parser';
 import { WireframeGeneratorWorker } from './wireframe-generator';
 import { ImageToVideoWorker } from './image-to-video';
 import { MediaLibraryWorker } from './media-library';
+import { LinkGeneratorWorker } from './link-generator';
 import { workerRegistry } from './registry';
 
 // Register Claude worker as "claude"
@@ -68,3 +70,6 @@ workerRegistry.register('image-to-video', ImageToVideoWorker);
 
 // Register Media Library worker as "media-library"
 workerRegistry.register('media-library', MediaLibraryWorker);
+
+// Register Link Generator worker as "link-generator"
+workerRegistry.register('link-generator', LinkGeneratorWorker);

@@ -180,7 +180,7 @@ export function EventsLogPanel({ events, onClear }: EventsLogPanelProps) {
             disabled={isLoading}
             variant="outline"
             size="icon"
-            className="h-14 w-14 rounded-xl border-gray-700 hover:bg-gray-800"
+            className="h-14 w-14 rounded-xl border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300"
             title="Reset demo"
           >
             <RotateCcw className="w-5 h-5" />

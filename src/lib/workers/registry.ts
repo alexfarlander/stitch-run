@@ -231,6 +231,84 @@ export const WORKER_DEFINITIONS: Record<string, WorkerDefinition> = {
       fps: 25,
       endpoint: 'https://api.shotstack.io/v1/render'
     }
+  },
+
+  'link-generator': {
+    id: 'link-generator',
+    name: 'Tracking Link Generator',
+    type: 'sync',
+    description: 'Generate tracking links with UTM parameters for marketing campaigns and lead attribution',
+    input: {
+      utm_source: {
+        type: 'string',
+        required: true,
+        description: 'UTM source parameter (e.g., "linkedin", "facebook", "email")'
+      },
+      utm_campaign: {
+        type: 'string',
+        required: false,
+        description: 'UTM campaign parameter (e.g., "demo_call", "product_launch")'
+      },
+      utm_medium: {
+        type: 'string',
+        required: false,
+        description: 'UTM medium parameter (e.g., "social", "cpc", "email")'
+      },
+      utm_content: {
+        type: 'string',
+        required: false,
+        description: 'UTM content parameter for A/B testing (e.g., "button_blue", "header_v2")'
+      },
+      utm_term: {
+        type: 'string',
+        required: false,
+        description: 'UTM term parameter for paid search keywords'
+      },
+      landing_path: {
+        type: 'string',
+        required: false,
+        description: 'Landing page path (default: "/track")',
+        default: '/track'
+      },
+      redirect_to: {
+        type: 'string',
+        required: false,
+        description: 'URL to redirect to after tracking (e.g., "/demo", "https://calendly.com/...")'
+      },
+      canvas_id: {
+        type: 'string',
+        required: false,
+        description: 'Canvas ID to associate the entity with (for pre-creating lead)'
+      },
+      create_entity: {
+        type: 'boolean',
+        required: false,
+        description: 'Whether to pre-create an entity for tracking (default: true)',
+        default: true
+      }
+    },
+    output: {
+      tracking_url: {
+        type: 'string',
+        description: 'Complete tracking URL with all UTM parameters'
+      },
+      tracking_id: {
+        type: 'string',
+        description: 'Unique tracking identifier for this link'
+      },
+      entity_id: {
+        type: 'string',
+        description: 'Pre-created entity ID (if create_entity is true)'
+      },
+      utm_params: {
+        type: 'object',
+        description: 'Object containing all UTM parameters used'
+      }
+    },
+    config: {
+      landingPath: '/track',
+      createEntity: true
+    }
   }
 };
 

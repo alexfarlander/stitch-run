@@ -178,7 +178,29 @@ You'll receive:
 - \`webhookUrl\`: Endpoint to send form submissions
 - \`uptimeUrl\`: Endpoint for health checks
 
-### 2. Get Integration Code
+### 2. Generate Tracking Links (Marketing Campaigns)
+
+Create tracking links for social media, email campaigns, or ads:
+
+\`\`\`
+stitch_generate_tracking_link(
+  canvasId: "your-canvas-id",
+  utmSource: "linkedin",
+  utmCampaign: "demo_call",
+  utmMedium: "social",
+  redirectTo: "/demo"
+)
+\`\`\`
+
+This returns a unique tracking URL like:
+\`https://yourdomain.com/track?tracking_id=xyz&utm_source=linkedin&utm_campaign=demo_call&redirect_to=/demo\`
+
+When someone clicks this link:
+- They're tracked as a lead in your canvas
+- UTM parameters are captured in their entity metadata
+- They're redirected to your specified destination
+
+### 3. Get Integration Code
 
 Retrieve framework-specific code:
 
@@ -190,7 +212,7 @@ stitch_get_stitching_code(
 )
 \`\`\`
 
-### 3. Implement Form Submission
+### 4. Implement Form Submission
 
 When a user submits your form:
 
@@ -218,7 +240,7 @@ export async function POST(request: Request) {
 }
 \`\`\`
 
-### 4. Add Analytics Tracking
+### 5. Add Analytics Tracking
 
 Track user interactions:
 
