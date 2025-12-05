@@ -10,7 +10,18 @@ interface JourneyEdgeData {
     totalTraveled?: number;
     conversionRate?: number;
   };
+  isTraversing?: boolean;
 }
+
+/**
+ * JourneyEdge Component
+ * 
+ * Displays an animated edge with traversal pulse effect.
+ * The traversal pulse animation is synchronized with entity movement animations.
+ * 
+ * Requirements: 17.1, 17.2 - Edge pulse synchronized with entity movement
+ * Animation duration: 2000ms (matches ENTITY_TRAVEL_DURATION_MS)
+ */
 
 export function JourneyEdge({
   id,
@@ -88,6 +99,30 @@ export function JourneyEdge({
         onMouseLeave={() => setIsHovered(false)}
       />
 
+      {/* Traversal pulse animation - cyan gradient */}
+      {edgeData?.isTraversing && (
+        <>
+          <defs>
+            <linearGradient id={`cyan-gradient-${id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0" />
+              <stop offset="50%" stopColor="#22d3ee" stopOpacity="1" />
+              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path
+            d={edgePath}
+            fill="none"
+            stroke={`url(#cyan-gradient-${id})`}
+            strokeWidth={4}
+            strokeDasharray="12 6"
+            className="edge-traversal-pulse"
+            style={{
+              filter: 'drop-shadow(0 0 8px rgba(34, 211, 238, 0.8))',
+            }}
+          />
+        </>
+      )}
+
       {/* Tooltip on hover */}
       {isHovered && edgeData?.stats && (
         <g transform={`translate(${labelX}, ${labelY})`}>
@@ -146,8 +181,21 @@ export function JourneyEdge({
             stroke-dashoffset: 0;
           }
         }
+        @keyframes edge-pulse {
+          from {
+            stroke-dashoffset: 24;
+            opacity: 1;
+          }
+          to {
+            stroke-dashoffset: 0;
+            opacity: 0.6;
+          }
+        }
         .journey-edge-animated {
           animation: flowAnimation 1s linear infinite;
+        }
+        .edge-traversal-pulse {
+          animation: edge-pulse 2000ms ease-out forwards;
         }
       `}</style>
     </>

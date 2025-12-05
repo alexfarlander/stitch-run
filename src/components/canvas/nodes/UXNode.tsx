@@ -12,6 +12,8 @@ interface UXNodeData {
   label?: string;
   prompt?: string;
   node_states?: StitchRun['node_states'];
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
 }
 
 export const UXNode = memo(({ id, data }: NodeProps) => {
@@ -21,7 +23,14 @@ export const UXNode = memo(({ id, data }: NodeProps) => {
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode id={id} type="UX" status={status} label={label}>
+      <BaseNode 
+        id={id} 
+        type="UX" 
+        status={status} 
+        label={label}
+        onDrop={nodeData.onDrop}
+        onDragOver={nodeData.onDragOver}
+      >
         {nodeData.label || 'User Input'}
       </BaseNode>
       <Handle type="source" position={Position.Bottom} />

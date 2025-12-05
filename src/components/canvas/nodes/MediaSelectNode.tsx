@@ -35,6 +35,8 @@ interface MediaSelectNodeData {
   // Persisted selection data
   selectedAssets?: SelectedAsset[];
   node_states?: StitchRun['node_states'];
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
 }
 
 const mediaTypeConfig: Record<MediaType, { icon: React.ElementType; label: string }> = {
@@ -102,7 +104,14 @@ export const MediaSelectNode = memo(({ id, data }: NodeProps) => {
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode id={id} type="MediaSelect" status={status} label={label}>
+      <BaseNode 
+        id={id} 
+        type="MediaSelect" 
+        status={status} 
+        label={label}
+        onDrop={nodeData.onDrop}
+        onDragOver={nodeData.onDragOver}
+      >
         <div className="space-y-3">
           {/* Node Label & Badge */}
           <div className="flex items-center justify-between">

@@ -12,6 +12,8 @@ interface SplitterNodeData {
   label?: string;
   arrayPath?: string;
   node_states?: StitchRun['node_states'];
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
 }
 
 export const SplitterNode = memo(({ id, data }: NodeProps) => {
@@ -21,7 +23,14 @@ export const SplitterNode = memo(({ id, data }: NodeProps) => {
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode id={id} type="Splitter" status={status} label={label}>
+      <BaseNode 
+        id={id} 
+        type="Splitter" 
+        status={status} 
+        label={label}
+        onDrop={nodeData.onDrop}
+        onDragOver={nodeData.onDragOver}
+      >
         {nodeData.label || 'Splitter'}
       </BaseNode>
       <Handle type="source" position={Position.Bottom} />

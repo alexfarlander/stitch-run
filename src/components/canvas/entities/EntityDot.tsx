@@ -2,15 +2,39 @@
 
 import { motion } from 'framer-motion';
 import { StitchEntity } from '@/types/entity';
+import { 
+  ENTITY_TRAVEL_DURATION_SECONDS, 
+  NODE_JUMP_DURATION_SECONDS 
+} from '@/lib/canvas/animation-config';
 
 interface EntityDotProps {
   entity: StitchEntity;
   position: { x: number; y: number };
   isSelected: boolean;
   onClick: () => void;
+  onDragStart?: (entityId: string) => void;
+  onDragEnd?: (entityId: string, targetNodeId: string | null) => void;
 }
 
-export function EntityDot({ entity, position, isSelected, onClick }: EntityDotProps) {
+/**
+ * EntityDot Component
+ * 
+ * Displays an animated entity dot that moves across the canvas.
+ * Animation duration is synchronized with edge traversal animations.
+ * Supports drag-and-drop for manual entity movement.
+ * 
+ * Requirements: 
+ * - 17.1, 17.2, 17.4 - Synchronized animations
+ * - 5.1 - Display visual indicator during drag operation
+ */
+export function EntityDot({ 
+  entity, 
+  position, 
+  isSelected, 
+  onClick,
+  onDragStart,
+  onDragEnd 
+}: EntityDotProps) {
   const glowColor = {
     lead: '#06b6d4',
     customer: '#10b981',
@@ -21,13 +45,32 @@ export function EntityDot({ entity, position, isSelected, onClick }: EntityDotPr
   const opacity = entity.entity_type === 'churned' ? 0.6 : 1;
 
   // Calculate animation duration based on whether entity is moving
-  // When moving along an edge, use slower animation (2s default)
-  // When jumping between nodes, use faster animation (0.5s)
-  const animationDuration = isMoving ? 2 : 0.5;
+  // Synchronized with edge traversal animation duration
+  // Requirement 17.2: Both animations complete at the same time
+  const animationDuration = isMoving 
+    ? ENTITY_TRAVEL_DURATION_SECONDS 
+    : NODE_JUMP_DURATION_SECONDS;
+
+  // Handle drag start
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      entityId: entity.id,
+      sourceNodeId: entity.current_node_id
+    }));
+    onDragStart?.(entity.id);
+  };
+
+  // Handle drag end
+  const handleDragEnd = (e: React.DragEvent) => {
+    // The drop target will handle the actual movement
+    // This is just for cleanup
+    onDragEnd?.(entity.id, null);
+  };
 
   return (
     <motion.div
-      className="absolute cursor-pointer group"
+      className="absolute cursor-move group"
       style={{ 
         zIndex: 40 // Below EntityDetailPanel (z-50) but above canvas elements
       }}
@@ -40,6 +83,9 @@ export function EntityDot({ entity, position, isSelected, onClick }: EntityDotPr
         ease: isMoving ? 'linear' : 'easeInOut',
       }}
       onClick={onClick}
+      draggable={!isMoving} // Only allow dragging when not currently moving
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
       {/* Pulse animation when moving */}
       {isMoving && (

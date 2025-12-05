@@ -7,7 +7,7 @@
 
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Zap } from 'lucide-react';
+import { Loader2, Zap, ArrowLeft } from 'lucide-react';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 import { useFlow } from '@/hooks/useFlow';
 import { BMCCanvas } from './BMCCanvas';
@@ -80,11 +80,35 @@ function ErrorState({ message }: { message: string }) {
 }
 
 /**
- * Placeholder for detail canvas (future implementation)
+ * DetailCanvas - Placeholder for detail canvas view
+ * Includes back navigation button
  */
 function DetailCanvas() {
+  const { goBack, canGoBack } = useCanvasNavigation();
+  
   return (
-    <div className="w-full h-full flex items-center justify-center bg-slate-950">
+    <div className="w-full h-full flex items-center justify-center bg-slate-950 relative">
+      {/* Back to Surface button */}
+      {canGoBack && (
+        <button
+          onClick={goBack}
+          className="
+            absolute top-4 left-4 z-10
+            flex items-center gap-2 px-4 py-2
+            bg-slate-900/90 hover:bg-slate-800
+            border border-slate-700 hover:border-cyan-500
+            rounded-lg
+            text-sm font-medium text-slate-300 hover:text-cyan-400
+            transition-all duration-200
+            backdrop-blur-sm
+            shadow-lg
+          "
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Surface
+        </button>
+      )}
+      
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-slate-300 mb-2">
           Detail Canvas
@@ -99,7 +123,7 @@ function DetailCanvas() {
  * Canvas Router Component
  */
 export function CanvasRouter({ initialFlowId, runId }: CanvasRouterProps) {
-  const { currentCanvasId, hydrateFromDatabase } = useCanvasNavigation();
+  const { currentCanvasId, direction, hydrateFromDatabase } = useCanvasNavigation();
   
   // Use currentCanvasId if available, otherwise use initialFlowId
   const activeCanvasId = currentCanvasId || initialFlowId;
@@ -143,6 +167,32 @@ export function CanvasRouter({ initialFlowId, runId }: CanvasRouterProps) {
     }
   };
 
+  // Get animation props based on navigation direction
+  const getAnimationProps = () => {
+    if (direction === 'in') {
+      // Drilling in: zoom from large to normal (diving in effect)
+      return {
+        initial: { scale: 2, opacity: 0 },
+        animate: { scale: 1, opacity: 1 },
+        exit: { scale: 0.5, opacity: 0 }
+      };
+    } else if (direction === 'out') {
+      // Going back: zoom from small to normal (surfacing effect)
+      return {
+        initial: { scale: 0.5, opacity: 0 },
+        animate: { scale: 1, opacity: 1 },
+        exit: { scale: 2, opacity: 0 }
+      };
+    } else {
+      // Default/initial load: simple fade
+      return {
+        initial: { scale: 1, opacity: 0 },
+        animate: { scale: 1, opacity: 1 },
+        exit: { scale: 1, opacity: 0 }
+      };
+    }
+  };
+
   return (
     <div className="w-full h-screen flex flex-col bg-slate-950">
       {/* Breadcrumbs */}
@@ -153,12 +203,10 @@ export function CanvasRouter({ initialFlowId, runId }: CanvasRouterProps) {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeCanvasId}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
+            {...getAnimationProps()}
             transition={{
               duration: 0.3,
-              ease: [0.4, 0, 0.2, 1],
+              ease: 'easeInOut',
             }}
             className="w-full h-full"
           >

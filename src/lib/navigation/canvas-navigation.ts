@@ -6,6 +6,7 @@
 import { supabase } from '@/lib/supabase/client';
 
 export type CanvasType = 'bmc' | 'workflow' | 'section' | 'detail';
+export type NavigationDirection = 'in' | 'out' | null;
 
 export interface CanvasStackItem {
   id: string;
@@ -29,6 +30,7 @@ const STORAGE_KEY = 'stitch_canvas_stack';
 export class CanvasNavigation {
   private stack: CanvasStackItem[] = [];
   private listeners: Set<() => void> = new Set();
+  private direction: NavigationDirection = null;
 
   constructor() {
     this.loadFromStorage();
@@ -48,7 +50,17 @@ export class CanvasNavigation {
     } catch (error) {
       console.error('Failed to load navigation stack:', error);
       this.stack = [];
+      // Emit error event for user feedback
+      this.notifyError('Failed to restore navigation history');
     }
+  }
+
+  /**
+   * Notify listeners of an error
+   */
+  private notifyError(message: string): void {
+    // Could be extended to emit error events to listeners
+    console.warn('Navigation error:', message);
   }
 
   /**
@@ -66,9 +78,16 @@ export class CanvasNavigation {
 
   /**
    * Notify all listeners of state change
+   * Wraps each listener in try-catch to prevent one failing listener from breaking the chain
    */
   private notify(): void {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach(listener => {
+      try {
+        listener();
+      } catch (error) {
+        console.error('Navigation listener error:', error);
+      }
+    });
   }
 
   /**
@@ -80,6 +99,13 @@ export class CanvasNavigation {
   }
 
   /**
+   * Get current navigation direction
+   */
+  getDirection(): NavigationDirection {
+    return this.direction;
+  }
+
+  /**
    * Drill into a canvas (push to stack)
    */
   drillInto(canvas: CanvasStackItem): void {
@@ -88,6 +114,7 @@ export class CanvasNavigation {
       return;
     }
 
+    this.direction = 'in';
     this.stack.push(canvas);
     this.saveToStorage();
     this.notify();
@@ -99,6 +126,7 @@ export class CanvasNavigation {
   goBack(): CanvasStackItem | null {
     if (this.stack.length <= 1) return null;
     
+    this.direction = 'out';
     this.stack.pop();
     this.saveToStorage();
     this.notify();
@@ -111,6 +139,10 @@ export class CanvasNavigation {
    */
   navigateTo(index: number): CanvasStackItem | null {
     if (index < 0 || index >= this.stack.length) return null;
+    
+    // Determine direction based on whether we're going forward or backward
+    const currentIndex = this.stack.length - 1;
+    this.direction = index > currentIndex ? 'in' : 'out';
     
     this.stack = this.stack.slice(0, index + 1);
     this.saveToStorage();
@@ -213,8 +245,14 @@ let navigationInstance: CanvasNavigation | null = null;
 
 /**
  * Get the singleton navigation instance
+ * Uses lazy initialization with SSR guard
  */
 export function getCanvasNavigation(): CanvasNavigation {
+  // Guard against SSR contexts
+  if (typeof window === 'undefined') {
+    throw new Error('CanvasNavigation can only be used in browser context');
+  }
+  
   if (!navigationInstance) {
     navigationInstance = new CanvasNavigation();
   }

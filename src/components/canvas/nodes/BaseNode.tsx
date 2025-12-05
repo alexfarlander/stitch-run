@@ -13,15 +13,19 @@ interface BaseNodeProps {
   status: NodeStatus;
   label: string;
   children?: React.ReactNode;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
 }
 
-export function BaseNode({ id, type, status, label, children }: BaseNodeProps) {
+export function BaseNode({ id, type, status, label, children, onDrop, onDragOver }: BaseNodeProps) {
   return (
     <div
       className={cn(
         'relative min-w-[200px] rounded-lg border-2 bg-slate-900 p-4 transition-all',
         getStatusStyles(status)
       )}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
     >
       {/* Status indicator badge */}
       <div className="absolute -top-2 -right-2">
@@ -60,13 +64,13 @@ function getStatusStyles(status: NodeStatus): string {
       return 'opacity-50 border-slate-700';
     
     case 'running':
-      return 'border-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.5)] animate-pulse';
+      return 'border-amber-500 animate-[pulse-running_1.5s_ease-in-out_infinite]';
     
     case 'completed':
-      return 'border-[#00ff99] shadow-[0_0_15px_rgba(0,255,153,0.4)]';
+      return 'border-[#00ff99] animate-[flash-completed_1s_ease-out_forwards]';
     
     case 'failed':
-      return 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]';
+      return 'border-red-500 animate-[flash-failed_1s_ease-out_forwards]';
     
     case 'waiting_for_user':
       return 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)] animate-pulse';

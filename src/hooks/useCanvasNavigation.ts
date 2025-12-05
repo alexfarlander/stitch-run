@@ -7,7 +7,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { 
   getCanvasNavigation, 
   type CanvasStackItem,
-  type CanvasType 
+  type CanvasType,
+  type NavigationDirection
 } from '@/lib/navigation/canvas-navigation';
 
 export interface UseCanvasNavigationReturn {
@@ -15,6 +16,7 @@ export interface UseCanvasNavigationReturn {
   currentCanvas: CanvasStackItem | null;
   breadcrumbs: CanvasStackItem[];
   canGoBack: boolean;
+  direction: NavigationDirection;
   drillInto: (id: string, name: string, type: CanvasType) => void;
   goBack: () => void;
   navigateTo: (index: number) => void;
@@ -44,6 +46,7 @@ export function useCanvasNavigation(): UseCanvasNavigationReturn {
   const currentCanvasId = navigation.getCurrentCanvasId();
   const breadcrumbs = navigation.getBreadcrumbs();
   const canGoBack = breadcrumbs.length > 1;
+  const direction = navigation.getDirection();
 
   // Actions
   const drillInto = useCallback((id: string, name: string, type: CanvasType) => {
@@ -71,6 +74,7 @@ export function useCanvasNavigation(): UseCanvasNavigationReturn {
     currentCanvas,
     breadcrumbs,
     canGoBack,
+    direction,
     drillInto,
     goBack,
     navigateTo,

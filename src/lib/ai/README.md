@@ -1,302 +1,220 @@
-# AI Module
+# AI Validation Module
 
-This module provides the AI Manager functionality for Stitch, enabling LLM-powered workflow management through natural language.
+This module provides validation utilities for AI-generated graph updates to ensure they use valid worker types and connect to existing nodes before being applied to the canvas.
 
-## Components
+## Overview
 
-### LLM Client (`llm-client.ts`)
+The AI validation system prevents invalid graph updates from being applied to the canvas by validating:
+1. **Worker Types** - All nodes must use valid worker types from the registry
+2. **Edge Connections** - All edges must connect to existing or new nodes
 
-Provides an interface for interacting with Large Language Models (LLMs).
+## Files
 
-**Features:**
-- Abstract `LLMClient` interface for multiple LLM providers
-- `ClaudeLLMClient` implementation using Anthropic's Claude API
-- Automatic retry logic with exponential backoff
-- Error handling and timeout management
+- `validation.ts` - Core validation logic and utilities
+- `__tests__/validation.test.ts` - Comprehensive unit tests (17 tests)
 
-**Usage:**
+## Usage
 
-```typescript
-import { createLLMClient } from '@/lib/ai';
-
-const client = createLLMClient({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-  model: 'claude-sonnet-4-20250514',
-  maxTokens: 4096,
-});
-
-const response = await client.complete('Your prompt here');
-```
-
-### Context Builder (`context-builder.ts`)
-
-Builds structured context for the AI Manager by stripping UI properties and loading worker definitions.
-
-**Features:**
-- Strip UI-only properties from canvases (position, style, width, height)
-- Load worker definitions from registry
-- Build structured context objects
-- Format context as JSON for LLM consumption
-
-**Usage:**
+### Basic Validation
 
 ```typescript
-import { buildAIManagerContext, stripCanvasUIProperties } from '@/lib/ai';
+import { validateGraphUpdate } from '@/lib/ai/validation';
 
-// Strip UI properties from a canvas
-const strippedCanvas = stripCanvasUIProperties(visualGraph);
-
-// Build complete AI Manager context
-const context = await buildAIManagerContext({
-  currentCanvas: strippedCanvas,
-  userRequest: 'Add video generation to this workflow',
-});
-```
-
-### Action Executor (`action-executor.ts`)
-
-Parses and validates LLM responses, routing them to appropriate handlers.
-
-**Features:**
-- Parse JSON from various LLM response formats (plain JSON, markdown code blocks, text with JSON)
-- Validate response structure (action type, payload)
-- Validate payload fields based on action type
-- Route validated responses to action handlers
-- Comprehensive error handling with descriptive messages
-
-**Supported Actions:**
-- `CREATE_WORKFLOW` - Generate new workflows
-- `MODIFY_WORKFLOW` - Update existing workflows
-- `RUN_WORKFLOW` - Execute workflows
-- `GET_STATUS` - Check workflow status
-
-**Usage:**
-
-```typescript
-import { parseAndValidateResponse, executeAction } from '@/lib/ai';
-
-// Parse and validate LLM response
-const response = parseAndValidateResponse(llmResponseText);
-
-// Execute action with handlers
-const result = await executeAction(response, {
-  createWorkflow: async (payload) => {
-    // Handle workflow creation
-    const canvas = await createCanvas(payload.name, payload.canvas);
-    return { canvasId: canvas.id };
+// Validate a complete graph update
+const result = validateGraphUpdate(
+  {
+    nodes: [...],
+    edges: [...]
   },
-  modifyWorkflow: async (payload) => {
-    // Handle workflow modification
-    const canvas = await updateCanvas(payload.canvasId, payload.canvas);
-    return { canvasId: canvas.id };
-  },
-  runWorkflow: async (payload) => {
-    // Handle workflow execution
-    const run = await startRun(payload.canvasId, payload.input);
-    return { runId: run.id };
-  },
-  getStatus: async (payload) => {
-    // Handle status check
-    const status = await getRunStatus(payload.runId);
-    return status;
-  },
-});
-```
+  existingNodes
+);
 
-### Prompt Template (`prompt-template.ts`)
-
-Generates comprehensive prompts for the AI Manager with worker definitions, entity movement rules, and examples.
-
-**Features:**
-- System role definition
-- Worker definitions with input/output schemas
-- Entity movement rules explanation
-- Output format specification
-- Example requests and responses
-- Current canvas context (for modifications)
-
-**Usage:**
-
-```typescript
-import { buildAIManagerPrompt } from '@/lib/ai';
-import { WORKER_DEFINITIONS } from '@/lib/workers/registry';
-
-const prompt = buildAIManagerPrompt({
-  workers: Object.values(WORKER_DEFINITIONS),
-  currentCanvas: strippedCanvas, // Optional, for modifications
-  userRequest: 'Create a video generation workflow',
-});
-```
-
-## Complete AI Manager Flow
-
-Here's how all components work together:
-
-```typescript
-import {
-  createLLMClient,
-  buildAIManagerContext,
-  buildAIManagerPrompt,
-  stripCanvasUIProperties,
-} from '@/lib/ai';
-import { WORKER_DEFINITIONS } from '@/lib/workers/registry';
-
-async function processAIManagerRequest(
-  userRequest: string,
-  currentCanvas?: VisualGraph
-) {
-  // 1. Create LLM client
-  const llmClient = createLLMClient({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
-  });
-
-  // 2. Strip UI properties if modifying existing canvas
-  const strippedCanvas = currentCanvas
-    ? stripCanvasUIProperties(currentCanvas)
-    : undefined;
-
-  // 3. Build prompt with context
-  const prompt = buildAIManagerPrompt({
-    workers: Object.values(WORKER_DEFINITIONS),
-    currentCanvas: strippedCanvas,
-    userRequest,
-  });
-
-  // 4. Get LLM response
-  const llmResponseText = await llmClient.complete(prompt);
-
-  // 5. Parse and validate response
-  const aiResponse = parseAndValidateResponse(llmResponseText);
-
-  // 6. Execute action with handlers
-  return await executeAction(aiResponse, {
-    createWorkflow: async (payload) => {
-      const canvas = await createCanvas(payload.name, payload.canvas);
-      return { canvasId: canvas.id, canvas: canvas.data };
-    },
-    modifyWorkflow: async (payload) => {
-      const canvas = await updateCanvas(payload.canvasId, payload.canvas);
-      return { canvasId: canvas.id, canvas: canvas.data };
-    },
-    runWorkflow: async (payload) => {
-      const run = await startRun(payload.canvasId, payload.input);
-      return { runId: run.id, status: run.status };
-    },
-    getStatus: async (payload) => {
-      const status = await getRunStatus(payload.runId);
-      return status;
-    },
-  });
+if (!result.valid) {
+  console.error('Validation failed:', result.errors);
 }
 ```
 
-## Prompt Template Structure
+### In AIAssistantPanel
 
-The AI Manager prompt includes the following sections:
+```typescript
+import { validateGraphUpdate, formatValidationErrors } from '@/lib/ai/validation';
 
-1. **System Role**: Defines the AI's role and capabilities
-2. **Available Workers**: Lists all worker types with input/output schemas
-3. **Current Canvas State**: (Optional) Shows the canvas being modified
-4. **Entity Movement Rules**: Explains how to configure entity movement
-5. **Output Format**: Specifies the expected JSON response structure
-6. **Examples**: Provides concrete examples of requests and responses
-7. **User Request**: The actual user's natural language request
+// Validate before applying
+const validation = validateGraphUpdate(graph, currentNodes);
 
-### Example Prompt Sections
-
-**Worker Definitions:**
-```markdown
-## Available Workers
-
-### Claude Script Generator (`claude`)
-
-**Type:** sync
-**Description:** Generate structured scene descriptions
-
-**Input:**
-  - **prompt** (required): The prompt to send to Claude
-
-**Output:**
-  - **scenes**: Array of scene objects
-```
-
-**Entity Movement Rules:**
-```markdown
-## Entity Movement Rules
-
-Worker nodes can specify where entities should move after execution:
-
-{
-  "entityMovement": {
-    "onSuccess": {
-      "targetSectionId": "next-section-node-id",
-      "completeAs": "success"
-    },
-    "onFailure": {
-      "targetSectionId": "error-handling-node-id",
-      "completeAs": "failure"
-    }
-  }
+if (!validation.valid) {
+  // Show error in chat
+  const errorMessage = formatValidationErrors(validation.errors);
+  setMessages(prev => [...prev, {
+    role: 'assistant',
+    content: errorMessage
+  }]);
+} else {
+  // Apply the update
+  onGraphUpdate(graph);
 }
 ```
 
-**Output Format:**
-```markdown
-## Output Format
+## API Reference
 
-You MUST respond with valid JSON in this exact format:
+### `validateWorkerTypes(nodes: Node[]): ValidationResult`
 
-{
-  "action": "CREATE_WORKFLOW" | "MODIFY_WORKFLOW" | "RUN_WORKFLOW" | "GET_STATUS",
-  "payload": { ...action-specific data... }
+Validates that all nodes use valid worker types from the registry.
+
+**Returns:** `{ valid: boolean, errors: ValidationError[] }`
+
+**Validates:**
+- Each node has a `workerType` or `type` field
+- The worker type exists in `WORKER_DEFINITIONS`
+
+### `validateEdgeConnections(edges: Edge[], existingNodes: Node[], newNodes?: Node[]): ValidationResult`
+
+Validates that all edges connect to existing nodes.
+
+**Returns:** `{ valid: boolean, errors: ValidationError[] }`
+
+**Validates:**
+- Each edge has source and target
+- Source and target nodes exist (in existing or new nodes)
+
+### `validateGraphUpdate(graph: { nodes: Node[], edges: Edge[] }, existingNodes: Node[]): ValidationResult`
+
+Validates a complete graph update (both worker types and edges).
+
+**Returns:** `{ valid: boolean, errors: ValidationError[] }`
+
+**Validates:**
+- All worker types are valid
+- All edge connections are valid
+
+### `formatValidationErrors(errors: ValidationError[]): string`
+
+Formats validation errors into a user-friendly message for display in chat.
+
+**Returns:** Formatted error message with bullet points and helpful guidance
+
+## Validation Rules
+
+### Worker Type Validation (Property 31)
+
+For any node created by the AI, the worker type SHALL exist in the WORKER_DEFINITIONS registry.
+
+**Valid Worker Types:**
+- `claude` - Claude Script Generator
+- `minimax` - MiniMax Video Generator
+- `elevenlabs` - ElevenLabs Voice Generator
+- `shotstack` - Shotstack Video Assembler
+
+**Error Messages:**
+- "Node 'X' is missing a worker type"
+- "Invalid worker type 'X' for node 'Y'. Valid types are: claude, minimax, elevenlabs, shotstack"
+
+### Edge Connection Validation (Property 32)
+
+For any edge created by the AI, both the source and target nodes SHALL exist in the canvas.
+
+**Validation Logic:**
+- Checks against existing nodes on canvas
+- Checks against new nodes being added in same update
+- Allows edges between new nodes
+
+**Error Messages:**
+- "Edge 'X' is missing a source node"
+- "Edge 'X' references non-existent source node 'Y'"
+- "Edge 'X' is missing a target node"
+- "Edge 'X' references non-existent target node 'Y'"
+
+## Error Handling
+
+### ValidationError Interface
+
+```typescript
+interface ValidationError {
+  field: string;        // e.g., "node.1.workerType"
+  message: string;      // Human-readable error message
+  details?: any;        // Additional context (nodeId, edgeId, etc.)
+}
+```
+
+### ValidationResult Interface
+
+```typescript
+interface ValidationResult {
+  valid: boolean;       // true if no errors
+  errors: ValidationError[];  // Array of validation errors
 }
 ```
 
 ## Testing
 
-All components have comprehensive test coverage:
+The validation module has comprehensive test coverage:
 
-- `llm-client.test.ts`: Tests LLM client functionality and retry logic
-- `context-builder.test.ts`: Tests context building and UI property stripping
-- `prompt-template.test.ts`: Tests prompt generation with all sections
-- `action-executor.test.ts`: Tests action parsing, validation, and routing
-- `action-executor.property.test.ts`: Property-based tests for response validation (100+ test cases)
+### Unit Tests (17 tests)
+- Worker type validation (4 tests)
+- Edge connection validation (6 tests)
+- Complete graph validation (3 tests)
+- Error formatting (4 tests)
 
-Run tests:
+### Integration Tests (8 tests)
+- Valid graph updates accepted
+- Invalid worker types rejected
+- Invalid edge connections rejected
+- Multiple errors collected
+- Error message formatting
 
+**Run tests:**
 ```bash
-npm test src/lib/ai/__tests__
+npm test src/lib/ai/__tests__/validation.test.ts
 ```
 
-## Requirements Coverage
+## Requirements
 
-This module satisfies the following requirements:
+This module implements the following requirements:
 
-- **4.1**: AI Manager generates valid canvas with appropriate nodes and edges
-- **4.2**: AI Manager selects appropriate worker types based on task description
-- **4.3**: AI Manager includes Splitter and Collector nodes with correct configuration
-- **4.4**: AI Manager configures entity movement rules for worker nodes
-- **8.1**: AI Manager returns JSON response with action type and payload
-- **8.5**: JSON is valid and parseable
-- **10.1**: AI Manager includes entity movement configuration
-- **10.2**: AI Manager specifies onSuccess behavior
-- **10.3**: AI Manager specifies onFailure behavior
+- **9.3** - Validate that AI-created nodes use valid worker types from registry
+- **9.4** - Validate that AI-created edges connect to existing nodes
+- **9.5** - Display error messages in chat for invalid operations
 
-## Environment Variables
+## Properties
 
-```bash
-# Required for LLM client
-ANTHROPIC_API_KEY=your-api-key-here
+This module validates the following correctness properties:
 
-# Optional configuration
-AI_MANAGER_MODEL=claude-sonnet-4-20250514
-AI_MANAGER_MAX_TOKENS=4096
+- **Property 31:** AI worker type validation - For any node created by the AI, the worker type SHALL exist in the WORKER_DEFINITIONS registry
+- **Property 32:** AI edge validation - For any edge created by the AI, both the source and target nodes SHALL exist in the canvas
+
+## Integration
+
+### AIAssistantPanel
+
+The validation module is integrated into the AI Assistant Panel:
+
+1. Panel receives `currentNodes` prop with existing canvas nodes
+2. When AI responds with graph update, validation runs first
+3. If validation passes, graph update is applied
+4. If validation fails, error message is shown in chat
+
+### Worker Registry
+
+The validation module imports from the worker registry:
+
+```typescript
+import { isValidWorkerType, getAvailableWorkerTypes } from '@/lib/workers/registry';
 ```
+
+This ensures validation always uses the latest worker definitions.
 
 ## Future Enhancements
 
-- Support for additional LLM providers (OpenAI, Google, etc.)
-- Streaming responses for real-time feedback
-- Conversation history for multi-turn interactions
-- Fine-tuned prompts for specific workflow types
-- Automatic validation of AI-generated canvases
+Potential improvements for future iterations:
+
+1. **Schema Validation** - Validate node input fields against worker schemas
+2. **Cycle Detection** - Detect and prevent circular dependencies in edges
+3. **Node Limits** - Enforce maximum node count per canvas
+4. **Custom Validators** - Allow custom validation rules per worker type
+5. **Async Validation** - Support async validation (e.g., checking external APIs)
+
+## See Also
+
+- [Worker Registry](../workers/registry.ts) - Worker type definitions
+- [AIAssistantPanel](../../components/panels/AIAssistantPanel.tsx) - AI chat interface
+- [Design Document](../../../.kiro/specs/living-canvas-enhancements/design.md) - Full design specification

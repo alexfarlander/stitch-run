@@ -11,6 +11,8 @@ import { StitchRun } from '@/types/stitch';
 interface CollectorNodeData {
   label?: string;
   node_states?: StitchRun['node_states'];
+  onDrop?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
 }
 
 export const CollectorNode = memo(({ id, data }: NodeProps) => {
@@ -20,7 +22,14 @@ export const CollectorNode = memo(({ id, data }: NodeProps) => {
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <BaseNode id={id} type="Collector" status={status} label={label}>
+      <BaseNode 
+        id={id} 
+        type="Collector" 
+        status={status} 
+        label={label}
+        onDrop={nodeData.onDrop}
+        onDragOver={nodeData.onDragOver}
+      >
         {nodeData.label || 'Collector'}
       </BaseNode>
       <Handle type="source" position={Position.Bottom} />

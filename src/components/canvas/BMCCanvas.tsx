@@ -29,8 +29,12 @@ import { JourneyEdge } from './edges/JourneyEdge';
 import { EntityOverlay } from './entities/EntityOverlay';
 import { RunStatusOverlay } from './RunStatusOverlay';
 import { DemoModeButton } from './DemoModeButton';
+import { AIAssistantPanel } from '@/components/panels/AIAssistantPanel';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
+import { useEdgeTraversal } from '@/hooks/useEdgeTraversal';
+import { useCanvasGraphUpdate } from '@/hooks/useCanvasGraphUpdate';
 import { sortNodesForRendering, Z_INDEX_LAYERS } from './utils';
+import { VisualGraph } from '@/types/canvas-schema';
 
 interface BMCCanvasProps {
   flow: StitchFlow;
@@ -52,6 +56,10 @@ interface ItemNodeData {
 
 export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
   const { drillInto } = useCanvasNavigation();
+  const traversingEdges = useEdgeTraversal(flow.id);
+  
+  // Handle AI graph updates using shared hook
+  const handleGraphUpdate = useCanvasGraphUpdate(flow.id);
   
   // Memoize nodeTypes so React Flow doesn't re-render constantly
   const nodeTypes = useMemo<NodeTypes>(() => ({
@@ -165,7 +173,7 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     return sortNodesForRendering(transformedNodes);
   }, [flow.graph.nodes]);
 
-  // Transform flow edges
+  // Transform flow edges with traversal state
   const edges: Edge[] = useMemo(() => {
     return flow.graph.edges.map((edge) => ({
       id: edge.id,
@@ -174,9 +182,12 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
       type: 'journey',
       animated: true, // Force animation
       style: { stroke: '#06b6d4', strokeWidth: 2 }, // Default style backup
-      data: { intensity: 0.8 },
+      data: { 
+        intensity: 0.8,
+        isTraversing: traversingEdges.get(edge.id) || false,
+      },
     }));
-  }, [flow.graph.edges]);
+  }, [flow.graph.edges, traversingEdges]);
 
   // Handle section double-clicks for drill-down
   const handleNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -200,6 +211,21 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
     }
   }, [drillInto]);
 
+  // Handle node drop event for entity movement
+  const onNodeDrop = useCallback((event: React.DragEvent, node: any) => {
+    event.preventDefault();
+    // Store the target node ID for EntityOverlay to use
+    window.dispatchEvent(new CustomEvent('entity-drop', {
+      detail: { targetNodeId: node.id, event }
+    }));
+  }, []);
+
+  // Handle node drag over
+  const onNodeDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
   return (
     <div className="w-full h-full bg-[#0a0f1a] text-white relative">
       {/* Demo Mode Button - Floating in top-right */}
@@ -214,6 +240,8 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
         edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}
+        onNodeDrop={onNodeDrop}
+        onNodeDragOver={onNodeDragOver}
         fitView
         minZoom={0.5}
         maxZoom={2}
@@ -244,6 +272,12 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
         {/* Run Status Indicators */}
         {runId && <RunStatusOverlay runId={runId} />}
       </ReactFlow>
+      
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel 
+        canvasId={flow.id}
+        onGraphUpdate={handleGraphUpdate}
+      />
     </div>
   );
 }

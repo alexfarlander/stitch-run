@@ -15,7 +15,7 @@ import {
   Lightbulb,
   Wallet,
   TrendingUp,
-  ChevronRight
+  Layers
 } from 'lucide-react';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 
@@ -106,9 +106,9 @@ export const SectionNode = memo(({ data }: NodeProps) => {
               transition-all duration-200
               opacity-60 group-hover/section:opacity-100
             "
-            title={`Open ${nodeData.label} workflow`}
+            title="Double-click to drill down"
           >
-            <ChevronRight className="w-3 h-3 text-slate-400 group-hover/section:text-cyan-400" />
+            <Layers className="w-3 h-3 text-slate-400 group-hover/section:text-cyan-400" />
           </button>
         )}
       </div>

@@ -120,3 +120,43 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Enhanced Node Status Animations */
+@keyframes pulse-running {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.9);
+  }
+}
+
+@keyframes flash-completed {
+  0% {
+    box-shadow: 0 0 50px rgba(0, 255, 153, 1);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(0, 255, 153, 0.4);
+  }
+}
+
+@keyframes flash-failed {
+  0% {
+    box-shadow: 0 0 50px rgba(239, 68, 68, 1);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* Edge Traversal Animation */
+@keyframes edge-pulse {
+  0% {
+    stroke-dashoffset: 24;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.6;
+  }
+}
