@@ -38,7 +38,7 @@ async function main() {
     await seedSimpleTestFlow();
     console.log('\n✅ Script completed successfully!');
     process.exit(0);
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Script failed:', error);
     process.exit(1);
   }

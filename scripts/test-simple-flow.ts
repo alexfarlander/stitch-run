@@ -35,7 +35,7 @@ interface ClaudeOutput {
 /**
  * Logs execution progress with timestamp and context
  */
-function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: string, context?: any) {
+function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: string, context?: unknown) {
   const timestamp = new Date().toISOString();
   const emoji = {
     info: 'ℹ️ ',
@@ -53,7 +53,7 @@ function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: str
 /**
  * Validates that the output matches the expected schema
  */
-function validateOutput(output: any): { valid: boolean; errors: string[] } {
+function validateOutput(output: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   // Check if output exists
@@ -103,8 +103,8 @@ async function waitForNodeCompletion(
   runId: string,
   nodeId: string,
   timeoutMs: number = 60000
-): Promise<{ status: string; output?: any; error?: string }> {
-  const startTime = Date.now();
+): Promise<{ status: string; output?: unknown; error?: string }> {
+  const _startTime = Date.now();
   
   while (Date.now() - startTime < timeoutMs) {
     // Query the run state
@@ -168,7 +168,7 @@ async function main() {
   }
   
   // Create admin client
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const _supabase = createClient(supabaseUrl, serviceRoleKey);
   
   try {
     // Step 1: Find the Simple Test Flow workflow
@@ -274,7 +274,7 @@ async function main() {
       throw new Error(`Failed to fetch updated run: ${runError?.message}`);
     }
     
-    const flow = await getFlowAdmin(workflow.id);
+    const _flow = await getFlowAdmin(workflow.id);
     if (!flow) {
       throw new Error('Failed to fetch flow');
     }
@@ -385,7 +385,7 @@ async function main() {
     
     process.exit(0);
     
-  } catch (error) {
+  } catch (_error) {
     logExecution('error', 'Test execution failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,

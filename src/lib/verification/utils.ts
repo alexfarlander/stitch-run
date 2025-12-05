@@ -18,7 +18,7 @@ import {
 export function createError(
   type: VerificationErrorType,
   message: string,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): VerificationError {
   return {
     type,
@@ -33,7 +33,7 @@ export function createError(
 export function createWarning(
   type: VerificationWarningType,
   message: string,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): VerificationWarning {
   return {
     type,
@@ -77,7 +77,7 @@ export async function runChecks(
       } else {
         result.summary.passedChecks++;
       }
-    } catch (error) {
+    } catch (_error) {
       // If a check throws an exception, treat it as a failed check
       result.errors.push(
         createError(

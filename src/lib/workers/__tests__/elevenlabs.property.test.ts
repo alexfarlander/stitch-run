@@ -2,7 +2,7 @@
  * Property-based tests for ElevenLabs worker
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+// beforeEach import removed as unused
 import * as fc from 'fast-check';
 import { ElevenLabsWorker } from '../elevenlabs';
 
@@ -67,7 +67,7 @@ describe('ElevenLabs Worker - Property Tests', () => {
               ok: true,
               status: 200,
             });
-          }) as any;
+          }) as unknown;
 
           // Mock Supabase storage
           const { createServerClient } = await import('@/lib/supabase/server');
@@ -149,7 +149,7 @@ describe('ElevenLabs Worker - Property Tests', () => {
               ok: true,
               status: 200,
             });
-          }) as any;
+          }) as unknown;
 
           // Mock Supabase storage with upload failure
           const { createServerClient } = await import('@/lib/supabase/server');
@@ -211,7 +211,7 @@ describe('ElevenLabs Worker - Property Tests', () => {
               ok: true,
               status: 200,
             });
-          }) as any;
+          }) as unknown;
 
           // Mock Supabase storage with successful upload but failed URL retrieval
           const { createServerClient } = await import('@/lib/supabase/server');

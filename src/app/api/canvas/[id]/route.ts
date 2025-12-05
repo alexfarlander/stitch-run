@@ -37,7 +37,7 @@ export async function GET(
     validateCanvasId(id);
 
     // Get flow with current version data
-    const flow = await getFlow(id, true);
+    const _flow = await getFlow(id, true);
 
     if (!flow) {
       throw new APIError(
@@ -51,8 +51,8 @@ export async function GET(
     let canvas: VisualGraph;
     
     // Check if flow has current version with visual_graph
-    if (flow.current_version_id && (flow as any).current_version?.visual_graph) {
-      canvas = (flow as any).current_version.visual_graph;
+    if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
+      canvas = (flow as unknown).current_version.visual_graph;
     } else {
       // Fallback to legacy graph format - convert StitchNode to VisualNode
       canvas = {
@@ -94,7 +94,7 @@ export async function GET(
 
     return NextResponse.json(response);
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }
@@ -188,8 +188,8 @@ export async function PUT(
 
     // Extract visual graph from current version
     let updatedCanvas: VisualGraph;
-    if (updatedFlow.current_version_id && (updatedFlow as any).current_version?.visual_graph) {
-      updatedCanvas = (updatedFlow as any).current_version.visual_graph;
+    if (updatedFlow.current_version_id && (updatedFlow as unknown).current_version?.visual_graph) {
+      updatedCanvas = (updatedFlow as unknown).current_version.visual_graph;
     } else if (canvas) {
       updatedCanvas = canvas;
     } else {
@@ -231,7 +231,7 @@ export async function PUT(
 
     return NextResponse.json(response);
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }
@@ -250,7 +250,7 @@ export async function DELETE(
     validateCanvasId(id);
 
     // Check if canvas exists
-    const flow = await getFlow(id);
+    const _flow = await getFlow(id);
     if (!flow) {
       throw new APIError(
         'NOT_FOUND',
@@ -269,7 +269,7 @@ export async function DELETE(
 
     return NextResponse.json(response);
 
-  } catch (error) {
+  } catch (_error) {
     return handleAPIError(error);
   }
 }

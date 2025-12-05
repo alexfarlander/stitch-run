@@ -39,8 +39,8 @@ describe('AI Assistant Integration', () => {
     // Define the expected prop interface
     interface AIAssistantPanelProps {
       canvasId: string;
-      currentNodes?: any[];
-      onGraphUpdate?: (graph: { nodes: any[]; edges: any[] }) => void;
+      currentNodes?: unknown[];
+      onGraphUpdate?: (graph: { nodes: unknown[]; edges: unknown[] }) => void;
     }
 
     // Test that the interface structure is correct
@@ -60,7 +60,7 @@ describe('AI Assistant Integration', () => {
 
   it('should verify handleGraphUpdate callback structure', () => {
     // Test the callback structure that both canvases implement
-    const mockHandleGraphUpdate = async (graph: { nodes: any[]; edges: any[] }) => {
+    const mockHandleGraphUpdate = async (graph: { nodes: unknown[]; edges: unknown[] }) => {
       // Simulate the API call structure
       const apiPayload = {
         canvas: graph,

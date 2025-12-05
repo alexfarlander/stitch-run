@@ -16,7 +16,7 @@ export interface MappedEntityData {
   email?: string;
   entity_type: string;
   avatar_url?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface MappedEntityData {
  * // }
  */
 export function mapPayloadToEntity(
-  payload: Record<string, any>,
+  payload: Record<string, unknown>,
   mapping: EntityMapping
 ): MappedEntityData {
   // Extract required fields
@@ -72,7 +72,7 @@ export function mapPayloadToEntity(
   const avatar_url = mapping.avatar_url ? extractValue(payload, mapping.avatar_url) : undefined;
   
   // Extract metadata fields
-  const metadata: Record<string, any> = {};
+  const metadata: Record<string, unknown> = {};
   
   if (mapping.metadata) {
     for (const [key, pathOrValue] of Object.entries(mapping.metadata)) {

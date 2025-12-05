@@ -47,7 +47,7 @@ export class CanvasNavigation {
       if (stored) {
         this.stack = JSON.parse(stored);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to load navigation stack:', error);
       this.stack = [];
       // Emit error event for user feedback
@@ -71,7 +71,7 @@ export class CanvasNavigation {
     
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(this.stack));
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to save navigation stack:', error);
     }
   }
@@ -84,7 +84,7 @@ export class CanvasNavigation {
     this.listeners.forEach(listener => {
       try {
         listener();
-      } catch (error) {
+      } catch (_error) {
         console.error('Navigation listener error:', error);
       }
     });
@@ -234,7 +234,7 @@ export class CanvasNavigation {
       if (path.length > 0) {
         this.setStack(path);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to hydrate navigation stack:', error);
     }
   }

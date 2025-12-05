@@ -47,7 +47,7 @@ for (const testCase of testCases) {
                 }
             }
         }
-    } catch (error) {
+    } catch (_error) {
         console.error("❌ ERROR:", error.message);
     }
 }
@@ -72,7 +72,7 @@ for (const errorCase of errorCases) {
         } else {
             console.log(`❌ ${errorCase.desc}: Should have returned error`);
         }
-    } catch (error) {
+    } catch (_error) {
         console.log(`✅ ${errorCase.desc}: Correctly threw error`);
     }
 }

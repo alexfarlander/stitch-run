@@ -355,7 +355,7 @@ Don't expose Stitch errors to end users:
 \`\`\`typescript
 try {
   await fetch(WEBHOOK_URL, { ... });
-} catch (error) {
+} catch (_error) {
   console.error('Failed to send to Stitch:', error);
   // Show user-friendly message
   return Response.json({ 

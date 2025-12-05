@@ -16,7 +16,7 @@ export interface EntityMetadata {
   cac?: number;              // Customer acquisition cost
   ltv?: number;              // Lifetime value
   plan?: string;             // Current plan
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface StitchEntity {

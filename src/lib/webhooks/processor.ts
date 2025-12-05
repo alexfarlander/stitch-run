@@ -53,7 +53,7 @@ export interface WebhookProcessingResult {
 export async function processWebhook(
   endpointSlug: string,
   rawBody: string,
-  payload: Record<string, any>,
+  payload: Record<string, unknown>,
   signature?: string | null
 ): Promise<WebhookProcessingResult> {
   let webhookEventId: string | undefined;
@@ -136,7 +136,7 @@ export async function processWebhook(
     
     // Step 6: Create or update entity in stitch_entities
     // We'll check if an entity with the same email exists, and update it if so
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     
     let entity: StitchEntity;
     
@@ -216,7 +216,7 @@ export async function processWebhook(
     if (webhookConfig.entry_edge_id) {
       try {
         await startJourney(entity.id, webhookConfig.entry_edge_id);
-      } catch (e) {
+      } catch (_e) {
         console.warn('Failed to start visual journey on entry edge:', e);
         // Continue processing; this is just visual
       }
@@ -238,7 +238,7 @@ export async function processWebhook(
     
     // Step 9: Start execution at entry_edge_id using existing engine
     // Get the flow to find the target node of the entry edge
-    const flow = await getFlowAdmin(webhookConfig.workflow_id);
+    const _flow = await getFlowAdmin(webhookConfig.workflow_id);
     
     if (!flow) {
       throw new Error(`Workflow not found: ${webhookConfig.workflow_id}`);
@@ -270,7 +270,7 @@ export async function processWebhook(
       workflowRunId: workflowRun.id,
     };
     
-  } catch (error) {
+  } catch (_error) {
     // Handle errors and update webhook event status accordingly
     // Validates: Requirements 2.2
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

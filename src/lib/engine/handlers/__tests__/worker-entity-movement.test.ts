@@ -3,7 +3,7 @@
  * Tests: Requirements 5.1, 5.2, 5.3, 5.4, 5.5
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { applyEntityMovement } from '../worker';
 import { NodeConfig } from '@/types/stitch';
 import * as runs from '@/lib/db/runs';

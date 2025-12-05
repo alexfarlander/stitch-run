@@ -206,7 +206,7 @@ function checkDiagramFile(filename: string): DiagramCheck {
       }
     }
 
-  } catch (error) {
+  } catch (_error) {
     check.errors.push(`Error reading file: ${error instanceof Error ? error.message : String(error)}`);
     check.valid = false;
   }

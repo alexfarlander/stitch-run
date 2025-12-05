@@ -23,7 +23,7 @@ export default function TestRevenueSectionPage() {
     selected: false,
     dragging: false,
     isConnectable: false,
-  } as any;
+  } as unknown;
 
   return (
     <div className="min-h-screen bg-slate-950 p-8">

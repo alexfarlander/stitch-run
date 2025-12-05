@@ -33,7 +33,7 @@ function testFinancialDisplay() {
   console.log('📋 Step 1: Finding financial nodes...');
   const financialNodes = graph.nodes.filter(node => 
     node.type === 'financial-item' || 
-    (node.data as any)?.value !== undefined
+    (node.data as unknown)?.value !== undefined
   );
   
   if (financialNodes.length === 0) {
@@ -48,10 +48,10 @@ function testFinancialDisplay() {
   let allValid = true;
   
   for (const node of financialNodes) {
-    const data = node.data as any;
+    const _data = node.data as unknown;
     const hasValue = data.value !== undefined;
-    const hasCurrency = data.currency !== undefined;
-    const hasFormat = data.format !== undefined;
+    const _hasCurrency = data.currency !== undefined;
+    const _hasFormat = data.format !== undefined;
     const isCorrectType = node.type === 'financial-item';
     
     console.log(`\n  Node: ${node.id}`);
@@ -117,7 +117,7 @@ function testFinancialDisplay() {
   // Final summary
   console.log('📊 Summary:');
   console.log(`  Total financial nodes: ${financialNodes.length}`);
-  console.log(`  Nodes with value property: ${financialNodes.filter(n => (n.data as any).value !== undefined).length}`);
+  console.log(`  Nodes with value property: ${financialNodes.filter(n => (n.data as unknown).value !== undefined).length}`);
   console.log(`  Nodes using financial-item type: ${financialItemNodes.length}`);
   console.log(`  Data structure valid: ${allValid ? '✅' : '❌'}`);
   console.log(`  Currency formatting valid: ${formattingValid ? '✅' : '❌'}`);

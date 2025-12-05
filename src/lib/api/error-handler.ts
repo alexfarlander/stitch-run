@@ -78,7 +78,7 @@ export function handleAPIError(error: unknown): NextResponse<ErrorResponse> {
     // Check for Mermaid parse errors (from mermaid-parser.ts)
     if (error.name === 'MermaidParseError') {
       const details: string[] = [];
-      const mermaidError = error as any;
+      const mermaidError = error as unknown;
       
       // Add hint if available
       if (mermaidError.hint) {
@@ -142,7 +142,7 @@ export function handleAPIError(error: unknown): NextResponse<ErrorResponse> {
  * @param body - Request body to validate
  * @throws APIError if body is invalid
  */
-export function validateRequestBody(body: any): void {
+export function validateRequestBody(body: unknown): void {
   if (!body || typeof body !== 'object') {
     throw new APIError(
       'BAD_REQUEST',
@@ -161,7 +161,7 @@ export function validateRequestBody(body: any): void {
  * @throws APIError if required fields are missing
  */
 export function validateRequiredFields(
-  body: Record<string, any>,
+  body: Record<string, unknown>,
   requiredFields: string[]
 ): void {
   const missingFields = requiredFields.filter(field => !(field in body));

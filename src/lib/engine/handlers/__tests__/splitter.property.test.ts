@@ -26,7 +26,7 @@ const arrayPathArb = fc.oneof(
 /**
  * Generate an input object with an array at a specific path
  */
-const inputWithArrayArb = (arrayPath: string, array: any[]) => {
+const inputWithArrayArb = (arrayPath: string, array: unknown[]) => {
   const pathParts = arrayPath.split('.');
   
   if (pathParts.length === 1) {
@@ -34,7 +34,7 @@ const inputWithArrayArb = (arrayPath: string, array: any[]) => {
     return fc.constant({ [pathParts[0]]: array });
   } else {
     // Nested path
-    let obj: any = { [pathParts[pathParts.length - 1]]: array };
+    let obj: unknown = { [pathParts[pathParts.length - 1]]: array };
     for (let i = pathParts.length - 2; i >= 0; i--) {
       obj = { [pathParts[i]]: obj };
     }

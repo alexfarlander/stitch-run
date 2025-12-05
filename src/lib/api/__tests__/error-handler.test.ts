@@ -132,8 +132,8 @@ describe('Error Handler', () => {
     it('should handle MermaidParseError (Requirement 9.4)', () => {
       const error = new Error('Invalid flowchart direction: INVALID');
       error.name = 'MermaidParseError';
-      (error as any).hint = 'Use LR, RL, TB, or BT';
-      (error as any).line = 1;
+      (error as unknown).hint = 'Use LR, RL, TB, or BT';
+      (error as unknown).line = 1;
 
       const response = handleAPIError(error);
 
@@ -227,7 +227,7 @@ describe('Error Handler', () => {
 
       try {
         validateRequestBody(null);
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).code).toBe('BAD_REQUEST');
         expect((error as APIError).statusCode).toBe(400);
@@ -279,7 +279,7 @@ describe('Error Handler', () => {
           { name: 'test' },
           ['name', 'email']
         );
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).code).toBe('BAD_REQUEST');
         expect((error as APIError).statusCode).toBe(400);
@@ -294,7 +294,7 @@ describe('Error Handler', () => {
           {},
           ['name', 'email', 'password']
         );
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).details).toEqual([
           'Missing field: name',
@@ -329,7 +329,7 @@ describe('Error Handler', () => {
 
       try {
         validateCanvasId('');
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).code).toBe('BAD_REQUEST');
         expect((error as APIError).statusCode).toBe(400);
@@ -345,15 +345,15 @@ describe('Error Handler', () => {
 
     it('should throw for non-string ID (Requirement 9.2)', () => {
       expect(() => {
-        validateCanvasId(null as any);
+        validateCanvasId(null as unknown);
       }).toThrow(APIError);
 
       expect(() => {
-        validateCanvasId(undefined as any);
+        validateCanvasId(undefined as unknown);
       }).toThrow(APIError);
 
       expect(() => {
-        validateCanvasId(123 as any);
+        validateCanvasId(123 as unknown);
       }).toThrow(APIError);
     });
   });

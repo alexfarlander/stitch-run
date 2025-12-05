@@ -23,7 +23,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function main() {
   console.log('🧪 Testing Entity Travel Animation\n');
@@ -75,7 +75,7 @@ async function main() {
     }
     
     const journeyEdges = bmcCanvas.graph.edges.filter(
-      (edge: any) => edge.source === currentNodeId && (edge.type === 'journey' || !edge.type)
+      (edge: unknown) => edge.source === currentNodeId && (edge.type === 'journey' || !edge.type)
     );
     
     if (journeyEdges.length === 0) {
@@ -260,7 +260,7 @@ async function main() {
       process.exit(1);
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');

@@ -3,7 +3,7 @@
  * Tests: Requirements 2.4, 2.6, 11.2
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { createRun, getRun, updateNodeState, updateNodeStates, deleteRun } from '../runs';
 import { createFlowWithVersion, deleteFlow } from '../flows';
 import { StitchNode, NodeState } from '@/types/stitch';
@@ -62,14 +62,14 @@ describe('Run Database Operations', () => {
     if (testRunId) {
       try {
         await deleteRun(testRunId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }

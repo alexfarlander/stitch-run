@@ -14,7 +14,7 @@ import { AlertTriangle } from 'lucide-react';
  */
 export const FallbackNode = memo(({ id, type, data }: NodeProps) => {
   // Use originalType from data if available, otherwise use the type prop
-  const displayType = (data as any)?.originalType || type;
+  const displayType = (data as unknown)?.originalType || type;
   
   return (
     <div className="bg-yellow-900/50 border-2 border-yellow-500 rounded-lg p-4 min-w-[200px]">
@@ -35,10 +35,10 @@ export const FallbackNode = memo(({ id, type, data }: NodeProps) => {
               <span className="text-white/50">Type:</span>{' '}
               <span className="font-mono">{displayType}</span>
             </div>
-            {(data as any)?.label && (
+            {(data as unknown)?.label && (
               <div>
                 <span className="text-white/50">Label:</span>{' '}
-                <span>{String((data as any).label)}</span>
+                <span>{String((data as unknown).label)}</span>
               </div>
             )}
           </div>

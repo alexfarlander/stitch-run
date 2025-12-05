@@ -69,7 +69,7 @@ export function AIAssistantContent({
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (_error) {
       if (retryCount < AI_RETRY_CONFIG.MAX_RETRIES) {
         const delay = Math.min(
           AI_RETRY_CONFIG.INITIAL_DELAY_MS *
@@ -138,7 +138,7 @@ export function AIAssistantContent({
     try {
       const data = await sendAIRequest(userInput);
       handleAIResponse(data);
-    } catch (error) {
+    } catch (_error) {
       console.error('AI request failed after retries:', error);
       const errorMessage: Message = {
         role: 'assistant',

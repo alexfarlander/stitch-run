@@ -26,7 +26,7 @@ const SectionItemNodeComponent = memo(({ id, data, selected }: NodeProps) => {
   const { drillInto } = useCanvasNavigation();
   const [isHovered, setIsHovered] = useState(false);
 
-  const IconComponent = (LucideIcons as any)[nodeData.icon] || LucideIcons.Package;
+  const IconComponent = (LucideIcons as unknown)[nodeData.icon] || LucideIcons.Package;
   const hasLinkedContent = !!(nodeData.linked_workflow_id || nodeData.linked_canvas_id);
 
   const handleDoubleClick = (e: React.MouseEvent) => {

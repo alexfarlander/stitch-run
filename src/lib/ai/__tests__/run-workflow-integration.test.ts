@@ -5,7 +5,7 @@
  * including version creation and execution start.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { handleRunWorkflow, RunWorkflowPayload } from '../action-executor';
 import { handleCreateWorkflow, CreateWorkflowPayload } from '../action-executor';
 import { deleteFlow } from '@/lib/db/flows';
@@ -20,7 +20,7 @@ describe('RUN_WORKFLOW Integration Tests', () => {
     for (const flowId of createdFlowIds) {
       try {
         await deleteFlow(flowId);
-      } catch (error) {
+      } catch (_error) {
         // Ignore errors if flow doesn't exist
       }
     }

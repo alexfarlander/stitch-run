@@ -114,7 +114,7 @@ export function EntityOverlay({
       }
 
       toast.success('Entity moved successfully');
-    } catch (error) {
+    } catch (_error) {
       console.error('Error moving entity:', error);
       toast.error('Failed to move entity');
     }

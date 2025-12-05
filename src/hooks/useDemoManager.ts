@@ -85,7 +85,7 @@ export function useDemoManager(): UseDemoManagerReturn {
       setTimeout(() => {
         setState({ isRunning: false, error: null });
       }, 3000);
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to start demo mode';
       
       console.error('Failed to start demo:', error);
@@ -121,12 +121,12 @@ export function useDemoManager(): UseDemoManagerReturn {
         throw new Error(error.error || 'Failed to cleanup demo');
       }
 
-      const data = await response.json();
+      const _data = await response.json();
 
       toast.success('Demo Cleaned Up', {
         description: `Removed ${data.deletedCount} demo entities`,
       });
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to cleanup demo';
       
       console.error('Failed to cleanup demo:', error);

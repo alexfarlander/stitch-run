@@ -30,7 +30,7 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const _supabase = createClient(supabaseUrl, supabaseKey);
 
 interface VerificationResult {
   name: string;
@@ -94,8 +94,8 @@ async function verify1_SeedScript() {
                      'Integrations', 'Code', 'Revenue', 'Costs'];
     
     // Node types are lowercase with hyphens
-    const sectionNodes = graph.nodes.filter((n: any) => n.type === 'section');
-    const foundSections = sectionNodes.map((n: any) => n.data.label);
+    const sectionNodes = graph.nodes.filter((n: unknown) => n.type === 'section');
+    const foundSections = sectionNodes.map((n: unknown) => n.data.label);
     const missingSections = sections.filter(s => !foundSections.includes(s));
     
     logResult({
@@ -105,7 +105,7 @@ async function verify1_SeedScript() {
     });
     
     // Check item nodes exist
-    const itemNodes = graph.nodes.filter((n: any) => n.type === 'section-item');
+    const itemNodes = graph.nodes.filter((n: unknown) => n.type === 'section-item');
     logResult({
       name: 'Item Nodes',
       passed: itemNodes.length > 20,
@@ -113,7 +113,7 @@ async function verify1_SeedScript() {
     });
     
     // Check journey edges exist
-    const journeyEdges = graph.edges.filter((e: any) => e.type === 'journey' || !e.type);
+    const journeyEdges = graph.edges.filter((e: unknown) => e.type === 'journey' || !e.type);
     logResult({
       name: 'Journey Edges',
       passed: journeyEdges.length > 0,
@@ -121,7 +121,7 @@ async function verify1_SeedScript() {
     });
     
     // Check system edges exist
-    const systemEdges = graph.edges.filter((e: any) => e.type === 'system');
+    const systemEdges = graph.edges.filter((e: unknown) => e.type === 'system');
     logResult({
       name: 'System Edges',
       passed: systemEdges.length > 0,
@@ -129,7 +129,7 @@ async function verify1_SeedScript() {
     });
     
     // Check financial nodes exist
-    const financialNodes = itemNodes.filter((n: any) => 
+    const financialNodes = itemNodes.filter((n: unknown) => 
       n.id === 'item-mrr' || n.id === 'item-stripe-fees'
     );
     logResult({
@@ -175,7 +175,7 @@ async function verify1_SeedScript() {
       });
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'Seed Script Verification',
       passed: false,
@@ -190,7 +190,7 @@ async function verify2_DemoOrchestrator() {
   
   try {
     // Check demo script exists
-    const demoScriptPath = './src/lib/demo/demo-script.ts';
+    const _demoScriptPath = './src/lib/demo/demo-script.ts';
     logResult({
       name: 'Demo Script File',
       passed: true,
@@ -198,8 +198,8 @@ async function verify2_DemoOrchestrator() {
     });
     
     // Check demo API endpoints exist
-    const startEndpoint = './src/app/api/demo/start/route.ts';
-    const resetEndpoint = './src/app/api/demo/reset/route.ts';
+    const _startEndpoint = './src/app/api/demo/start/route.ts';
+    const _resetEndpoint = './src/app/api/demo/reset/route.ts';
     
     logResult({
       name: 'Demo API Endpoints',
@@ -214,7 +214,7 @@ async function verify2_DemoOrchestrator() {
       details: 'DemoControlPanel.tsx exists'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'Demo Orchestrator Verification',
       passed: false,
@@ -265,7 +265,7 @@ async function verify3_EntityMovement() {
       });
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'Entity Movement Verification',
       passed: false,
@@ -314,8 +314,8 @@ async function verify4_SystemEdges() {
         return currentNodeCount > bestNodeCount ? current : best;
       }, allBmcs2[0]);
       
-      const systemEdges = bmc2.graph.edges.filter((e: any) => e.type === 'system');
-      const withSystemAction = systemEdges.filter((e: any) => e.data?.systemAction);
+      const systemEdges = bmc2.graph.edges.filter((e: unknown) => e.type === 'system');
+      const withSystemAction = systemEdges.filter((e: unknown) => e.data?.systemAction);
       
       logResult({
         name: 'System Edge Configuration',
@@ -324,7 +324,7 @@ async function verify4_SystemEdges() {
       });
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'System Edge Verification',
       passed: false,
@@ -366,11 +366,11 @@ async function verify5_FinancialMetrics() {
         return currentNodeCount > bestNodeCount ? current : best;
       }, allBmcs3[0]);
       
-      const financialNodes = bmc3.graph.nodes.filter((n: any) => 
+      const financialNodes = bmc3.graph.nodes.filter((n: unknown) => 
         n.id === 'item-mrr' || n.id === 'item-stripe-fees'
       );
       
-      const withValues = financialNodes.filter((n: any) => 
+      const withValues = financialNodes.filter((n: unknown) => 
         typeof n.data?.value === 'number'
       );
       
@@ -381,7 +381,7 @@ async function verify5_FinancialMetrics() {
       });
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'Financial Metrics Verification',
       passed: false,
@@ -441,7 +441,7 @@ async function verify6_DrillDownNavigation() {
       details: 'Click handler navigates to child workflow'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'Drill-Down Navigation Verification',
       passed: false,
@@ -469,7 +469,7 @@ async function verify7_ParallelExecution() {
       details: 'System edge failures do not block entity movement'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'Parallel Execution Verification',
       passed: false,
@@ -495,7 +495,7 @@ async function verify8_DatabaseIndex() {
       details: 'Migration 011_entity_email_canvas_index.sql exists'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     logResult({
       name: 'Database Index Verification',
       passed: true,

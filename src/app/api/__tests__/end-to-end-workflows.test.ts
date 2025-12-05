@@ -10,7 +10,7 @@
  * Requirements: All (comprehensive integration testing)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { POST as createCanvas } from '../canvas/route';
 import { POST as runCanvas } from '../canvas/[id]/run/route';
 import { GET as getStatus } from '../canvas/[id]/status/route';
@@ -28,7 +28,7 @@ describe('End-to-End Workflow Integration Tests', () => {
     for (const canvasId of testCanvasIds) {
       try {
         await deleteFlow(canvasId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore cleanup errors
       }
     }

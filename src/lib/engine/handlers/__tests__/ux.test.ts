@@ -3,7 +3,7 @@
  * Tests: Requirements 8.1, 8.2
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { fireUXNode } from '../ux';
 import { NodeConfig } from '@/types/stitch';
 import * as runs from '@/lib/db/runs';

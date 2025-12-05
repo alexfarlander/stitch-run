@@ -38,8 +38,8 @@ function verifyBMCSeed() {
   console.log('💰 Financial Nodes:');
   financialNodes.forEach(node => {
     const hasValue = node.data.value !== undefined;
-    const hasCurrency = node.data.currency === 'USD';
-    const hasFormat = node.data.format === 'currency';
+    const _hasCurrency = node.data.currency === 'USD';
+    const _hasFormat = node.data.format === 'currency';
     const status = hasValue && hasCurrency && hasFormat ? '✅' : '❌';
     console.log(`  ${status} ${node.data.label}: $${node.data.value || 0} (${node.id})`);
   });

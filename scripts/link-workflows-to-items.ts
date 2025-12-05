@@ -28,7 +28,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
  * Mapping of workflow names to their parent item node IDs
@@ -102,7 +102,7 @@ async function main() {
       }
       
       // Find the item node in the graph
-      const nodeIndex = graph.nodes.findIndex((n: any) => n.id === itemNodeId);
+      const nodeIndex = graph.nodes.findIndex((n: unknown) => n.id === itemNodeId);
       
       if (nodeIndex === -1) {
         console.log(`⚠️  Item node not found: ${itemNodeId} for workflow ${workflow.name}`);
@@ -151,15 +151,15 @@ async function main() {
     }
     
     const linkedNodes = updatedBmc.graph.nodes.filter(
-      (n: any) => n.data?.linked_workflow_id
+      (n: unknown) => n.data?.linked_workflow_id
     );
     
     console.log(`✅ Verification complete:`);
-    console.log(`   - Total item nodes: ${updatedBmc.graph.nodes.filter((n: any) => n.type === 'section-item').length}`);
+    console.log(`   - Total item nodes: ${updatedBmc.graph.nodes.filter((n: unknown) => n.type === 'section-item').length}`);
     console.log(`   - Linked item nodes: ${linkedNodes.length}`);
     console.log('');
     
-    linkedNodes.forEach((node: any) => {
+    linkedNodes.forEach((node: unknown) => {
       console.log(`   ✓ ${node.data.label} (${node.id})`);
       console.log(`     → Workflow ID: ${node.data.linked_workflow_id}`);
     });
@@ -177,7 +177,7 @@ async function main() {
     console.log('   Click any linked item node to navigate to its workflow.');
     console.log('');
     
-  } catch (error) {
+  } catch (_error) {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');

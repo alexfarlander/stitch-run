@@ -109,7 +109,7 @@ export const calendlyAdapter: WebhookAdapter = {
    * Calendly events have an 'event' field at the root level
    * (e.g., 'invitee.created', 'invitee.canceled')
    */
-  getEventType: (payload: any): string => {
+  getEventType: (payload: unknown): string => {
     return payload.event || 'unknown_calendly_event';
   }
 };

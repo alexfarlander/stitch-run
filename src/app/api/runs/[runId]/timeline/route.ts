@@ -44,7 +44,7 @@ export async function GET(
     const beforeTimestamp = searchParams.get('before');
     const afterTimestamp = searchParams.get('after');
     
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
 
     // First, get the run to find the flow_id (canvas_id)
     const { data: run, error: runError } = await supabase
@@ -111,7 +111,7 @@ export async function GET(
     }
 
     // Calculate timeline bounds
-    const startTime = events && events.length > 0 ? events[0].timestamp : null;
+    const _startTime = events && events.length > 0 ? events[0].timestamp : null;
     const endTime = events && events.length > 0 ? events[events.length - 1].timestamp : null;
 
     const response: TimelineResponse = {
@@ -122,7 +122,7 @@ export async function GET(
     };
 
     return NextResponse.json(response);
-  } catch (error) {
+  } catch (_error) {
     console.error('Timeline API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

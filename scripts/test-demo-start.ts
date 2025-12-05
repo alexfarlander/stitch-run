@@ -72,7 +72,7 @@ async function testDemoStart() {
     console.log('   Check the server logs to see events firing.');
     console.log(`   Demo will complete in approximately ${Math.ceil(result.duration / 1000)} seconds.`);
     
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Test failed:', error);
     process.exit(1);
   }

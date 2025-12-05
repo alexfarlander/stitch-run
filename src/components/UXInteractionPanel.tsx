@@ -52,7 +52,7 @@ export function UXInteractionPanel({
 
       // Success - clear input
       setInput('');
-    } catch (err) {
+    } catch (_err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsSubmitting(false);

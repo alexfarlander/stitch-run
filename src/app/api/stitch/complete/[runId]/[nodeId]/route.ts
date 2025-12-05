@@ -41,7 +41,7 @@ export async function POST(
     }
 
     // Get the flow to check node type
-    const flow = await getFlowAdmin(run.flow_id);
+    const _flow = await getFlowAdmin(run.flow_id);
     if (!flow) {
       return NextResponse.json(
         { error: 'Flow not found' },
@@ -75,7 +75,7 @@ export async function POST(
     }
 
     // Parse input from request body
-    let input: any;
+    let input: unknown;
     try {
       const body = await request.json();
       input = body.input;
@@ -103,7 +103,7 @@ export async function POST(
       { success: true },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (_error) {
     console.error('UX complete processing error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

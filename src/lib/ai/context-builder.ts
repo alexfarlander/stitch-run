@@ -25,10 +25,10 @@ export interface StrippedNode {
   id: string;
   type: string;
   worker_type?: string;
-  config?: Record<string, any>;
-  inputs?: Record<string, any>;
-  outputs?: Record<string, any>;
-  entityMovement?: any;
+  config?: Record<string, unknown>;
+  inputs?: Record<string, unknown>;
+  outputs?: Record<string, unknown>;
+  entityMovement?: unknown;
 }
 
 /**

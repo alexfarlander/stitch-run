@@ -12,7 +12,7 @@ import { fireNode } from '@/lib/engine/edge-walker';
 /**
  * Helper function to get upstream node IDs from ExecutionGraph
  */
-function getUpstreamNodeIds(nodeId: string, executionGraph: any): string[] {
+function getUpstreamNodeIds(nodeId: string, executionGraph: unknown): string[] {
   const upstreamIds: string[] = [];
   
   // Check adjacency map to find nodes that point to this node
@@ -115,7 +115,7 @@ export async function POST(
       { success: true },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (_error) {
     console.error('Retry processing error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

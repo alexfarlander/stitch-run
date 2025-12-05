@@ -11,7 +11,7 @@
  * 
  * Request Body (optional):
  * - status?: 'healthy' | 'degraded' | 'down'
- * - metadata?: Record<string, any>
+ * - metadata?: Record<string, unknown>
  * 
  * Response:
  * - 200 OK: Uptime ping recorded successfully
@@ -44,7 +44,7 @@ export async function POST(
     }
     
     // Step 2: Parse request body (optional for uptime pings)
-    let body: { status?: string; metadata?: Record<string, any> } = {};
+    let body: { status?: string; metadata?: Record<string, unknown> } = {};
     
     try {
       const text = await request.text();
@@ -143,7 +143,7 @@ export async function POST(
       { status: 200 }
     );
     
-  } catch (error) {
+  } catch (_error) {
     console.error('MCP uptime API error:', error);
     return NextResponse.json(
       { 

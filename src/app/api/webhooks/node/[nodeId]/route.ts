@@ -44,7 +44,7 @@ export async function POST(
     }
     
     // Step 2: Parse request body
-    let payload: Record<string, any>;
+    let payload: Record<string, unknown>;
     
     try {
       payload = await request.json();
@@ -153,7 +153,7 @@ export async function POST(
       { status: 200 }
     );
     
-  } catch (error) {
+  } catch (_error) {
     console.error('MCP webhook API error:', error);
     return NextResponse.json(
       { 

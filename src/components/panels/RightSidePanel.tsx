@@ -37,7 +37,7 @@ interface RightSidePanelProps {
   onEntityClose: () => void;
   onMoveEntity: (entityId: string, targetNodeId: string) => void;
   currentNodes?: Node[];
-  onGraphUpdate?: (graph: { nodes: Node[]; edges: any[] }) => void;
+  onGraphUpdate?: (graph: { nodes: Node[]; edges: unknown[] }) => void;
 }
 
 /**

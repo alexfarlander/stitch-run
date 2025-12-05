@@ -5,7 +5,7 @@
  * Requirements: 6.1, 6.2, 6.3
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import {
   validateMCPAuth,
   requireMCPAuth,
@@ -124,7 +124,7 @@ describe('MCP Authentication Middleware', () => {
       });
 
       const response = await protectedHandler(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ success: true });
@@ -144,7 +144,7 @@ describe('MCP Authentication Middleware', () => {
       });
 
       const response = await protectedHandler(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data).toMatchObject({
@@ -164,7 +164,7 @@ describe('MCP Authentication Middleware', () => {
       const request = new Request('http://localhost:3000/api/test');
 
       const response = await protectedHandler(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data).toMatchObject({
@@ -192,7 +192,7 @@ describe('MCP Authentication Middleware', () => {
 
       const context = { params: { id: 'test-123' } };
       const response = await protectedHandler(request, context);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ id: 'test-123' });
@@ -238,7 +238,7 @@ describe('MCP Authentication Middleware', () => {
 
       try {
         validateMCPAuthConfig();
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(Error);
         expect((error as Error).message).toContain('openssl rand -hex 32');
       }
@@ -264,7 +264,7 @@ describe('MCP Authentication Middleware', () => {
       const request = new Request('http://localhost:3000/api/test');
 
       const response = await protectedHandler(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(data).toHaveProperty('error');
       expect(data).toHaveProperty('message');
@@ -292,7 +292,7 @@ describe('MCP Authentication Middleware', () => {
       });
 
       const response = await protectedHandler(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ received: { data: 'test' } });
@@ -314,7 +314,7 @@ describe('MCP Authentication Middleware', () => {
         });
 
         const response = await protectedHandler(request);
-        const data = await response.json();
+        const _data = await response.json();
 
         expect(response.status).toBe(200);
         expect(data).toEqual({ method });

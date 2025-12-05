@@ -38,7 +38,7 @@ export function validateSignature(
       Buffer.from(signature),
       Buffer.from(computedSignature)
     );
-  } catch (error) {
+  } catch (_error) {
     console.error('Signature validation error:', error);
     return false;
   }

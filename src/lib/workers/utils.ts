@@ -14,7 +14,7 @@ import { WorkerCallback } from '@/types/stitch';
  * @returns Fully qualified callback URL
  */
 export function buildCallbackUrl(runId: string, nodeId: string): string {
-  const config = getConfig();
+  const _config = getConfig();
   
   // Validate that baseUrl is set (getConfig already validates, but double-check)
   if (!config.baseUrl) {
@@ -59,7 +59,7 @@ export async function triggerCallback(
     if (!response.ok) {
       throw new Error(`Callback failed with status ${response.status}`);
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to trigger callback:', {
       runId,
       nodeId,
@@ -75,7 +75,7 @@ export async function triggerCallback(
  * @param data - The data to sanitize
  * @returns Sanitized copy of the data
  */
-export function sanitizeForLogging(data: any): any {
+export function sanitizeForLogging(data: unknown): any {
   if (data === null || data === undefined) {
     return data;
   }
@@ -102,7 +102,7 @@ export function sanitizeForLogging(data: any): any {
     'credentials',
   ];
 
-  const sanitized: any = {};
+  const sanitized: unknown = {};
   for (const [key, value] of Object.entries(data)) {
     const lowerKey = key.toLowerCase();
     if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {
@@ -126,7 +126,7 @@ export function sanitizeForLogging(data: any): any {
 export function logWorker(
   level: 'info' | 'error' | 'warn',
   message: string,
-  context: Record<string, any>
+  context: Record<string, unknown>
 ): void {
   const sanitizedContext = sanitizeForLogging(context);
   const logData = {
@@ -210,7 +210,7 @@ export function categorizeError(error: unknown): string {
  * @param error - The error to extract context from
  * @returns Error context object
  */
-export function extractErrorContext(error: unknown): Record<string, any> {
+export function extractErrorContext(error: unknown): Record<string, unknown> {
   if (!(error instanceof Error)) {
     return {
       errorType: typeof error,
@@ -218,7 +218,7 @@ export function extractErrorContext(error: unknown): Record<string, any> {
     };
   }
 
-  const context: Record<string, any> = {
+  const context: Record<string, unknown> = {
     errorName: error.name,
     errorMessage: error.message,
     errorCategory: categorizeError(error),

@@ -23,9 +23,9 @@ interface StitchNode {
     label: string;
     linked_workflow_id?: string;
     linked_canvas_id?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface StitchFlow {
@@ -34,7 +34,7 @@ interface StitchFlow {
   canvas_type: string;
   graph: {
     nodes: StitchNode[];
-    edges: any[];
+    edges: unknown[];
   };
 }
 
@@ -107,7 +107,7 @@ try {
     console.log('\n❌ Verification failed!');
     process.exit(1);
   }
-} catch (error) {
+} catch (_error) {
   console.error('\n❌ Verification error:', error);
   process.exit(1);
 }

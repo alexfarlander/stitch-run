@@ -21,7 +21,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function testRunStatus() {
   console.log('🧪 Testing Run Status Indicators...\n');
@@ -43,7 +43,7 @@ async function testRunStatus() {
   console.log(`✅ Found BMC canvas: ${canvas.name} (${canvas.id})`);
   
   // Initialize node states from graph
-  const nodeStates: any = {};
+  const nodeStates: unknown = {};
   for (const node of canvas.graph.nodes) {
     nodeStates[node.id] = { status: 'pending' };
   }
@@ -75,9 +75,9 @@ async function testRunStatus() {
   
   // Get some node IDs from the canvas
   const nodeIds = canvas.graph.nodes
-    .filter((n: any) => n.type === 'section')
+    .filter((n: unknown) => n.type === 'section')
     .slice(0, 3)
-    .map((n: any) => n.id);
+    .map((n: unknown) => n.id);
   
   if (nodeIds.length === 0) {
     console.error('❌ No section nodes found in canvas');

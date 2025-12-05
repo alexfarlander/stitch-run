@@ -24,7 +24,7 @@ describe('POST /api/ai-manager - Integration Tests', () => {
 
     expect(response.status).toBe(200);
     
-    const data = await response.json();
+    const _data = await response.json();
     
     expect(data.action).toBe('CREATE_WORKFLOW');
     expect(data.result).toBeDefined();

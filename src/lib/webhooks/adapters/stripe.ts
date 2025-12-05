@@ -119,7 +119,7 @@ export const stripeAdapter: WebhookAdapter = {
    * Stripe events have a 'type' field at the root level
    * (e.g., 'checkout.session.completed', 'customer.subscription.created')
    */
-  getEventType: (payload: any): string => {
+  getEventType: (payload: unknown): string => {
     return payload.type || 'unknown_stripe_event';
   }
 };

@@ -3,7 +3,7 @@
 import { AIAssistantPanel } from '@/components/panels/AIAssistantPanel';
 
 export default function TestAIAssistantPage() {
-  const handleGraphUpdate = (graph: { nodes: any[]; edges: any[] }) => {
+  const handleGraphUpdate = (graph: { nodes: unknown[]; edges: unknown[] }) => {
     console.log('Graph update received:', graph);
   };
 

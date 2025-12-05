@@ -4,7 +4,7 @@
  * Validates: Requirements 8.1
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+// beforeEach import removed as unused
 import * as fc from 'fast-check';
 import { WireframeGeneratorWorker } from '../wireframe-generator';
 import * as mediaService from '@/lib/media/media-service';
@@ -103,7 +103,7 @@ describe('Wireframe Generator Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new WireframeGeneratorWorker();
           await worker.execute(runId, nodeId, {}, {
@@ -169,7 +169,7 @@ describe('Wireframe Generator Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new WireframeGeneratorWorker();
           await worker.execute(runId, nodeId, {}, invalidInput);
@@ -208,7 +208,7 @@ describe('Wireframe Generator Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new WireframeGeneratorWorker();
           await worker.execute(runId, nodeId, {}, invalidInput);
@@ -248,7 +248,7 @@ describe('Wireframe Generator Worker - Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             status: 200,
-          }) as any;
+          }) as unknown;
 
           const worker = new WireframeGeneratorWorker();
           await worker.execute(runId, nodeId, {}, {

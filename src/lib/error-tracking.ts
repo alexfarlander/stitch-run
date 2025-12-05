@@ -16,7 +16,7 @@
  */
 
 export interface ErrorContext {
-  [key: string]: any;
+  [key: string]: unknown;
   user?: {
     id?: string;
     email?: string;
@@ -141,7 +141,7 @@ export function trackMessage(message: string, context?: ErrorContext): void {
   // Send to Sentry if configured
   // if (typeof window !== 'undefined' && window.Sentry) {
   //   window.Sentry.captureMessage(message, {
-  //     level: level as any,
+  //     level: level as unknown,
   //     extra: context,
   //     tags: context?.tags,
   //   });
@@ -183,7 +183,7 @@ export function clearUserContext(): void {
  * @param eventName - Name of the event
  * @param properties - Event properties
  */
-export function trackEvent(eventName: string, properties?: Record<string, any>): void {
+export function trackEvent(eventName: string, properties?: Record<string, unknown>): void {
   if (process.env.NODE_ENV !== 'production') {
     console.log(`📊 Event: ${eventName}`, properties || '');
   }
@@ -202,14 +202,14 @@ export function trackEvent(eventName: string, properties?: Record<string, any>):
  * @param context - Error context
  * @returns Wrapped function
  */
-export function withErrorTracking<T extends (...args: any[]) => Promise<any>>(
+export function withErrorTracking<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   context?: ErrorContext
 ): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
-    } catch (error) {
+    } catch (_error) {
       trackError(error instanceof Error ? error : new Error(String(error)), context);
       throw error; // Re-throw after tracking
     }
@@ -219,7 +219,7 @@ export function withErrorTracking<T extends (...args: any[]) => Promise<any>>(
 // Type augmentation for Sentry global (for TypeScript)
 declare global {
   interface Window {
-    Sentry?: any;
-    analytics?: any;
+    Sentry?: unknown;
+    analytics?: unknown;
   }
 }

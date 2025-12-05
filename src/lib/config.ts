@@ -75,7 +75,7 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
   try {
     getConfig();
     return { valid: true, errors: [] };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof Error) {
       return { valid: false, errors: [error.message] };
     }

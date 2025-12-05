@@ -52,13 +52,13 @@ export async function POST(request: NextRequest) {
       // For direct cleanup, we'll query and delete
       const entities = await demoManager.queryEntities(canvasId, false);
       const demoEntities = entities.filter(
-        (e: any) => e.metadata?.source === 'demo'
+        (e: unknown) => e.metadata?.source === 'demo'
       );
       
       // Delete each demo entity's session
       const sessionIds = new Set(
         demoEntities
-          .map((e: any) => e.metadata?.session_id)
+          .map((e: unknown) => e.metadata?.session_id)
           .filter(Boolean)
       );
       
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(response, { status: 200 });
-  } catch (error) {
+  } catch (_error) {
     console.error('Demo cleanup error:', error);
     return NextResponse.json(
       { 

@@ -22,7 +22,7 @@ async function verifyParallelEdgeExecution() {
   const { getAdminClient } = await import('../src/lib/supabase/client');
   const { walkParallelEdges } = await import('../src/lib/engine/edge-walker');
   
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   let allTestsPassed = true;
   
   try {
@@ -55,12 +55,12 @@ async function verifyParallelEdgeExecution() {
     
     // Test 2: Verify function handles nodes with both edge types (Requirement 12.1)
     console.log('Test 2: Parallel Execution (Requirement 12.1)');
-    const nodeWithBothEdges = graph.nodes.find((node: any) => {
+    const nodeWithBothEdges = graph.nodes.find((node: unknown) => {
       const journeyEdges = graph.edges.filter(
-        (e: any) => e.source === node.id && (e.type === 'journey' || !e.type)
+        (e: unknown) => e.source === node.id && (e.type === 'journey' || !e.type)
       );
       const systemEdges = graph.edges.filter(
-        (e: any) => e.source === node.id && e.type === 'system'
+        (e: unknown) => e.source === node.id && e.type === 'system'
       );
       return journeyEdges.length > 0 && systemEdges.length > 0;
     });
@@ -74,7 +74,7 @@ async function verifyParallelEdgeExecution() {
       
       if (entities && entities.length > 0) {
         const testEntity = entities[0];
-        const startTime = Date.now();
+        const _startTime = Date.now();
         const results = await walkParallelEdges(
           nodeWithBothEdges.id,
           testEntity.id,
@@ -98,9 +98,9 @@ async function verifyParallelEdgeExecution() {
     
     // Test 3: Verify entity movement not blocked (Requirement 12.2)
     console.log('Test 3: Non-Blocking Entity Movement (Requirement 12.2)');
-    const nodeWithJourneyEdge = graph.nodes.find((node: any) => {
+    const nodeWithJourneyEdge = graph.nodes.find((node: unknown) => {
       const journeyEdges = graph.edges.filter(
-        (e: any) => e.source === node.id && (e.type === 'journey' || !e.type)
+        (e: unknown) => e.source === node.id && (e.type === 'journey' || !e.type)
       );
       return journeyEdges.length > 0;
     });
@@ -156,16 +156,16 @@ async function verifyParallelEdgeExecution() {
     
     // Test 5: Verify concurrent system edge execution (Requirement 12.4)
     console.log('Test 5: Concurrent System Edge Execution (Requirement 12.4)');
-    const nodeWithMultipleSystemEdges = graph.nodes.find((node: any) => {
+    const nodeWithMultipleSystemEdges = graph.nodes.find((node: unknown) => {
       const systemEdges = graph.edges.filter(
-        (e: any) => e.source === node.id && e.type === 'system'
+        (e: unknown) => e.source === node.id && e.type === 'system'
       );
       return systemEdges.length > 1;
     });
     
     if (nodeWithMultipleSystemEdges) {
       const systemEdges = graph.edges.filter(
-        (e: any) => e.source === nodeWithMultipleSystemEdges.id && e.type === 'system'
+        (e: unknown) => e.source === nodeWithMultipleSystemEdges.id && e.type === 'system'
       );
       
       const { data: entities } = await supabase
@@ -176,7 +176,7 @@ async function verifyParallelEdgeExecution() {
       
       if (entities && entities.length > 0) {
         const testEntity = entities[0];
-        const startTime = Date.now();
+        const _startTime = Date.now();
         const results = await walkParallelEdges(
           nodeWithMultipleSystemEdges.id,
           testEntity.id,
@@ -246,7 +246,7 @@ async function verifyParallelEdgeExecution() {
       process.exit(1);
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Verification failed:', error);
     process.exit(1);
   }

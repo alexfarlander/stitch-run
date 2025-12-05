@@ -59,7 +59,7 @@ export function compileToOEG(visualGraph: VisualGraph): CompileResult {
   // 2. OPTIMIZATION - Build adjacency map (Requirement 3.1)
   // Use Object.create(null) to avoid prototype pollution issues with special keys like __proto__
   const adjacency: Record<string, string[]> = Object.create(null);
-  const edgeData: Record<string, any> = Object.create(null);
+  const edgeData: Record<string, unknown> = Object.create(null);
   
   // Initialize adjacency for all nodes
   for (const node of visualGraph.nodes) {

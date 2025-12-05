@@ -25,7 +25,7 @@ export async function createFlow(
   canvasType: 'bmc' | 'workflow' | 'detail' = 'workflow',
   parentId?: string
 ): Promise<StitchFlow> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_flows')
@@ -70,7 +70,7 @@ export async function createFlowWithVersion(
   parentId?: string,
   commitMessage?: string
 ): Promise<{ flow: StitchFlow; versionId: string }> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   // Step 1: Create flow record (Requirement 1.1)
   const { data: flow, error: flowError } = await supabase
@@ -123,7 +123,7 @@ export async function getFlow(
   flowId: string,
   includeCurrentVersion: boolean = false
 ): Promise<StitchFlow | null> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   let query = supabase
     .from('stitch_flows')
@@ -167,7 +167,7 @@ export async function getFlowAdmin(
   includeCurrentVersion: boolean = false
 ): Promise<StitchFlow | null> {
   const { getAdminClient } = await import('../supabase/client');
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   let query = supabase
     .from('stitch_flows')
@@ -207,7 +207,7 @@ export async function getFlowAdmin(
 export async function getAllFlows(
   includeCurrentVersion: boolean = false
 ): Promise<StitchFlow[]> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   let query = supabase
     .from('stitch_flows')
@@ -266,7 +266,7 @@ export async function updateFlow(
     graph?: { nodes: StitchNode[]; edges: StitchEdge[] };
   }
 ): Promise<StitchFlow> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   // Warn if trying to update graph
   if (updates.graph) {
@@ -294,7 +294,7 @@ export async function updateFlow(
  * Delete a flow
  */
 export async function deleteFlow(flowId: string): Promise<void> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   const { error } = await supabase
     .from('stitch_flows')

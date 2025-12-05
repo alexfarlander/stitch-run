@@ -129,7 +129,7 @@ export async function seedTrialActivationWorkflow(supabase?: SupabaseClient): Pr
   
   // Use provided client or global admin client
   if (!supabase) {
-    supabase = (global as any).supabaseAdminClient;
+    supabase = (global as unknown).supabaseAdminClient;
   }
   
   if (!supabase) {
@@ -181,7 +181,7 @@ export async function seedTrialActivationWorkflow(supabase?: SupabaseClient): Pr
     // Step 3: Verify parent item node exists
     console.log('📋 Step 3: Verifying parent item node...');
     const parentItemId = 'item-free-trial';
-    const parentNode = bmc.graph.nodes.find((n: any) => n.id === parentItemId);
+    const parentNode = bmc.graph.nodes.find((n: unknown) => n.id === parentItemId);
     
     if (!parentNode) {
       throw new Error(`Parent item node '${parentItemId}' not found in BMC canvas`);
@@ -228,7 +228,7 @@ export async function seedTrialActivationWorkflow(supabase?: SupabaseClient): Pr
     
     return workflow.id;
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Trial Activation workflow seed failed:', error);
     throw error;
   }

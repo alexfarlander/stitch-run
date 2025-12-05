@@ -20,7 +20,7 @@ import { logWorkerCall, logExecutionError, logNodeExecution } from '../logger';
  * @returns The full callback URL
  */
 export function constructCallbackUrl(runId: string, nodeId: string): string {
-  const config = getConfig();
+  const _config = getConfig();
   
   // Validate that baseUrl is set (getConfig already validates, but double-check)
   if (!config.baseUrl) {
@@ -46,7 +46,7 @@ export function buildWorkerPayload(
   runId: string,
   nodeId: string,
   config: NodeConfig,
-  input: any
+  input: unknown
 ): WorkerPayload {
   const callbackUrl = constructCallbackUrl(runId, nodeId);
   
@@ -80,7 +80,7 @@ export async function applyEntityMovement(
   const { moveEntityToSection } = await import('@/lib/db/entities');
 
   // Check if entityMovement is configured
-  const workerConfig = config as any;
+  const workerConfig = config as unknown;
   if (!workerConfig.entityMovement) {
     return; // No entity movement configured
   }
@@ -116,7 +116,7 @@ export async function applyEntityMovement(
       },
       movementAction.setEntityType  // Pass entity type conversion if specified
     );
-  } catch (error) {
+  } catch (_error) {
     logExecutionError('Failed to apply entity movement', error, {
       runId,
       nodeId,
@@ -141,7 +141,7 @@ export async function fireWorkerNode(
   runId: string,
   nodeId: string,
   config: NodeConfig,
-  input: any
+  input: unknown
 ): Promise<void> {
   // Log node execution start (Requirement 10.1)
   logNodeExecution(runId, nodeId, 'Worker', input);
@@ -171,7 +171,7 @@ export async function fireWorkerNode(
       await worker.execute(runId, nodeId, config, input);
       // Integrated worker handles its own callbacks and state updates
       return;
-    } catch (error) {
+    } catch (_error) {
       // Handle worker execution errors (Requirement 10.5)
       let errorMessage = 'Integrated worker execution failed';
       if (error instanceof Error) {
@@ -264,7 +264,7 @@ export async function fireWorkerNode(
 
     // Worker webhook fired successfully
     // Node remains in 'running' state until callback is received
-  } catch (error) {
+  } catch (_error) {
     // Handle network errors, timeouts, unreachable URLs (Requirement 4.5, 10.5)
     let errorMessage = 'Worker webhook unreachable';
     

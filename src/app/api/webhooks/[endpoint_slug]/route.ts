@@ -54,7 +54,7 @@ export async function POST(
     // Step 3: Extract payload from request body
     // We need both the raw body (for signature validation) and parsed JSON
     const rawBody = await request.text();
-    let payload: Record<string, any>;
+    let payload: Record<string, unknown>;
 
     try {
       payload = JSON.parse(rawBody);
@@ -113,7 +113,7 @@ export async function POST(
     );
     return applyRateLimitHeaders(response, rateLimitResult);
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Webhook API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

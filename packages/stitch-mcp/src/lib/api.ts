@@ -1,4 +1,4 @@
-import { z } from "zod";
+// z import removed as unused
 
 const STITCH_URL = process.env.STITCH_URL || "http://localhost:3000";
 const STITCH_API_KEY = process.env.STITCH_API_KEY;
@@ -88,7 +88,7 @@ export async function stitchRequest(path: string, options: RequestInit = {}) {
         }
 
         return response.json();
-    } catch (error) {
+    } catch (_error) {
         // If it's already a StitchAPIError, re-throw it
         if (error instanceof StitchAPIError) {
             throw error;

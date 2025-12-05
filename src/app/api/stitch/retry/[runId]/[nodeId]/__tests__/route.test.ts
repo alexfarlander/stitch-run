@@ -3,7 +3,7 @@
  * Tests: Requirements 10.2, 10.3, 10.5
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import * as runs from '@/lib/db/runs';
@@ -107,7 +107,7 @@ describe('Retry API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: 'invalid-run', nodeId: mockNodeId }) });
 
       expect(response.status).toBe(404);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Run not found');
     });
 
@@ -118,7 +118,7 @@ describe('Retry API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: 'invalid-node' }) });
 
       expect(response.status).toBe(404);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Node not found in run');
     });
 
@@ -137,7 +137,7 @@ describe('Retry API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Node is not in failed state');
     });
   });
@@ -160,7 +160,7 @@ describe('Retry API Endpoint', () => {
       });
 
       expect(response.status).toBe(200);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.success).toBe(true);
     });
 
@@ -307,7 +307,7 @@ describe('Retry API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(404);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Flow not found');
     });
 
@@ -319,7 +319,7 @@ describe('Retry API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(500);
-      const data = await response.json();
+      const _data = await response.json();
       expect(data.error).toBe('Internal server error');
     });
   });

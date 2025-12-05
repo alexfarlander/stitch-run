@@ -89,7 +89,7 @@ export const createNodeTool = {
                 ]
             };
         }
-        catch (error) {
+        catch (_error) {
             // Handle validation errors with clear parameter names
             if (error instanceof z.ZodError) {
                 const errorDetails = error.errors.map(e => ({

@@ -17,7 +17,7 @@ export interface ExtractedEntity {
   email?: string;
   entity_type?: string;
   avatar_url?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -64,5 +64,5 @@ export interface WebhookAdapter {
    * @param payload - Parsed webhook payload
    * @returns Event type string (e.g., 'checkout.session.completed')
    */
-  getEventType(payload: any): string;
+  getEventType(payload: unknown): string;
 }

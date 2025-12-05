@@ -18,7 +18,7 @@ import { WebhookEvent } from '@/types/stitch';
 export async function createWebhookEvent(
   event: Omit<WebhookEvent, 'id' | 'received_at' | 'processed_at'>
 ): Promise<WebhookEvent> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_events')
@@ -53,9 +53,9 @@ export async function updateWebhookEvent(
   id: string,
   updates: Partial<Omit<WebhookEvent, 'id' | 'webhook_config_id' | 'received_at' | 'payload'>>
 ): Promise<WebhookEvent> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
-  const updateData: Record<string, any> = { ...updates };
+  const updateData: Record<string, unknown> = { ...updates };
   
   // Set processed_at timestamp if status is being updated to completed or failed
   if (updates.status === 'completed' || updates.status === 'failed') {
@@ -86,7 +86,7 @@ export async function updateWebhookEvent(
 export async function getWebhookEventsByConfig(
   webhookConfigId: string
 ): Promise<WebhookEvent[]> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_events')
@@ -110,7 +110,7 @@ export async function getWebhookEventsByConfig(
 export async function getWebhookEventById(
   id: string
 ): Promise<WebhookEvent | null> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_events')
@@ -139,7 +139,7 @@ export async function getWebhookEventById(
 export async function getWebhookEventByIdAdmin(
   id: string
 ): Promise<WebhookEvent | null> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_events')

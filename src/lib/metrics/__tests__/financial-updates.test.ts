@@ -4,7 +4,7 @@
  * Validates that financial metrics are correctly updated based on business events.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+// beforeEach import removed as unused
 import { 
   updateFinancials, 
   resetFinancialMetrics,

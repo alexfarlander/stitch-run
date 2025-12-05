@@ -58,6 +58,6 @@ export interface WorkerConfig {
   model?: string;
   
   /** Allow additional custom configuration fields */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 

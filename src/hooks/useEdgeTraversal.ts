@@ -69,14 +69,14 @@ export function useEdgeTraversal(canvasId: string | undefined): Map<string, bool
     const channel = supabase
       .channel(`edge-traversal:${canvasId}`)
       .on(
-        'postgres_changes' as any,
+        'postgres_changes' as unknown,
         {
           event: 'INSERT',
           schema: 'public',
           table: 'stitch_journey_events',
           filter: `canvas_id=eq.${canvasId}`,
         },
-        (payload: any) => {
+        (payload: unknown) => {
           if (!mountedRef.current) return;
 
           // Validate payload structure
@@ -115,7 +115,7 @@ export function useEdgeTraversal(canvasId: string | undefined): Map<string, bool
           // Add this traversal
           edgeState.traversalIds.add(traversalId);
 
-          // Update traversing state (edge is traversing if it has any active traversals)
+          // Update traversing state (edge is traversing if it has unknown active traversals)
           setTraversingEdges(prev => {
             const next = new Map(prev);
             next.set(edgeId, true);

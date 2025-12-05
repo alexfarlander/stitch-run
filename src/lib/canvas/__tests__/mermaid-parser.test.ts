@@ -390,7 +390,7 @@ describe('mermaidToCanvas - Error Handling', () => {
     try {
       mermaidToCanvas(mermaid);
       expect.fail('Should have thrown error');
-    } catch (error: any) {
+    } catch (error: unknown) {
       expect(error.lineNumber).toBe(3);
       expect(error.line).toContain('Invalid Node');
     }
@@ -405,7 +405,7 @@ describe('mermaidToCanvas - Error Handling', () => {
     try {
       mermaidToCanvas(mermaid);
       expect.fail('Should have thrown error');
-    } catch (error: any) {
+    } catch (error: unknown) {
       expect(error.hint).toContain('LR');
       expect(error.hint).toContain('TD');
     }
@@ -420,7 +420,7 @@ describe('mermaidToCanvas - Error Handling', () => {
     try {
       mermaidToCanvas(mermaid);
       expect.fail('Should have thrown error');
-    } catch (error: any) {
+    } catch (error: unknown) {
       const detailed = error.getDetailedMessage();
       expect(detailed).toContain('line');
       expect(detailed).toContain('Hint:');

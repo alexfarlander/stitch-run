@@ -113,7 +113,7 @@ export function mergeUpstreamOutputs(
   }
   
   // Merge all upstream outputs
-  const mergedInput: any = {};
+  const mergedInput: unknown = {};
   
   for (const edge of inboundEdges) {
     const sourceState = run.node_states[edge.source];

@@ -8,7 +8,7 @@ import { getAdminClient } from '../src/lib/supabase/client';
 async function main() {
   console.log('🔍 Verifying webhook-created entities...\n');
   
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   // Get all test entities
   const { data: entities, error: entitiesError } = await supabase

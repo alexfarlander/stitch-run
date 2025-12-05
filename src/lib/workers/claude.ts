@@ -18,7 +18,7 @@ export class ClaudeWorker implements IWorker {
   private mockMode: boolean = false;
 
   constructor() {
-    const config = getConfig();
+    const _config = getConfig();
     
     if (!config.workers.anthropicApiKey) {
       this.mockMode = true;
@@ -46,9 +46,9 @@ export class ClaudeWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: any
+    input: unknown
   ): Promise<void> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
 
     logWorker('info', 'Claude worker execution started', {
       worker: 'claude',
@@ -171,10 +171,10 @@ Create exactly 4 scenes that tell a cohesive story based on the user's topic.`;
         .replace(/\s*```$/, '');    // Remove code block end
 
       // Parse JSON response
-      let parsedResponse: any;
+      let parsedResponse: unknown;
       try {
         parsedResponse = JSON.parse(cleanJson);
-      } catch (error) {
+      } catch (_error) {
         // Log the raw text so we can debug why it failed
         console.error('Failed to parse raw output:', cleanJson);
         throw new Error(`Failed to parse Claude response as JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -212,7 +212,7 @@ Create exactly 4 scenes that tell a cohesive story based on the user's topic.`;
         output: { scenes },
       });
 
-    } catch (error) {
+    } catch (_error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

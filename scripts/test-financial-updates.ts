@@ -116,7 +116,7 @@ async function testFinancialUpdates() {
     console.log('- Worker cost updates: Claude, ElevenLabs, MiniMax ✓');
     console.log('- Reset functionality: All metrics restored ✓');
     
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Test failed:', error);
     process.exit(1);
   }

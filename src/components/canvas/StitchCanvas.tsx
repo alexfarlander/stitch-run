@@ -158,10 +158,10 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
           label: n.data.label || '',
           ...n.data,
         },
-        parentNode: (n as any).parentNode,
-        style: (n as any).style,
-        width: (n as any).width,
-        height: (n as any).height,
+        parentNode: (n as unknown).parentNode,
+        style: (n as unknown).style,
+        width: (n as unknown).width,
+        height: (n as unknown).height,
       })),
       edges: edges.map(e => ({
         id: e.id,
@@ -170,8 +170,8 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
         sourceHandle: e.sourceHandle,
         targetHandle: e.targetHandle,
         type: e.type,
-        animated: (e as any).animated,
-        style: (e as any).style,
+        animated: (e as unknown).animated,
+        style: (e as unknown).style,
         data: e.data,
       })),
     };
@@ -198,10 +198,10 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
             label: n.data.label || '',
             ...n.data,
           },
-          parentNode: (n as any).parentNode,
-          style: (n as any).style,
-          width: (n as any).width,
-          height: (n as any).height,
+          parentNode: (n as unknown).parentNode,
+          style: (n as unknown).style,
+          width: (n as unknown).width,
+          height: (n as unknown).height,
         })),
         edges: edges.map(e => ({
           id: e.id,
@@ -210,8 +210,8 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
           sourceHandle: e.sourceHandle,
           targetHandle: e.targetHandle,
           type: e.type,
-          animated: (e as any).animated,
-          style: (e as any).style,
+          animated: (e as unknown).animated,
+          style: (e as unknown).style,
           data: e.data,
         })),
       };
@@ -235,7 +235,7 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
       
       // Refresh the page to get updated version info
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to save version:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save version');
     } finally {
@@ -260,10 +260,10 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
             label: n.data.label || '',
             ...n.data,
           },
-          parentNode: (n as any).parentNode,
-          style: (n as any).style,
-          width: (n as any).width,
-          height: (n as any).height,
+          parentNode: (n as unknown).parentNode,
+          style: (n as unknown).style,
+          width: (n as unknown).width,
+          height: (n as unknown).height,
         })),
         edges: edges.map(e => ({
           id: e.id,
@@ -272,8 +272,8 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
           sourceHandle: e.sourceHandle,
           targetHandle: e.targetHandle,
           type: e.type,
-          animated: (e as any).animated,
-          style: (e as any).style,
+          animated: (e as unknown).animated,
+          style: (e as unknown).style,
           data: e.data,
         })),
       };
@@ -298,7 +298,7 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
       
       // Navigate to run view
       router.push(`/runs/${runId}`);
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to run flow:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to start run');
     } finally {
@@ -311,12 +311,12 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
     // Update nodes and edges to show historical version
     setNodes(version.visual_graph.nodes.map(node => ({
       id: node.id,
-      type: node.type as any,
+      type: node.type as unknown,
       position: node.position,
       data: node.data,
       draggable: false,  // Historical versions are read-only
       selectable: true,
-    })) as any);
+    })) as unknown);
     
     setEdges(version.visual_graph.edges.map(edge => ({
       id: edge.id,
@@ -326,7 +326,7 @@ export function StitchCanvas({ flow, run, editable = false }: StitchCanvasProps)
       targetHandle: edge.targetHandle,
       type: 'journey',
       data: { intensity: 0.6 },
-    })) as any);
+    })) as unknown);
     
     setShowVersionHistory(false);
   }, [setNodes, setEdges]);

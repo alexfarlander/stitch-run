@@ -142,9 +142,9 @@ function verifyBMCSeed() {
   // Verify financial nodes have values
   console.log('💰 Financial Nodes:');
   financialNodes.forEach(node => {
-    const hasValue = (node as any).value !== undefined;
+    const hasValue = (node as unknown).value !== undefined;
     const status = hasValue ? '✅' : '❌';
-    console.log(`  ${status} ${node.label}: $${(node as any).value || 0} (${node.id})`);
+    console.log(`  ${status} ${node.label}: $${(node as unknown).value || 0} (${node.id})`);
   });
   console.log();
   
@@ -186,7 +186,7 @@ function verifyBMCSeed() {
     systemEdges.length > 0,
     journeyEdges.length > 0,
     systemEdgesWithAction.length === systemEdges.length,
-    financialNodes.every(n => (n as any).value !== undefined),
+    financialNodes.every(n => (n as unknown).value !== undefined),
     sections.length === 13,
     BMC_ITEMS.length >= 29, // At least 29 items (22 original + 7 financial)
   ];

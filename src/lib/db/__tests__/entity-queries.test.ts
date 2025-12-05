@@ -3,7 +3,7 @@
  * Tests getEntitiesAtNode, getEntitiesOnEdge, and getJourneyHistory
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { getAdminClient } from '../../supabase/client';
 import {
   getEntitiesAtNode,
@@ -14,7 +14,7 @@ import {
 } from '../entities';
 
 describe('Entity Query Functions', () => {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   let testCanvasId: string;
   let testEntityId: string;
 

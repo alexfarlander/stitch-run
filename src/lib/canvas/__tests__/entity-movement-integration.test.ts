@@ -61,7 +61,7 @@ describe('Entity Movement Validation Integration', () => {
             entityMovement: {
               onSuccess: {
                 targetSectionId: 'section1',
-                completeAs: 'invalid-value' as any
+                completeAs: 'invalid-value' as unknown
               }
             }
           }

@@ -3,7 +3,7 @@
  * Tests: Requirements 6.6
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { fireSplitterNode, extractArray } from '../splitter';
 import { NodeConfig } from '@/types/stitch';
 import * as runs from '@/lib/db/runs';

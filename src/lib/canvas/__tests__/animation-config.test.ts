@@ -50,7 +50,7 @@ describe('Animation Configuration', () => {
 
     it('should return 0 when animations are disabled', () => {
       // Requirement 17.5: Handle animation disabling for both entity and edge
-      const config = { ...DEFAULT_CINEMATIC_CONFIG, enabled: false };
+      const _config = { ...DEFAULT_CINEMATIC_CONFIG, enabled: false };
       const travelDuration = getAnimationDuration(true, config);
       const jumpDuration = getAnimationDuration(false, config);
       
@@ -59,7 +59,7 @@ describe('Animation Configuration', () => {
     });
 
     it('should use custom duration from config', () => {
-      const config = {
+      const _config = {
         enabled: true,
         travelDuration: 3,
         jumpDuration: 1,
@@ -76,12 +76,12 @@ describe('Animation Configuration', () => {
     });
 
     it('should return false when disabled', () => {
-      const config = { ...DEFAULT_CINEMATIC_CONFIG, enabled: false };
+      const _config = { ...DEFAULT_CINEMATIC_CONFIG, enabled: false };
       expect(areAnimationsEnabled(config)).toBe(false);
     });
 
     it('should return true when explicitly enabled', () => {
-      const config = { ...DEFAULT_CINEMATIC_CONFIG, enabled: true };
+      const _config = { ...DEFAULT_CINEMATIC_CONFIG, enabled: true };
       expect(areAnimationsEnabled(config)).toBe(true);
     });
   });

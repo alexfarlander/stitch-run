@@ -22,7 +22,7 @@ export async function fireUXNode(
   runId: string,
   nodeId: string,
   config: NodeConfig,
-  input: any
+  input: unknown
 ): Promise<void> {
   // Mark node as 'waiting_for_user' (Requirement 8.1)
   // This prevents downstream execution (Requirement 8.2)

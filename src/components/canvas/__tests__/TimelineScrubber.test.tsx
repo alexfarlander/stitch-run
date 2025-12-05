@@ -133,7 +133,7 @@ describe('TimelineScrubber Component', () => {
               })),
             })),
           })),
-        } as any;
+        } as unknown;
       }
       
       if (table === 'stitch_journey_events') {
@@ -157,10 +157,10 @@ describe('TimelineScrubber Component', () => {
               })),
             })),
           })),
-        } as any;
+        } as unknown;
       }
       
-      return {} as any;
+      return {} as unknown;
     });
 
     render(
@@ -215,7 +215,7 @@ describe('TimelineScrubber Component', () => {
                 })),
               })),
             })),
-          } as any;
+          } as unknown;
         }
         
         if (table === 'stitch_journey_events') {
@@ -228,10 +228,10 @@ describe('TimelineScrubber Component', () => {
                 })),
               })),
             })),
-          } as any;
+          } as unknown;
         }
         
-        return {} as any;
+        return {} as unknown;
       });
 
       render(
@@ -280,7 +280,7 @@ describe('TimelineScrubber Component', () => {
                 })),
               })),
             })),
-          } as any;
+          } as unknown;
         }
         
         if (table === 'stitch_journey_events') {
@@ -293,10 +293,10 @@ describe('TimelineScrubber Component', () => {
                 })),
               })),
             })),
-          } as any;
+          } as unknown;
         }
         
-        return {} as any;
+        return {} as unknown;
       });
 
       render(
@@ -363,7 +363,7 @@ describe('TimelineScrubber Component', () => {
                 })),
               })),
             })),
-          } as any;
+          } as unknown;
         }
         
         if (table === 'stitch_journey_events') {
@@ -376,10 +376,10 @@ describe('TimelineScrubber Component', () => {
                 })),
               })),
             })),
-          } as any;
+          } as unknown;
         }
         
-        return {} as any;
+        return {} as unknown;
       });
 
       render(

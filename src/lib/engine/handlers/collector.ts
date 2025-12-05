@@ -100,7 +100,7 @@ export function hasAnyPathFailed(
 export function mergeParallelOutputs(
   nodeStates: Record<string, NodeState>,
   parallelPaths: string[]
-): any[] {
+): unknown[] {
   // Sort parallel paths by their index suffix to preserve order
   const sortedPaths = [...parallelPaths].sort((a, b) => {
     const indexA = extractIndexFromNodeId(a);
@@ -133,7 +133,7 @@ function extractIndexFromNodeId(nodeId: string): number {
 interface CollectorNodeState extends NodeState {
   upstream_completed_count?: number;
   expected_upstream_count?: number;
-  upstream_outputs?: Record<string, any>;
+  upstream_outputs?: Record<string, unknown>;
 }
 
 /**
@@ -184,7 +184,7 @@ export async function fireCollectorNode(
     
     // Count how many upstream nodes are completed
     let completedCount = 0;
-    const upstreamOutputs: Record<string, any> = { ...collectorState.upstream_outputs };
+    const upstreamOutputs: Record<string, unknown> = { ...collectorState.upstream_outputs };
     
     for (const upstreamId of upstreamToTrack) {
       const upstreamState = run.node_states[upstreamId];
@@ -232,7 +232,7 @@ export async function fireCollectorNode(
     }
     
     // All upstream paths completed! Merge outputs
-    let mergedOutput: any;
+    let mergedOutput: unknown;
     
     if (parallelPaths.length > 0) {
       // Merge parallel outputs preserving order (Requirements 7.3, 7.4)
@@ -256,7 +256,7 @@ export async function fireCollectorNode(
         upstream_outputs: upstreamOutputs,
       } as CollectorNodeState,
     });
-  } catch (error) {
+  } catch (_error) {
     // Handle errors (Requirement 10.5)
     let errorMessage = 'Failed to process collector node';
     if (error instanceof Error) {

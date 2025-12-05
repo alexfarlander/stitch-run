@@ -3,14 +3,14 @@
  * Validates: Requirements 1.7, 9.4
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+// beforeEach import removed as unused
 import { fireCollectorNode } from '../collector';
 import { createRun, getRun, updateNodeState } from '@/lib/db/runs';
 import { createFlow } from '@/lib/db/flows';
 import { StitchNode, StitchEdge } from '@/types/stitch';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
+const _supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -34,7 +34,7 @@ describe('Collector Race Condition Fix', () => {
       { id: 'e3', source: 'upstream3', target: 'collector' },
     ];
 
-    const flow = await createFlow('Collector Race Test', { nodes, edges });
+    const _flow = await createFlow('Collector Race Test', { nodes, edges });
 
     flowId = flow.id;
 

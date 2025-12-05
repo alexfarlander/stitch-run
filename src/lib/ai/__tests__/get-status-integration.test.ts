@@ -7,7 +7,7 @@
  * Requirements: 6.2, 6.3, 6.4, 6.5
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { handleGetStatus, GetStatusPayload } from '../action-executor';
 import { handleRunWorkflow, RunWorkflowPayload } from '../action-executor';
 import { handleCreateWorkflow, CreateWorkflowPayload } from '../action-executor';
@@ -23,7 +23,7 @@ describe('GET_STATUS Integration Tests', () => {
     for (const flowId of createdFlowIds) {
       try {
         await deleteFlow(flowId);
-      } catch (error) {
+      } catch (_error) {
         // Ignore errors if flow doesn't exist
       }
     }

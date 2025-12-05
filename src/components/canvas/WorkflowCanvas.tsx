@@ -45,11 +45,11 @@ interface WorkflowCanvasProps {
 
 // Node type registry for workflow nodes
 const nodeTypes: NodeTypes = {
-  Worker: WorkerNode as any,
-  Collector: CollectorNode as any,
-  UX: UXNode as any,
-  Splitter: SplitterNode as any,
-  MediaSelect: MediaSelectNode as any,
+  Worker: WorkerNode as unknown,
+  Collector: CollectorNode as unknown,
+  UX: UXNode as unknown,
+  Splitter: SplitterNode as unknown,
+  MediaSelect: MediaSelectNode as unknown,
 };
 
 // Edge type registry for workflow edges
@@ -194,7 +194,7 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to update node configuration');
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Error saving node configuration:', error);
       throw error;
     }

@@ -21,7 +21,7 @@ export interface InputSchema {
   type: 'string' | 'number' | 'object' | 'array' | 'boolean';
   required: boolean;
   description?: string;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -91,7 +91,7 @@ export interface VisualNode {
   data: {
     label: string;
     worker_type?: string;  // For worker nodes: claude, minimax, elevenlabs, shotstack, etc.
-    config?: Record<string, any>;  // Worker-specific configuration
+    config?: Record<string, unknown>;  // Worker-specific configuration
     
     // Input/Output schema (for validation and mapping)
     inputs?: Record<string, InputSchema>;
@@ -101,7 +101,7 @@ export interface VisualNode {
     entityMovement?: EntityMovementConfig;
     
     // Allow additional custom data
-    [key: string]: any;
+    [key: string]: unknown;
   };
   
   // React Flow properties for nesting and layout
@@ -133,7 +133,7 @@ export interface VisualEdge {
   // Data mapping between nodes
   data?: {
     mapping?: EdgeMapping;  // How to wire outputs to inputs
-    [key: string]: any;     // Allow additional custom data
+    [key: string]: unknown;     // Allow additional custom data
   };
 }
 

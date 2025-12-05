@@ -16,8 +16,8 @@ import { logWorker } from './utils';
 export interface WorkerTestConfig {
   workerName: 'claude' | 'minimax' | 'elevenlabs' | 'shotstack';
   mockMode: boolean;
-  testInput: any;
-  expectedOutputSchema?: Record<string, any>;
+  testInput: unknown;
+  expectedOutputSchema?: Record<string, unknown>;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface WorkerTestConfig {
 export interface WorkerTestResult {
   success: boolean;
   duration: number;
-  output?: any;
+  output?: unknown;
   error?: string;
   apiKeyPresent: boolean;
   callbackReceived: boolean;
@@ -43,7 +43,7 @@ class MockWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: any
+    input: unknown
   ): Promise<void> {
     logWorker('info', 'Mock worker execution started', {
       worker: this.workerName,
@@ -56,7 +56,7 @@ class MockWorker implements IWorker {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // Generate mock output based on worker type
-    let mockOutput: any;
+    let mockOutput: unknown;
     switch (this.workerName) {
       case 'claude':
         mockOutput = {
@@ -125,7 +125,7 @@ export function createMockWorker(workerName: string): IWorker {
  * @returns true if API key is present, false otherwise
  */
 export function checkApiKey(workerName: string): boolean {
-  const config = getConfig();
+  const _config = getConfig();
   
   switch (workerName) {
     case 'claude':
@@ -167,7 +167,7 @@ export function getRequiredEnvVars(workerName: string): string[] {
  * @returns Test result with success status and details
  */
 export async function testWorker(config: WorkerTestConfig): Promise<WorkerTestResult> {
-  const startTime = Date.now();
+  const _startTime = Date.now();
   const { workerName, mockMode, testInput } = config;
 
   logWorker('info', 'Worker test started', {
@@ -207,7 +207,7 @@ export async function testWorker(config: WorkerTestConfig): Promise<WorkerTestRe
       logWorker('info', 'Using real worker', { workerName });
       worker = workerRegistry.getWorker(workerName);
     }
-  } catch (error) {
+  } catch (_error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logWorker('error', 'Failed to create worker instance', {
       workerName,
@@ -229,7 +229,7 @@ export async function testWorker(config: WorkerTestConfig): Promise<WorkerTestRe
 
   // Set up callback listener
   let callbackReceived = false;
-  let callbackOutput: any = undefined;
+  let callbackOutput: unknown = undefined;
   let callbackError: string | undefined = undefined;
 
   // Mock the callback endpoint by intercepting fetch calls
@@ -323,7 +323,7 @@ export async function testWorker(config: WorkerTestConfig): Promise<WorkerTestRe
       callbackReceived: true,
     };
 
-  } catch (error) {
+  } catch (_error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -364,7 +364,7 @@ export async function testAllWorkers(mockMode: boolean = false): Promise<Record<
 
   for (const workerName of workers) {
     // Generate appropriate test input for each worker
-    let testInput: any;
+    let testInput: unknown;
     switch (workerName) {
       case 'claude':
         testInput = { prompt: 'Create a short video about AI technology' };

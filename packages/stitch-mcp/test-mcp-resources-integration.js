@@ -49,7 +49,7 @@ async function testMCPResourcesIntegration() {
     console.log('  ✓ PASSED\n');
     passed++;
     
-  } catch (error) {
+  } catch (_error) {
     console.log(`  ✗ FAILED: ${error.message}\n`);
     failed++;
   }
@@ -79,7 +79,7 @@ async function testMCPResourcesIntegration() {
     console.log('  ✓ PASSED\n');
     passed++;
     
-  } catch (error) {
+  } catch (_error) {
     console.log(`  ✗ FAILED: ${error.message}\n`);
     failed++;
   }
@@ -125,7 +125,7 @@ async function testMCPResourcesIntegration() {
     console.log('  ✓ PASSED\n');
     passed++;
     
-  } catch (error) {
+  } catch (_error) {
     console.log(`  ✗ FAILED: ${error.message}\n`);
     failed++;
   }

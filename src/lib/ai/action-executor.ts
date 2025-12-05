@@ -43,7 +43,7 @@ const VALID_ACTIONS: AIManagerAction[] = [
  */
 export interface AIManagerResponse {
   action: AIManagerAction;
-  payload: any;
+  payload: unknown;
   error?: string;
 }
 
@@ -72,7 +72,7 @@ export interface ModifyWorkflowPayload {
  */
 export interface RunWorkflowPayload {
   canvasId: string;
-  input: Record<string, any>;
+  input: Record<string, unknown>;
 }
 
 /**
@@ -93,7 +93,7 @@ export class ActionExecutorError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly details?: any
+    public readonly details?: unknown
   ) {
     super(message);
     this.name = 'ActionExecutorError';
@@ -189,7 +189,7 @@ export function isValidAction(action: string): action is AIManagerAction {
  * @param response - Parsed response object
  * @throws ActionExecutorError if validation fails
  */
-export function validateResponse(response: any): asserts response is AIManagerResponse {
+export function validateResponse(response: unknown): asserts response is AIManagerResponse {
   // Check if response is an object
   if (!response || typeof response !== 'object') {
     throw new ActionExecutorError(
@@ -238,7 +238,7 @@ export function validateResponse(response: any): asserts response is AIManagerRe
  * @param payload - Payload to validate
  * @throws ActionExecutorError if validation fails
  */
-export function validateCreateWorkflowPayload(payload: any): asserts payload is CreateWorkflowPayload {
+export function validateCreateWorkflowPayload(payload: unknown): asserts payload is CreateWorkflowPayload {
   if (!payload || typeof payload !== 'object') {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW payload must be an object',
@@ -282,7 +282,7 @@ export function validateCreateWorkflowPayload(payload: any): asserts payload is 
  * @param payload - Payload to validate
  * @throws ActionExecutorError if validation fails
  */
-export function validateModifyWorkflowPayload(payload: any): asserts payload is ModifyWorkflowPayload {
+export function validateModifyWorkflowPayload(payload: unknown): asserts payload is ModifyWorkflowPayload {
   if (!payload || typeof payload !== 'object') {
     throw new ActionExecutorError(
       'MODIFY_WORKFLOW payload must be an object',
@@ -328,7 +328,7 @@ export function validateModifyWorkflowPayload(payload: any): asserts payload is 
  * @param payload - Payload to validate
  * @throws ActionExecutorError if validation fails
  */
-export function validateRunWorkflowPayload(payload: any): asserts payload is RunWorkflowPayload {
+export function validateRunWorkflowPayload(payload: unknown): asserts payload is RunWorkflowPayload {
   if (!payload || typeof payload !== 'object') {
     throw new ActionExecutorError(
       'RUN_WORKFLOW payload must be an object',
@@ -357,7 +357,7 @@ export function validateRunWorkflowPayload(payload: any): asserts payload is Run
  * @param payload - Payload to validate
  * @throws ActionExecutorError if validation fails
  */
-export function validateGetStatusPayload(payload: any): asserts payload is GetStatusPayload {
+export function validateGetStatusPayload(payload: unknown): asserts payload is GetStatusPayload {
   if (!payload || typeof payload !== 'object') {
     throw new ActionExecutorError(
       'GET_STATUS payload must be an object',
@@ -380,7 +380,7 @@ export function validateGetStatusPayload(payload: any): asserts payload is GetSt
  * @param payload - Payload to validate
  * @throws ActionExecutorError if validation fails
  */
-export function validatePayload(action: AIManagerAction, payload: any): void {
+export function validatePayload(action: AIManagerAction, payload: unknown): void {
   switch (action) {
     case 'CREATE_WORKFLOW':
       validateCreateWorkflowPayload(payload);
@@ -444,7 +444,7 @@ export function parseAndValidateResponse(llmResponseText: string): AIManagerResp
  * @param result - Result from CREATE_WORKFLOW handler
  * @throws ActionExecutorError if validation fails
  */
-export function validateCreateWorkflowResponse(result: any): void {
+export function validateCreateWorkflowResponse(result: unknown): void {
   if (!result || typeof result !== 'object') {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW response must be an object',
@@ -493,7 +493,7 @@ export function validateCreateWorkflowResponse(result: any): void {
  * @param result - Result from RUN_WORKFLOW handler
  * @throws ActionExecutorError if validation fails
  */
-export function validateRunWorkflowResponse(result: any): void {
+export function validateRunWorkflowResponse(result: unknown): void {
   if (!result || typeof result !== 'object') {
     throw new ActionExecutorError(
       'RUN_WORKFLOW response must be an object',
@@ -522,12 +522,12 @@ export function validateRunWorkflowResponse(result: any): void {
  * @param result - Result from handler
  * @throws ActionExecutorError if validation fails
  */
-export function validateResponseFormat(action: AIManagerAction, result: any): void {
+export function validateResponseFormat(action: AIManagerAction, result: unknown): void {
   // Requirement 8.5: Validate result is valid JSON-serializable
   // Try to serialize and deserialize to ensure it's valid JSON
   try {
     JSON.parse(JSON.stringify(result));
-  } catch (error) {
+  } catch (_error) {
     throw new ActionExecutorError(
       'Response is not valid JSON-serializable',
       'VALIDATION_ERROR',
@@ -606,7 +606,7 @@ export async function executeAction<T>(
     default:
       // TypeScript should prevent this, but handle it anyway
       throw new ActionExecutorError(
-        `Unknown action type: ${(response as any).action}`,
+        `Unknown action type: ${(response as unknown).action}`,
         'VALIDATION_ERROR'
       );
   }
@@ -794,7 +794,7 @@ export async function handleCreateWorkflow(
       canvasId: flow.id,
       canvas: payload.canvas,
     };
-  } catch (error) {
+  } catch (_error) {
     throw new ActionExecutorError(
       'Failed to store canvas in database',
       'DATABASE_ERROR',
@@ -916,7 +916,7 @@ export async function handleModifyWorkflow(
   const { isValidWorkerType } = await import('@/lib/workers/registry');
   
   // Step 1: Load current canvas from database (Requirement 5.1)
-  const flow = await getFlow(payload.canvasId, true);
+  const _flow = await getFlow(payload.canvasId, true);
   
   if (!flow) {
     throw new ActionExecutorError(
@@ -1145,7 +1145,7 @@ export async function handleModifyWorkflow(
       canvasId: payload.canvasId,
       canvas: modifiedCanvas,
     };
-  } catch (error) {
+  } catch (_error) {
     throw new ActionExecutorError(
       'Failed to store modified canvas in database',
       'DATABASE_ERROR',
@@ -1175,7 +1175,7 @@ export async function handleRunWorkflow(
   let flow;
   try {
     flow = await getFlow(payload.canvasId, true);
-  } catch (error) {
+  } catch (_error) {
     throw new ActionExecutorError(
       `Failed to load canvas: ${payload.canvasId}`,
       'NOT_FOUND',
@@ -1247,7 +1247,7 @@ export async function handleRunWorkflow(
       status: 'running',
       statusUrl: statusUrl
     };
-  } catch (error) {
+  } catch (_error) {
     throw new ActionExecutorError(
       'Failed to start workflow execution',
       'EXECUTION_ERROR',
@@ -1279,8 +1279,8 @@ export async function handleGetStatus(
 ): Promise<{
   runId: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
-  nodes: Record<string, { status: string; output?: any; error?: string }>;
-  finalOutputs?: Record<string, any>;
+  nodes: Record<string, { status: string; output?: unknown; error?: string }>;
+  finalOutputs?: Record<string, unknown>;
   statusUrl: string;
 }> {
   // Step 1: Extract run ID from payload
@@ -1292,7 +1292,7 @@ export async function handleGetStatus(
   let run;
   try {
     run = await getRun(runId);
-  } catch (error) {
+  } catch (_error) {
     throw new ActionExecutorError(
       `Failed to retrieve run: ${runId}`,
       'DATABASE_ERROR',
@@ -1315,7 +1315,7 @@ export async function handleGetStatus(
   const nodeStates = run.node_states;
   
   // Step 4: Aggregate node outputs for completed nodes (Requirement 6.3)
-  const nodes: Record<string, { status: string; output?: any; error?: string }> = {};
+  const nodes: Record<string, { status: string; output?: unknown; error?: string }> = {};
   
   for (const [nodeId, state] of Object.entries(nodeStates)) {
     nodes[nodeId] = {
@@ -1344,7 +1344,7 @@ export async function handleGetStatus(
   }
   
   // Step 6: Extract final outputs from terminal nodes (Requirement 6.5)
-  let finalOutputs: Record<string, any> | undefined;
+  let finalOutputs: Record<string, unknown> | undefined;
   
   if (overallStatus === 'completed') {
     // Load the execution graph to identify terminal nodes
@@ -1371,7 +1371,7 @@ export async function handleGetStatus(
             finalOutputs = undefined;
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // If we can't load the version, just skip finalOutputs
         // This is not critical to the status response
         console.warn(`Failed to load version for terminal outputs: ${error}`);

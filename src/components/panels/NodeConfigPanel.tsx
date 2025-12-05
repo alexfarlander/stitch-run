@@ -46,7 +46,7 @@ import { InputSchema } from '@/types/canvas-schema';
 
 interface NodeConfig {
   workerType: string;
-  inputs: Record<string, any>;
+  inputs: Record<string, unknown>;
   entityMovement?: {
     targetNodeId?: string;
     targetSectionId?: string;
@@ -109,7 +109,7 @@ export function NodeConfigPanel({
         setConfig(nodeConfig);
         setOriginalConfig(nodeConfig);
         setValidationErrors({});
-      } catch (err) {
+      } catch (_err) {
         console.error('Error fetching node config:', err);
         setError(err instanceof Error ? err.message : 'Failed to load configuration');
       } finally {
@@ -133,7 +133,7 @@ export function NodeConfigPanel({
     const newWorkerDef = WORKER_DEFINITIONS[newWorkerType];
     
     // Initialize inputs with default values from schema
-    const newInputs: Record<string, any> = {};
+    const newInputs: Record<string, unknown> = {};
     if (newWorkerDef) {
       Object.entries(newWorkerDef.input).forEach(([key, schema]) => {
         // Use default value from schema if available, otherwise use empty value based on type
@@ -300,7 +300,7 @@ export function NodeConfigPanel({
     try {
       await onSave(nodeId, config);
       onClose();
-    } catch (err) {
+    } catch (_err) {
       console.error('Error saving node config:', err);
       setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {

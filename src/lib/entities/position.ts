@@ -75,7 +75,7 @@ export function getEntityEdgePosition(
   if (pathElement) {
     try {
       return getEntityEdgePositionFromPath(pathElement, clampedProgress);
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Failed to use SVG path for edge ${edge.id}, falling back to linear interpolation:`, error);
     }
   }
@@ -158,7 +158,7 @@ export function getEdgePathElement(edgeId: string): SVGPathElement | null {
     // Target the specific visual path, not the interaction hitbox or arrowheads
     const pathElement = edgeElement.querySelector('path.react-flow__edge-path');
     return pathElement as SVGPathElement | null;
-  } catch (error) {
+  } catch (_error) {
     console.warn(`Failed to get path element for edge ${edgeId}:`, error);
     return null;
   }

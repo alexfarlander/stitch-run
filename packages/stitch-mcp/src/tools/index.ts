@@ -20,7 +20,7 @@ export function registerTools(server: Server) {
                     inputSchema: tool.inputSchema
                 }))
             };
-        } catch (error) {
+        } catch (_error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             throw new Error(`Failed to list tools: ${errorMessage}`);
         }
@@ -43,7 +43,7 @@ export function registerTools(server: Server) {
 
         try {
             return await tool.handler(request.params.arguments);
-        } catch (error) {
+        } catch (_error) {
             // Tool handlers already format their own errors nicely
             // Just re-throw to preserve the error structure
             throw error;

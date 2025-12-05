@@ -15,7 +15,7 @@ import { logCallbackReceived, logExecutionError } from '@/lib/engine/logger';
  * Validates callback payload structure
  * Requirements: 9.1, 9.2, 9.5
  */
-function validateCallbackPayload(payload: any): { valid: boolean; error?: string } {
+function validateCallbackPayload(payload: unknown): { valid: boolean; error?: string } {
   // Check if payload is an object
   if (!payload || typeof payload !== 'object') {
     return { valid: false, error: 'Callback payload must be an object' };
@@ -66,7 +66,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string; nodeId: string }> }
 ) {
-  const startTime = Date.now();
+  const _startTime = Date.now();
   let runId: string | undefined;
   let nodeId: string | undefined;
 
@@ -181,7 +181,7 @@ export async function POST(
     }
 
     // Apply entity movement if configured
-    const flow = await getFlowAdmin(run.flow_id);
+    const _flow = await getFlowAdmin(run.flow_id);
     if (flow) {
       const node = flow.graph.nodes.find(n => n.id === nodeId);
       if (node && node.type === 'Worker') {
@@ -210,7 +210,7 @@ export async function POST(
       { success: true },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (_error) {
     // Enhanced error logging (Requirement 10.5)
     logExecutionError('Callback processing error', error, {
       runId,

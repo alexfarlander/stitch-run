@@ -18,7 +18,7 @@ interface BaseLogEntry {
   message: string;
   runId?: string;
   nodeId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -31,7 +31,7 @@ function formatLogEntry(entry: BaseLogEntry): string {
 /**
  * Log a structured message
  */
-function log(level: LogLevel, message: string, context: Record<string, any> = {}): void {
+function log(level: LogLevel, message: string, context: Record<string, unknown> = {}): void {
   const entry: BaseLogEntry = {
     timestamp: new Date().toISOString(),
     level,
@@ -69,7 +69,7 @@ export function logNodeExecution(
   runId: string,
   nodeId: string,
   nodeType: string,
-  input?: any
+  input?: unknown
 ): void {
   log('info', 'Node execution started', {
     runId,
@@ -94,7 +94,7 @@ export function logWorkerCall(
   nodeId: string,
   workerType: string,
   endpoint: string,
-  payload: any
+  payload: unknown
 ): void {
   log('info', 'Worker called', {
     runId,
@@ -163,9 +163,9 @@ export function logEdgeWalking(
 export function logExecutionError(
   message: string,
   error: Error | unknown,
-  context: Record<string, any> = {}
+  context: Record<string, unknown> = {}
 ): void {
-  const errorDetails: Record<string, any> = {
+  const errorDetails: Record<string, unknown> = {
     message,
     ...context,
   };
@@ -256,7 +256,7 @@ export function logCollectorWaiting(
 export function logCollectorFiring(
   runId: string,
   collectorNodeId: string,
-  mergedOutput: any
+  mergedOutput: unknown
 ): void {
   log('info', 'Collector firing downstream', {
     runId,

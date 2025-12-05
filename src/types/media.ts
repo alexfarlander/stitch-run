@@ -47,7 +47,7 @@ export interface MediaMetadata {
   text?: string;
   
   // Extensible for custom metadata
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

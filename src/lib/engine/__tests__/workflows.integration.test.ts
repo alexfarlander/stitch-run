@@ -4,7 +4,7 @@
  * Validates: Requirement 11.3
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { createFlow, deleteFlow } from '@/lib/db/flows';
 import { createRun, getRun, deleteRun, getRunAdmin } from '@/lib/db/runs';
 import { walkEdges } from '@/lib/engine/edge-walker';
@@ -26,7 +26,7 @@ describe('Integration Tests: Complete Workflows', () => {
     for (const runId of createdRunIds) {
       try {
         await deleteRun(runId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore errors during cleanup
       }
     }
@@ -35,7 +35,7 @@ describe('Integration Tests: Complete Workflows', () => {
     for (const flowId of createdFlowIds) {
       try {
         await deleteFlow(flowId);
-      } catch (e) {
+      } catch (_e) {
         // Ignore errors during cleanup
       }
     }
@@ -73,7 +73,7 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e2', source: 'worker1', target: 'worker2' },
     ];
 
-    const flow = await createFlow('Linear Flow Test', { nodes, edges });
+    const _flow = await createFlow('Linear Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
@@ -85,7 +85,7 @@ describe('Integration Tests: Complete Workflows', () => {
     expect(run.node_states['worker2'].status).toBe('pending');
 
     // Simulate start node completion
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -175,14 +175,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e4', source: 'collector', target: 'end' },
     ];
 
-    const flow = await createFlow('Parallel Flow Test', { nodes, edges });
+    const _flow = await createFlow('Parallel Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start node completion with array output
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -239,7 +239,7 @@ describe('Integration Tests: Complete Workflows', () => {
 
     // Trigger edge-walking from each parallel worker instance
     // The collector will check dependencies each time, but won't fire until all are complete
-    let updatedRun2 = await getRunAdmin(run.id);
+    const updatedRun2 = await getRunAdmin(run.id);
     await walkEdges('worker_0', flow, updatedRun2!);
     
     // After first worker completes, collector fires and checks - should be completed!
@@ -293,14 +293,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e2', source: 'ux-gate', target: 'worker' },
     ];
 
-    const flow = await createFlow('UX Flow Test', { nodes, edges });
+    const _flow = await createFlow('UX Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start node completion
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -393,14 +393,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e4', source: 'worker', target: 'collector' },
     ];
 
-    const flow = await createFlow('Mixed Flow Test', { nodes, edges });
+    const _flow = await createFlow('Mixed Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start completion
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -465,7 +465,7 @@ describe('Integration Tests: Complete Workflows', () => {
 
     // Walk from parallel worker instances
     // Both workers are already completed, so collector will fire immediately
-    let updatedRun3 = await getRunAdmin(run.id);
+    const updatedRun3 = await getRunAdmin(run.id);
     await walkEdges('worker_0', flow, updatedRun3!);
 
     // Verify collector merged results
@@ -506,14 +506,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e2', source: 'worker1', target: 'worker2' },
     ];
 
-    const flow = await createFlow('Error Recovery Test', { nodes, edges });
+    const _flow = await createFlow('Error Recovery Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start completion
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -618,14 +618,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e3', source: 'worker2', target: 'worker3' },
     ];
 
-    const flow = await createFlow('Recovery Test', { nodes, edges });
+    const _flow = await createFlow('Recovery Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate partial execution: start and worker1 completed, worker2 running
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -720,14 +720,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e4', source: 'collector', target: 'end' },
     ];
 
-    const flow = await createFlow('Empty Array Test', { nodes, edges });
+    const _flow = await createFlow('Empty Array Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start with empty array
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -799,14 +799,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e3', source: 'worker', target: 'collector' },
     ];
 
-    const flow = await createFlow('Failure Propagation Test', { nodes, edges });
+    const _flow = await createFlow('Failure Propagation Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start with array
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -844,7 +844,7 @@ describe('Integration Tests: Complete Workflows', () => {
     // Walk from parallel worker instances - collector will check all parallel paths
     // All three workers are already in terminal states (completed, failed, completed)
     // So when we walk from worker_0, the collector will fire and detect the failure
-    let updatedRun2 = await getRunAdmin(run.id);
+    const updatedRun2 = await getRunAdmin(run.id);
     await walkEdges('worker_0', flow, updatedRun2!);
     
     // Collector should have detected the failure and marked itself as failed

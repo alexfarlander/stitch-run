@@ -3,7 +3,7 @@
  * Tests the various input formats the worker needs to handle
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// beforeEach import removed as unused
 import { MediaLibraryWorker } from '../media-library';
 
 // Mock the media service

@@ -38,7 +38,7 @@ export async function POST(
       );
     }
 
-    const supabase = getAdminClient();
+    const _supabase = getAdminClient();
 
     // Fetch the entity
     const { data: entity, error: entityError } = await supabase
@@ -69,8 +69,8 @@ export async function POST(
       );
     }
 
-    const canvasData = canvas.canvas as any;
-    const targetNode = canvasData.nodes?.find((n: any) => n.id === targetNodeId);
+    const canvasData = canvas.canvas as unknown;
+    const targetNode = canvasData.nodes?.find((n: unknown) => n.id === targetNodeId);
 
     if (!targetNode) {
       return NextResponse.json(
@@ -84,7 +84,7 @@ export async function POST(
     if (sourceNodeId && sourceNodeId !== targetNodeId) {
       const edges = canvasData.edges || [];
       const connectingEdge = edges.find(
-        (e: any) =>
+        (e: unknown) =>
           (e.source === sourceNodeId && e.target === targetNodeId) ||
           (e.source === targetNodeId && e.target === sourceNodeId)
       );
@@ -136,7 +136,7 @@ export async function POST(
       entity: updatedEntity,
       journeyEvent,
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error moving entity:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

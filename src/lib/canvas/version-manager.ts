@@ -92,7 +92,7 @@ export async function createVersion(
     );
   }
   
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
   
   // Insert version (Requirement 10.3)
   const { data: version, error: insertError } = await supabase
@@ -140,7 +140,7 @@ export async function createVersion(
  * @throws Error if database operation fails
  */
 export async function getVersion(versionId: string): Promise<FlowVersion | null> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
   
   const { data, error } = await supabase
     .from('stitch_flow_versions')
@@ -170,7 +170,7 @@ export async function getVersion(versionId: string): Promise<FlowVersion | null>
  * @throws Error if database operation fails
  */
 export async function getVersionAdmin(versionId: string): Promise<FlowVersion | null> {
-  const supabase = getAdminClient();
+  const _supabase = getAdminClient();
   
   const { data, error } = await supabase
     .from('stitch_flow_versions')
@@ -205,7 +205,7 @@ export async function getVersionAdmin(versionId: string): Promise<FlowVersion | 
  * @throws Error if database operation fails
  */
 export async function listVersions(flowId: string): Promise<FlowVersionMetadata[]> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
   
   const { data, error } = await supabase
     .from('stitch_flow_versions')
@@ -247,7 +247,7 @@ export async function autoVersionOnRun(
   flowId: string,
   currentVisualGraph: VisualGraph
 ): Promise<string> {
-  const supabase = createServerClient();
+  const _supabase = createServerClient();
   
   // Get current version
   const { data: flow, error: flowError } = await supabase
@@ -313,9 +313,9 @@ export async function autoVersionOnRun(
  * @param b - Second object
  * @returns true if objects are deeply equal
  */
-function deepEqual(a: any, b: any): boolean {
+function deepEqual(a: any, b: unknown): boolean {
   // Sort object keys recursively to ensure consistent comparison
-  const sortKeys = (obj: any): any => {
+  const sortKeys = (obj: unknown): unknown => {
     if (obj === null || typeof obj !== 'object') {
       return obj;
     }
@@ -324,7 +324,7 @@ function deepEqual(a: any, b: any): boolean {
       return obj.map(sortKeys);
     }
     
-    const sorted: any = {};
+    const sorted: unknown = {};
     Object.keys(obj).sort().forEach(key => {
       sorted[key] = sortKeys(obj[key]);
     });

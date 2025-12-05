@@ -25,7 +25,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function main() {
   console.log('🔍 Verifying Drill-Down Navigation\n');
@@ -55,8 +55,8 @@ async function main() {
     
     // Step 2: Find all item nodes with linked workflows
     console.log('📋 Step 2: Analyzing item nodes...');
-    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
-    const linkedNodes = itemNodes.filter((n: any) => n.data?.linked_workflow_id);
+    const itemNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section-item');
+    const linkedNodes = itemNodes.filter((n: unknown) => n.data?.linked_workflow_id);
     
     console.log(`✅ Found ${itemNodes.length} item nodes`);
     console.log(`✅ Found ${linkedNodes.length} linked item nodes\n`);
@@ -174,7 +174,7 @@ async function main() {
       process.exit(1);
     }
     
-  } catch (error) {
+  } catch (_error) {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');

@@ -71,7 +71,7 @@ async function testDemoReset() {
     
     console.log('✅ Financial metrics reset to initial values');
     
-  } catch (error) {
+  } catch (_error) {
     console.error('\n❌ Test failed:', error);
     process.exit(1);
   }

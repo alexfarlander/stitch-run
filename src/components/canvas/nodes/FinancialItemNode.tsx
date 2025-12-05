@@ -32,7 +32,7 @@ function formatCurrency(value: number, currency: string = 'USD'): string {
 
 const FinancialItemNodeComponent = memo(({ data, selected }: NodeProps) => {
   const nodeData = data as unknown as FinancialItemNodeData;
-  const IconComponent = (LucideIcons as any)[nodeData.icon] || LucideIcons.DollarSign;
+  const IconComponent = (LucideIcons as unknown)[nodeData.icon] || LucideIcons.DollarSign;
 
   const displayValue = nodeData.value !== undefined
     ? formatCurrency(nodeData.value, nodeData.currency)

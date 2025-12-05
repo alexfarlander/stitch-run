@@ -30,13 +30,13 @@ export function useRealtimeRun(runId: string): UseRealtimeRunResult {
           throw new Error('Failed to fetch run status');
         }
 
-        const data = await response.json();
+        const _data = await response.json();
         
         if (mounted) {
           setRun(data);
           setLoading(false);
         }
-      } catch (err) {
+      } catch (_err) {
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Unknown error');
           setLoading(false);

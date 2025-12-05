@@ -20,7 +20,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function testDemoAPI() {
   console.log('🧪 Testing Demo Mode API\n');

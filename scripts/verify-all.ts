@@ -26,7 +26,7 @@ config({ path: envPath });
 async function runVerificationScript(
   scriptName: string,
   flowId: string | null
-): Promise<{ name: string; result: any; error?: string }> {
+): Promise<{ name: string; result: unknown; error?: string }> {
   const { createServerClient } = await import('../src/lib/supabase/server');
   const {
     checkForeignKeys,
@@ -93,7 +93,7 @@ async function runVerificationScript(
       name: scriptName,
       result,
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       name: scriptName,
       result: {
@@ -127,7 +127,7 @@ async function main() {
     logSection('Master Verification - All Systems');
     logInfo('Running all verification scripts...\n');
 
-    const supabase = createServerClient();
+    const _supabase = createServerClient();
 
     // Get BMC canvas
     const { data: bmcs } = await supabase
@@ -203,7 +203,7 @@ async function main() {
       logInfo('  - npx tsx scripts/verify-video-factory-v2.ts');
       process.exit(1);
     }
-  } catch (error) {
+  } catch (_error) {
     logError('Unexpected error during master verification');
     console.error(error);
     process.exit(1);
