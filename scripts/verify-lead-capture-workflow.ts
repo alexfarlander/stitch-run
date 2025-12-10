@@ -40,7 +40,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
   try {
     // Check 1: Workflow exists
     console.log('📋 Check 1: Workflow exists in database...');
-    const { data: workflow, error: workflowError } = await supabase
+    const { data: workflow, error: workflowError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('name', 'Lead Capture Logic')
@@ -74,7 +74,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
     
     // Check 2: Workflow has correct parent_id (links to BMC)
     console.log('📋 Check 2: Workflow links to BMC canvas...');
-    const { data: bmc, error: bmcError } = await supabase
+    const { data: bmc, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('id')
       .eq('canvas_type', 'bmc')
@@ -134,7 +134,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
     
     let allNodesCorrect = true;
     for (const expected of expectedNodes) {
-      const node = nodes.find((n: unknown) => n.id === expected.id);
+      const node = nodes.find((n: any) => n.id === expected.id);
       if (!node) {
         results.push({
           check: `Node '${expected.id}' exists`,
@@ -203,7 +203,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
     let allEdgesCorrect = true;
     for (const expected of expectedEdges) {
       const edge = edges.find(
-        (e: unknown) => e.source === expected.source && e.target === expected.target
+        (e: any) => e.source === expected.source && e.target === expected.target
       );
       if (!edge) {
         results.push({
@@ -230,7 +230,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
     console.log('📋 Check 7: Node configurations...');
     
     // Validate Lead node
-    const validateNode = nodes.find((n: unknown) => n.id === 'validate-lead');
+    const validateNode = nodes.find((n: any) => n.id === 'validate-lead');
     if (validateNode?.data?.workerType === 'data-transform') {
       results.push({
         check: 'Validate Lead has correct workerType',
@@ -248,7 +248,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
     }
     
     // Score Lead node
-    const scoreNode = nodes.find((n: unknown) => n.id === 'score-lead');
+    const scoreNode = nodes.find((n: any) => n.id === 'score-lead');
     if (scoreNode?.data?.workerType === 'claude') {
       results.push({
         check: 'Score Lead has correct workerType',
@@ -266,7 +266,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
     }
     
     // CRM Sync node
-    const crmNode = nodes.find((n: unknown) => n.id === 'crm-sync');
+    const crmNode = nodes.find((n: any) => n.id === 'crm-sync');
     if (crmNode?.data?.workerType === 'webhook-trigger') {
       results.push({
         check: 'CRM Sync has correct workerType',
@@ -284,7 +284,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
     }
     
     // Assign SDR node
-    const assignNode = nodes.find((n: unknown) => n.id === 'assign-sdr');
+    const assignNode = nodes.find((n: any) => n.id === 'assign-sdr');
     if (assignNode?.data?.workerType === 'data-transform') {
       results.push({
         check: 'Assign SDR has correct workerType',

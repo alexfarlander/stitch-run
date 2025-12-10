@@ -23,7 +23,7 @@ export function registerResources(server: Server) {
                 })),
             };
         } catch (_error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = _error instanceof Error ? _error.message : String(_error);
             throw new Error(`Failed to list resources: ${errorMessage}`);
         }
     });
@@ -50,12 +50,12 @@ export function registerResources(server: Server) {
             return await resource.read();
         } catch (_error) {
             // If it's already our formatted error, re-throw it
-            if (error instanceof Error && error.message.includes('Resource not found:')) {
-                throw error;
+            if (_error instanceof Error && _error.message.includes('Resource not found:')) {
+                throw _error;
             }
-            
+
             // Otherwise, wrap it with context
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = _error instanceof Error ? _error.message : String(_error);
             throw new Error(
                 `Failed to read resource '${uri}': ${errorMessage}`
             );

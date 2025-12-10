@@ -256,7 +256,7 @@ async function main() {
     console.log('❌ Unexpected Error:');
     console.log('═══════════════════════════════════════════════════════════');
     console.log('');
-    console.error(error);
+    console.error(_error);
     console.log('');
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║  ❌ Worker test failed with unexpected error               ║');

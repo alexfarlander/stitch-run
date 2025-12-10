@@ -58,7 +58,7 @@ async function verify1_SeedScript() {
   
   try {
     // Check BMC canvas exists - find the one with the most nodes (the complete one)
-    const { data: allBmcs, error: bmcError } = await supabase
+    const { data: allBmcs, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'bmc')
@@ -94,8 +94,8 @@ async function verify1_SeedScript() {
                      'Integrations', 'Code', 'Revenue', 'Costs'];
     
     // Node types are lowercase with hyphens
-    const sectionNodes = graph.nodes.filter((n: unknown) => n.type === 'section');
-    const foundSections = sectionNodes.map((n: unknown) => n.data.label);
+    const sectionNodes = graph.nodes.filter((n: any) => n.type === 'section');
+    const foundSections = sectionNodes.map((n: any) => n.data.label);
     const missingSections = sections.filter(s => !foundSections.includes(s));
     
     logResult({
@@ -105,7 +105,7 @@ async function verify1_SeedScript() {
     });
     
     // Check item nodes exist
-    const itemNodes = graph.nodes.filter((n: unknown) => n.type === 'section-item');
+    const itemNodes = graph.nodes.filter((n: any) => n.type === 'section-item');
     logResult({
       name: 'Item Nodes',
       passed: itemNodes.length > 20,
@@ -113,7 +113,7 @@ async function verify1_SeedScript() {
     });
     
     // Check journey edges exist
-    const journeyEdges = graph.edges.filter((e: unknown) => e.type === 'journey' || !e.type);
+    const journeyEdges = graph.edges.filter((e: any) => e.type === 'journey' || !e.type);
     logResult({
       name: 'Journey Edges',
       passed: journeyEdges.length > 0,
@@ -121,7 +121,7 @@ async function verify1_SeedScript() {
     });
     
     // Check system edges exist
-    const systemEdges = graph.edges.filter((e: unknown) => e.type === 'system');
+    const systemEdges = graph.edges.filter((e: any) => e.type === 'system');
     logResult({
       name: 'System Edges',
       passed: systemEdges.length > 0,
@@ -129,7 +129,7 @@ async function verify1_SeedScript() {
     });
     
     // Check financial nodes exist
-    const financialNodes = itemNodes.filter((n: unknown) => 
+    const financialNodes = itemNodes.filter((n: any) => 
       n.id === 'item-mrr' || n.id === 'item-stripe-fees'
     );
     logResult({
@@ -139,7 +139,7 @@ async function verify1_SeedScript() {
     });
     
     // Check entities exist
-    const { data: entities, error: entitiesError } = await supabase
+    const { data: entities, error: entitiesError } = await _supabase
       .from('stitch_entities')
       .select('*')
       .eq('canvas_id', bmc.id);
@@ -243,14 +243,14 @@ async function verify3_EntityMovement() {
     });
     
     // Check entities can be positioned on nodes
-    const { data: bmc } = await supabase
+    const { data: bmc } = await _supabase
       .from('stitch_flows')
       .select('id')
       .eq('name', 'Business Model Canvas')
       .single();
     
     if (bmc) {
-      const { data: entities } = await supabase
+      const { data: entities } = await _supabase
         .from('stitch_entities')
         .select('current_node_id, current_edge_id')
         .eq('canvas_id', bmc.id);
@@ -301,7 +301,7 @@ async function verify4_SystemEdges() {
     });
     
     // Check system edges have correct styling
-    const { data: allBmcs2 } = await supabase
+    const { data: allBmcs2 } = await _supabase
       .from('stitch_flows')
       .select('graph')
       .eq('canvas_type', 'bmc')
@@ -314,8 +314,8 @@ async function verify4_SystemEdges() {
         return currentNodeCount > bestNodeCount ? current : best;
       }, allBmcs2[0]);
       
-      const systemEdges = bmc2.graph.edges.filter((e: unknown) => e.type === 'system');
-      const withSystemAction = systemEdges.filter((e: unknown) => e.data?.systemAction);
+      const systemEdges = bmc2.graph.edges.filter((e: any) => e.type === 'system');
+      const withSystemAction = systemEdges.filter((e: any) => e.data?.systemAction);
       
       logResult({
         name: 'System Edge Configuration',
@@ -353,7 +353,7 @@ async function verify5_FinancialMetrics() {
     });
     
     // Check financial nodes have values
-    const { data: allBmcs3 } = await supabase
+    const { data: allBmcs3 } = await _supabase
       .from('stitch_flows')
       .select('graph')
       .eq('canvas_type', 'bmc')
@@ -366,11 +366,11 @@ async function verify5_FinancialMetrics() {
         return currentNodeCount > bestNodeCount ? current : best;
       }, allBmcs3[0]);
       
-      const financialNodes = bmc3.graph.nodes.filter((n: unknown) => 
+      const financialNodes = bmc3.graph.nodes.filter((n: any) => 
         n.id === 'item-mrr' || n.id === 'item-stripe-fees'
       );
       
-      const withValues = financialNodes.filter((n: unknown) => 
+      const withValues = financialNodes.filter((n: any) => 
         typeof n.data?.value === 'number'
       );
       
@@ -414,7 +414,7 @@ async function verify6_DrillDownNavigation() {
     });
     
     // Check workflows are linked to parent items
-    const { data: workflowFlows } = await supabase
+    const { data: workflowFlows } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'workflow');
@@ -484,7 +484,7 @@ async function verify8_DatabaseIndex() {
   
   try {
     // Check entity email index exists
-    const { data: indexes } = await supabase
+    const { data: indexes } = await _supabase
       .rpc('pg_indexes_list', { table_name: 'stitch_entities' })
       .select('*');
     

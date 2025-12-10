@@ -1,3 +1,4 @@
+// z import removed as unused
 const STITCH_URL = process.env.STITCH_URL || "http://localhost:3000";
 const STITCH_API_KEY = process.env.STITCH_API_KEY;
 /**
@@ -79,14 +80,14 @@ export async function stitchRequest(path, options = {}) {
     }
     catch (_error) {
         // If it's already a StitchAPIError, re-throw it
-        if (error instanceof StitchAPIError) {
-            throw error;
+        if (_error instanceof StitchAPIError) {
+            throw _error;
         }
         // If it's a network error (fetch failed), wrap it
-        if (error instanceof Error) {
-            throw new StitchNetworkError(url, error);
+        if (_error instanceof Error) {
+            throw new StitchNetworkError(url, _error);
         }
         // Unknown error type
-        throw new Error(`Unexpected error calling Stitch API: ${String(error)}`);
+        throw new Error(`Unexpected error calling Stitch API: ${String(_error)}`);
     }
 }

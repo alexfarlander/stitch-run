@@ -17,7 +17,7 @@ export const STITCH_WEBHOOK_URL = "${webhookUrl}";
 export const STITCH_UPTIME_URL = "${uptimeUrl}";
 export const STITCH_NODE_ID = "${nodeId}";
 
-export async function sendStitchEvent(event: string, data: Record<string, any>) {
+export async function sendStitchEvent(event: string, data: Record<string, unknown>) {
   try {
     const response = await fetch(STITCH_WEBHOOK_URL, {
       method: "POST",
@@ -212,7 +212,7 @@ import { sendStitchEvent } from "@/lib/stitch";
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
+    const _data = await request.json();
     
     // Process your data
     const result = await processData(data);
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processData(data: any) {
+async function processData(data: unknown) {
   // Your processing logic here
   return { processed: true, data };
 }
@@ -396,7 +396,7 @@ app.listen(PORT, () => {
     document.getElementById("contactForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      const data = Object.fromEntries(formData);
+      const _data = Object.fromEntries(formData);
       
       try {
         const response = await fetch("/api/submit-form", {
@@ -458,7 +458,7 @@ const router = express.Router();
 
 router.post("/process-data", async (req, res) => {
   try {
-    const data = req.body;
+    const _data = req.body;
     
     // Process your data
     const result = await processData(data);
@@ -661,7 +661,7 @@ if __name__ == "__main__":
         document.getElementById("contactForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
+            const _data = Object.fromEntries(formData);
             
             try {
                 const response = await fetch("/api/submit-form", {
@@ -835,14 +835,14 @@ export const getStitchingCodeTool = {
         }
         catch (_error) {
             // Handle validation errors with clear parameter names
-            if (error instanceof z.ZodError) {
-                const errorDetails = error.errors.map(e => ({
+            if (_error instanceof z.ZodError) {
+                const errorDetails = _error.errors.map((e) => ({
                     parameter: e.path.join('.') || 'root',
                     message: e.message,
                     code: e.code
                 }));
                 const errorMessages = errorDetails
-                    .map(e => `- Parameter '${e.parameter}': ${e.message}`)
+                    .map((e) => `- Parameter '${e.parameter}': ${e.message}`)
                     .join('\n');
                 return {
                     content: [
@@ -864,7 +864,7 @@ ${errorMessages}
                 };
             }
             // Handle other errors
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = _error instanceof Error ? _error.message : String(_error);
             return {
                 content: [
                     {

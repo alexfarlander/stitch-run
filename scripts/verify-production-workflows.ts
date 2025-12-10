@@ -80,7 +80,7 @@ async function main() {
   
   try {
     // Get BMC canvas
-    const { data: bmc, error: bmcError } = await supabase
+    const { data: bmc, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('id, graph')
       .eq('canvas_type', 'bmc')
@@ -100,7 +100,7 @@ async function main() {
       console.log('-'.repeat(60));
       
       // Verify parent node exists in BMC
-      const parentNode = bmc.graph.nodes.find((n: unknown) => n.id === check.parentNodeId);
+      const parentNode = bmc.graph.nodes.find((n: any) => n.id === check.parentNodeId);
       if (!parentNode) {
         console.error(`❌ Parent node '${check.parentNodeId}' not found in BMC`);
         allPassed = false;
@@ -110,7 +110,7 @@ async function main() {
       console.log(`✅ Parent node exists: ${check.parentNodeId}`);
       
       // Fetch workflow
-      const { data: workflow, error: workflowError } = await supabase
+      const { data: workflow, error: workflowError } = await _supabase
         .from('stitch_flows')
         .select('id, name, canvas_type, parent_id, graph')
         .eq('name', check.name)
@@ -153,7 +153,7 @@ async function main() {
       }
       
       // Verify node labels
-      const actualLabels = workflow.graph.nodes.map((n: unknown) => n.data.label);
+      const actualLabels = workflow.graph.nodes.map((n: any) => n.data.label);
       const missingLabels = check.nodeLabels.filter(label => !actualLabels.includes(label));
       if (missingLabels.length > 0) {
         console.error(`❌ Missing node labels: ${missingLabels.join(', ')}`);
@@ -171,8 +171,8 @@ async function main() {
       if (workflow.graph.edges.length > 0) {
         console.log('\n🔗 Edges:');
         workflow.graph.edges.forEach((edge: any, index: number) => {
-          const sourceNode = workflow.graph.nodes.find((n: unknown) => n.id === edge.source);
-          const targetNode = workflow.graph.nodes.find((n: unknown) => n.id === edge.target);
+          const sourceNode = workflow.graph.nodes.find((n: any) => n.id === edge.source);
+          const targetNode = workflow.graph.nodes.find((n: any) => n.id === edge.target);
           console.log(`   ${index + 1}. ${sourceNode?.data.label} → ${targetNode?.data.label}`);
         });
       }

@@ -44,7 +44,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   
   // Check 1: Workflow exists
   console.log('📋 Check 1: Workflow exists in database');
-  const { data: workflow, error: workflowError } = await supabase
+  const { data: workflow, error: workflowError } = await _supabase
     .from('stitch_flows')
     .select('*')
     .eq('name', 'Demo Scheduling Logic')
@@ -78,7 +78,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   
   // Check 2: Parent ID links to BMC canvas
   console.log('📋 Check 2: Parent ID links to BMC canvas');
-  const { data: bmc, error: bmcError } = await supabase
+  const { data: bmc, error: bmcError } = await _supabase
     .from('stitch_flows')
     .select('id')
     .eq('canvas_type', 'bmc')
@@ -108,7 +108,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   
   // Check 3: Verify parent item node exists
   console.log('📋 Check 3: Parent item node exists in BMC');
-  const { data: bmcFull, error: bmcFullError } = await supabase
+  const { data: bmcFull, error: bmcFullError } = await _supabase
     .from('stitch_flows')
     .select('graph')
     .eq('canvas_type', 'bmc')
@@ -122,7 +122,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
       details: 'Could not fetch BMC graph',
     });
   } else {
-    const parentNode = bmcFull.graph.nodes.find((n: unknown) => n.id === 'item-demo-call');
+    const parentNode = bmcFull.graph.nodes.find((n: any) => n.id === 'item-demo-call');
     if (!parentNode) {
       results.push({
         check: 'Parent item node exists',
@@ -152,7 +152,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   const nodeDetails: string[] = [];
   
   for (const required of requiredNodes) {
-    const node = graph.nodes.find((n: unknown) => n.id === required.id);
+    const node = graph.nodes.find((n: any) => n.id === required.id);
     if (!node) {
       allNodesExist = false;
       nodeDetails.push(`❌ Missing node: ${required.id}`);
@@ -191,7 +191,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   
   for (const required of requiredEdges) {
     const edge = graph.edges.find(
-      (e: unknown) => e.source === required.source && e.target === required.target
+      (e: any) => e.source === required.source && e.target === required.target
     );
     if (!edge) {
       allEdgesExist = false;
@@ -219,7 +219,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   let allConfigsValid = true;
   
   // Check Send Email node
-  const sendEmailNode = graph.nodes.find((n: unknown) => n.id === 'send-email');
+  const sendEmailNode = graph.nodes.find((n: any) => n.id === 'send-email');
   if (sendEmailNode) {
     if (!sendEmailNode.data.config?.url) {
       allConfigsValid = false;
@@ -230,7 +230,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   }
   
   // Check Wait for Booking node
-  const waitNode = graph.nodes.find((n: unknown) => n.id === 'wait-for-booking');
+  const waitNode = graph.nodes.find((n: any) => n.id === 'wait-for-booking');
   if (waitNode) {
     if (!waitNode.data.config?.webhookSource) {
       allConfigsValid = false;
@@ -241,7 +241,7 @@ async function verifyDemoSchedulingWorkflow(): Promise<VerificationResult[]> {
   }
   
   // Check Pre-Demo Prep node
-  const prepNode = graph.nodes.find((n: unknown) => n.id === 'pre-demo-prep');
+  const prepNode = graph.nodes.find((n: any) => n.id === 'pre-demo-prep');
   if (prepNode) {
     if (!prepNode.data.config?.tasks || !Array.isArray(prepNode.data.config.tasks)) {
       allConfigsValid = false;
@@ -308,7 +308,7 @@ async function main() {
     console.error('=' .repeat(60));
     console.error('❌ Verification failed with error!');
     console.error('=' .repeat(60));
-    console.error(error);
+    console.error(_error);
     process.exit(1);
   }
 }

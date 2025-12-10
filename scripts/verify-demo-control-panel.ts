@@ -100,6 +100,6 @@ try {
   }
 
 } catch (_error) {
-  console.error('❌ Error verifying component:', error);
+  console.error('❌ Error verifying component:', _error);
   process.exit(1);
 }

@@ -108,6 +108,6 @@ try {
     process.exit(1);
   }
 } catch (_error) {
-  console.error('\n❌ Verification error:', error);
+  console.error('\n❌ Verification error:', _error);
   process.exit(1);
 }

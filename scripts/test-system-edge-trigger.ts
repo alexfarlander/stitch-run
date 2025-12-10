@@ -19,7 +19,7 @@ async function testSystemEdgeTrigger() {
 
   try {
     // Find the BMC canvas (get the most recent one)
-    const { data: bmcCanvases, error: canvasError } = await supabase
+    const { data: bmcCanvases, error: canvasError } = await _supabase
       .from('stitch_flows')
       .select('id, name, graph')
       .eq('canvas_type', 'bmc')
@@ -37,12 +37,12 @@ async function testSystemEdgeTrigger() {
 
     // Count system edges
     const systemEdges = bmcCanvas.graph.edges.filter(
-      (edge: unknown) => edge.type === 'system'
+      (edge: any) => edge.type === 'system'
     );
     console.log(`📊 Total system edges in BMC: ${systemEdges.length}\n`);
 
     // Find a test entity
-    const { data: testEntity, error: entityError } = await supabase
+    const { data: testEntity, error: entityError } = await _supabase
       .from('stitch_entities')
       .select('id, name, email, current_node_id')
       .eq('canvas_id', bmcCanvas.id)
@@ -59,7 +59,7 @@ async function testSystemEdgeTrigger() {
 
     // Find system edges for this node
     const nodeSystemEdges = systemEdges.filter(
-      (edge: unknown) => edge.source === testEntity.current_node_id
+      (edge: any) => edge.source === testEntity.current_node_id
     );
 
     if (nodeSystemEdges.length === 0) {
@@ -69,7 +69,7 @@ async function testSystemEdgeTrigger() {
       // Try a node that should have system edges
       const testNodeId = 'item-linkedin-ads';
       const testNodeEdges = systemEdges.filter(
-        (edge: unknown) => edge.source === testNodeId
+        (edge: any) => edge.source === testNodeId
       );
       
       if (testNodeEdges.length > 0) {
@@ -81,7 +81,7 @@ async function testSystemEdgeTrigger() {
         console.log('✅ System edges triggered successfully!\n');
         
         console.log('📋 System edges that were triggered:');
-        testNodeEdges.forEach((edge: unknown) => {
+        testNodeEdges.forEach((edge: any) => {
           console.log(`   - ${edge.id}: ${edge.source} -> ${edge.target} (${edge.data?.systemAction})`);
         });
       } else {
@@ -93,7 +93,7 @@ async function testSystemEdgeTrigger() {
       console.log('✅ System edges triggered successfully!\n');
       
       console.log('📋 System edges that were triggered:');
-      nodeSystemEdges.forEach((edge: unknown) => {
+      nodeSystemEdges.forEach((edge: any) => {
         console.log(`   - ${edge.id}: ${edge.source} -> ${edge.target} (${edge.data?.systemAction})`);
       });
     }

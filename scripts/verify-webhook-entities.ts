@@ -11,7 +11,7 @@ async function main() {
   const _supabase = getAdminClient();
   
   // Get all test entities
-  const { data: entities, error: entitiesError } = await supabase
+  const { data: entities, error: entitiesError } = await _supabase
     .from('stitch_entities')
     .select('*')
     .like('email', 'test-%@monsters.io')
@@ -37,7 +37,7 @@ async function main() {
     console.log(`   - Metadata:`, JSON.stringify(entity.metadata, null, 2));
     
     // Check journey events
-    const { data: events, error: eventsError } = await supabase
+    const { data: events, error: eventsError } = await _supabase
       .from('stitch_journey_events')
       .select('*')
       .eq('entity_id', entity.id)
@@ -63,7 +63,7 @@ async function main() {
   
   // Cleanup
   console.log('🧹 Cleaning up test entities...');
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await _supabase
     .from('stitch_entities')
     .delete()
     .like('email', 'test-%@monsters.io');

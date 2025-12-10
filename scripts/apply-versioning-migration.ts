@@ -40,8 +40,8 @@ async function applyMigration() {
     
     console.log(`Executing: ${statement.substring(0, 50)}...`);
     
-    const { error } = await supabase.rpc('exec_sql', { 
-      sql: statement + ';' 
+    const { error } = await _supabase.rpc('exec_sql', {
+      sql: statement + ';'
     });
 
     if (error) {

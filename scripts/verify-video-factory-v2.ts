@@ -47,7 +47,7 @@ async function main() {
     const _supabase = createServerClient();
     
     // First check if any Video Factory V2 workflow exists
-    const { data: workflows, error: queryError } = await supabase
+    const { data: workflows, error: queryError } = await _supabase
       .from('stitch_flows')
       .select('id, name, canvas_type')
       .eq('canvas_type', 'workflow')
@@ -117,7 +117,7 @@ async function main() {
     }
   } catch (_error) {
     logError('Unexpected error during verification');
-    console.error(error);
+    console.error(_error);
     process.exit(1);
   }
 }

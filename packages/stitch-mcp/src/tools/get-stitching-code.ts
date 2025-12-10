@@ -858,17 +858,17 @@ export const getStitchingCodeTool = {
             };
         } catch (_error) {
             // Handle validation errors with clear parameter names
-            if (error instanceof z.ZodError) {
-                const errorDetails = error.errors.map(e => ({
+            if (_error instanceof z.ZodError) {
+                const errorDetails = _error.errors.map((e: any) => ({
                     parameter: e.path.join('.') || 'root',
                     message: e.message,
                     code: e.code
                 }));
-                
+
                 const errorMessages = errorDetails
-                    .map(e => `- Parameter '${e.parameter}': ${e.message}`)
+                    .map((e: any) => `- Parameter '${e.parameter}': ${e.message}`)
                     .join('\n');
-                
+
                 return {
                     content: [
                         {
@@ -890,7 +890,7 @@ ${errorMessages}
             }
 
             // Handle other errors
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = _error instanceof Error ? _error.message : String(_error);
             return {
                 content: [
                     {

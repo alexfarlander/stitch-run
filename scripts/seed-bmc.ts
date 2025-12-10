@@ -29,12 +29,12 @@ async function main() {
 
   try {
     // Use the centralized seed function from lib/seeds, passing our script's Supabase client
-    const bmcId = await seedDefaultBMC(supabase);
+    const bmcId = await seedDefaultBMC(_supabase);
     console.log(`✅ BMC seeded successfully! Canvas ID: ${bmcId}\n`);
 
     // Verify the BMC was created correctly
     console.log('📊 Verifying BMC structure...');
-    const { data: bmc, error } = await supabase
+    const { data: bmc, error } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('id', bmcId)
@@ -52,21 +52,21 @@ async function main() {
     console.log(`   Total Edges: ${bmc.graph.edges.length}`);
 
     // Count node types
-    const sectionNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section');
-    const itemNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section-item');
-    const financialNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'financial-item');
+    const sectionNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section');
+    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
+    const financialNodes = bmc.graph.nodes.filter((n: any) => n.type === 'financial-item');
 
     console.log(`   Section Nodes: ${sectionNodes.length}`);
     console.log(`   Item Nodes: ${itemNodes.length}`);
     console.log(`   Financial Nodes: ${financialNodes.length}`);
 
     // Verify all 13 sections are present
-    const sectionNames = sectionNodes.map((n: unknown) => n.data.label).sort();
+    const sectionNames = sectionNodes.map((n: any) => n.data.label).sort();
     console.log(`\n   Sections:`);
     sectionNames.forEach((name: string) => console.log(`     - ${name}`));
 
     console.log(`\n   Sample Items:`);
-    itemNodes.slice(0, 5).forEach((n: unknown) => console.log(`     - ${n.data.label} (${n.data.itemType})`));
+    itemNodes.slice(0, 5).forEach((n: any) => console.log(`     - ${n.data.label} (${n.data.itemType})`));
     if (itemNodes.length > 5) {
       console.log(`     ... and ${itemNodes.length - 5} more`);
     }
@@ -79,7 +79,7 @@ async function main() {
       { name: 'Edge count is 31', pass: bmc.graph.edges.length === 31 },
       { name: 'Canvas type is "bmc"', pass: bmc.canvas_type === 'bmc' },
       { name: 'Parent ID is null', pass: bmc.parent_id === null },
-      { name: 'All items have parentId', pass: itemNodes.every((n: unknown) => n.parentId) },
+      { name: 'All items have parentId', pass: itemNodes.every((n: any) => n.parentId) },
     ];
 
     console.log('\n   Validation:');
@@ -97,7 +97,7 @@ async function main() {
     }
 
   } catch (_error) {
-    console.error('❌ Seed failed:', error);
+    console.error('❌ Seed failed:', _error);
     process.exit(1);
   }
 }

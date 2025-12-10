@@ -15,9 +15,9 @@ function verifyBMCSeed() {
   const graph = generateBMCGraph();
   
   // Count nodes by type
-  const sectionNodes = graph.nodes.filter(n => n.type === 'section');
-  const itemNodes = graph.nodes.filter(n => n.type === 'section-item');
-  const financialNodes = itemNodes.filter(n => n.data.itemType === 'financial');
+  const sectionNodes = graph.nodes.filter((n: any) => n.type === 'section');
+  const itemNodes = graph.nodes.filter((n: any) => n.type === 'section-item');
+  const financialNodes = itemNodes.filter((n: any) => n.data.itemType === 'financial');
   
   console.log('📊 Node Statistics:');
   console.log(`  - Section nodes: ${sectionNodes.length} (expected: 13)`);
@@ -36,7 +36,7 @@ function verifyBMCSeed() {
   
   // Verify financial nodes have values
   console.log('💰 Financial Nodes:');
-  financialNodes.forEach(node => {
+  financialNodes.forEach((node: any) => {
     const hasValue = node.data.value !== undefined;
     const _hasCurrency = node.data.currency === 'USD';
     const _hasFormat = node.data.format === 'currency';

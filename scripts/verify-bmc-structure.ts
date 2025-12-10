@@ -115,11 +115,11 @@ function verifyBMCSeed() {
   console.log('🔍 Verifying BMC seed data structure...\n');
   
   // Count nodes by type
-  const financialNodes = BMC_ITEMS.filter(n => n.type === 'financial');
-  const workerNodes = BMC_ITEMS.filter(n => n.type === 'worker');
-  const productNodes = BMC_ITEMS.filter(n => n.type === 'product');
-  const assetNodes = BMC_ITEMS.filter(n => n.type === 'asset');
-  const integrationNodes = BMC_ITEMS.filter(n => n.type === 'integration');
+  const financialNodes = BMC_ITEMS.filter((n: any) => n.type === 'financial');
+  const workerNodes = BMC_ITEMS.filter((n: any) => n.type === 'worker');
+  const productNodes = BMC_ITEMS.filter((n: any) => n.type === 'product');
+  const assetNodes = BMC_ITEMS.filter((n: any) => n.type === 'asset');
+  const integrationNodes = BMC_ITEMS.filter((n: any) => n.type === 'integration');
   
   console.log('📊 Node Statistics:');
   console.log(`  - Total item nodes: ${BMC_ITEMS.length}`);
@@ -141,10 +141,10 @@ function verifyBMCSeed() {
   
   // Verify financial nodes have values
   console.log('💰 Financial Nodes:');
-  financialNodes.forEach(node => {
-    const hasValue = (node as unknown).value !== undefined;
+  financialNodes.forEach((node: any) => {
+    const hasValue = (node as any).value !== undefined;
     const status = hasValue ? '✅' : '❌';
-    console.log(`  ${status} ${node.label}: $${(node as unknown).value || 0} (${node.id})`);
+    console.log(`  ${status} ${node.label}: $${(node as any).value || 0} (${node.id})`);
   });
   console.log();
   
@@ -174,7 +174,7 @@ function verifyBMCSeed() {
   ];
   
   expectedSections.forEach(section => {
-    const itemsInSection = BMC_ITEMS.filter(n => n.section === section);
+    const itemsInSection = BMC_ITEMS.filter((n: any) => n.section === section);
     const status = itemsInSection.length > 0 ? '✅' : '❌';
     console.log(`  ${status} ${section} (${itemsInSection.length} items)`);
   });
@@ -186,7 +186,7 @@ function verifyBMCSeed() {
     systemEdges.length > 0,
     journeyEdges.length > 0,
     systemEdgesWithAction.length === systemEdges.length,
-    financialNodes.every(n => (n as unknown).value !== undefined),
+    financialNodes.every(n => (n as any).value !== undefined),
     sections.length === 13,
     BMC_ITEMS.length >= 29, // At least 29 items (22 original + 7 financial)
   ];

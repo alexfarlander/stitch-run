@@ -104,8 +104,8 @@ function verifyNodeSorting(): VerificationResult {
 
   // Verify sections come first
   console.log('\n✅ Checking section nodes render first...');
-  const sectionNodes = sortedNodes.filter(node => node.type === 'section');
-  const nonSectionNodes = sortedNodes.filter(node => node.type !== 'section');
+  const sectionNodes = sortedNodes.filter((node: any) => node.type === 'section');
+  const nonSectionNodes = sortedNodes.filter((node: any) => node.type !== 'section');
   
   // Find the index of the last section node
   const lastSectionIndex = sortedNodes.findLastIndex(node => node.type === 'section');

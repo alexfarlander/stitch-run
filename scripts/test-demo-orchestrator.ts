@@ -26,7 +26,7 @@ async function testDemoOrchestrator() {
   try {
     // Step 1: Get BMC canvas ID
     console.log('Step 1: Finding BMC canvas...');
-    const { data: bmcList, error: bmcError } = await supabase
+    const { data: bmcList, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('id, name')
       .eq('canvas_type', 'bmc')
@@ -69,7 +69,7 @@ async function testDemoOrchestrator() {
     let positionErrors = 0;
     
     for (const entitySeed of CLOCKWORK_ENTITIES) {
-      const { data: entity, error: entityError } = await supabase
+      const { data: entity, error: entityError } = await _supabase
         .from('stitch_entities')
         .select('*')
         .eq('canvas_id', canvasId)
@@ -179,7 +179,7 @@ async function testDemoOrchestrator() {
     console.log('\n🎉 All tests passed!');
     
   } catch (_error) {
-    console.error('\n❌ Test failed:', error);
+    console.error('\n❌ Test failed:', _error);
     process.exit(1);
   }
 }

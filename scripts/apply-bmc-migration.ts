@@ -35,7 +35,7 @@ async function applyMigration() {
   // Split the SQL into individual statements and execute them
   // This is necessary because Supabase doesn't have a direct SQL execution endpoint
   // We'll use the service role key to execute via the REST API
-  const { error } = await supabase.rpc('exec_sql', { sql });
+  const { error } = await _supabase.rpc('exec_sql', { sql });
 
   if (error) {
     console.error('❌ Migration failed:', error);
@@ -60,9 +60,9 @@ async function runSeed() {
   try {
     const bmcId = await seedDefaultBMC();
     console.log(`✅ BMC seeded successfully! Canvas ID: ${bmcId}`);
-    
+
     // Verify the BMC was created correctly
-    const { data: bmc, error } = await supabase
+    const { data: bmc, error } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('id', bmcId)
@@ -81,7 +81,7 @@ async function runSeed() {
     console.log(`   Edges: ${bmc.graph.edges.length}`);
     
     // Verify all 12 sections are present
-    const sectionNames = bmc.graph.nodes.map((n: unknown) => n.data.label).sort();
+    const sectionNames = bmc.graph.nodes.map((n: any) => n.data.label).sort();
     console.log(`   Sections: ${sectionNames.join(', ')}`);
     
     if (bmc.graph.nodes.length === 12 && bmc.canvas_type === 'bmc' && bmc.parent_id === null) {
@@ -91,7 +91,7 @@ async function runSeed() {
     }
     
   } catch (_error) {
-    console.error('❌ Seed failed:', error);
+    console.error('❌ Seed failed:', _error);
     process.exit(1);
   }
 }

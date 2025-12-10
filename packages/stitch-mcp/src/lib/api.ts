@@ -93,13 +93,13 @@ export async function stitchRequest(path: string, options: RequestInit = {}) {
         if (_error instanceof StitchAPIError) {
             throw _error;
         }
-        
+
         // If it's a network error (fetch failed), wrap it
         if (_error instanceof Error) {
-            throw new StitchNetworkError(url, error);
+            throw new StitchNetworkError(url, _error);
         }
-        
+
         // Unknown error type
-        throw new Error(`Unexpected error calling Stitch API: ${String(error)}`);
+        throw new Error(`Unexpected error calling Stitch API: ${String(_error)}`);
     }
 }

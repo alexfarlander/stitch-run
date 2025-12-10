@@ -41,7 +41,7 @@ async function verify(): Promise<VerificationResult[]> {
   
   // Check 1: Workflow exists
   console.log('📋 Check 1: Workflow exists in database');
-  const { data: workflow, error: workflowError } = await supabase
+  const { data: workflow, error: workflowError } = await _supabase
     .from('stitch_flows')
     .select('*')
     .eq('name', 'Trial Activation Logic')
@@ -75,7 +75,7 @@ async function verify(): Promise<VerificationResult[]> {
   
   // Check 2: Parent node linkage
   console.log('📋 Check 2: Workflow linked to BMC canvas');
-  const { data: bmc, error: bmcError } = await supabase
+  const { data: bmc, error: bmcError } = await _supabase
     .from('stitch_flows')
     .select('id, graph')
     .eq('canvas_type', 'bmc')
@@ -106,7 +106,7 @@ async function verify(): Promise<VerificationResult[]> {
   // Check 3: Parent item node exists
   console.log('📋 Check 3: Parent item node exists');
   const parentItemId = 'item-free-trial';
-  const parentNode = bmc?.graph.nodes.find((n: unknown) => n.id === parentItemId);
+  const parentNode = bmc?.graph.nodes.find((n: any) => n.id === parentItemId);
   
   if (!parentNode) {
     results.push({
@@ -135,7 +135,7 @@ async function verify(): Promise<VerificationResult[]> {
   let allNodesExist = true;
   
   for (const required of requiredNodes) {
-    const node = graph.nodes.find((n: unknown) => n.id === required.id);
+    const node = graph.nodes.find((n: any) => n.id === required.id);
     if (!node) {
       results.push({
         check: `Node exists: ${required.id}`,
@@ -181,7 +181,7 @@ async function verify(): Promise<VerificationResult[]> {
   let allEdgesExist = true;
   
   for (const required of requiredEdges) {
-    const edge = graph.edges.find((e: unknown) => 
+    const edge = graph.edges.find((e: any) => 
       e.source === required.source && e.target === required.target
     );
     if (!edge) {
@@ -209,7 +209,7 @@ async function verify(): Promise<VerificationResult[]> {
   console.log('📋 Check 6: Node configurations');
   
   // Provision Account config
-  const provisionNode = graph.nodes.find((n: unknown) => n.id === 'provision-account');
+  const provisionNode = graph.nodes.find((n: any) => n.id === 'provision-account');
   if (provisionNode?.data.config?.accountType === 'trial' && 
       provisionNode?.data.config?.trialDuration === 14) {
     results.push({
@@ -227,7 +227,7 @@ async function verify(): Promise<VerificationResult[]> {
   }
   
   // Send Onboarding config
-  const onboardingNode = graph.nodes.find((n: unknown) => n.id === 'send-onboarding');
+  const onboardingNode = graph.nodes.find((n: any) => n.id === 'send-onboarding');
   if (onboardingNode?.data.config?.emailSequence?.length >= 5) {
     results.push({
       check: 'Send Onboarding config',
@@ -244,7 +244,7 @@ async function verify(): Promise<VerificationResult[]> {
   }
   
   // Wait for Upgrade config
-  const upgradeNode = graph.nodes.find((n: unknown) => n.id === 'wait-for-upgrade');
+  const upgradeNode = graph.nodes.find((n: any) => n.id === 'wait-for-upgrade');
   if (upgradeNode?.data.config?.webhookSources?.length === 3) {
     results.push({
       check: 'Wait for Upgrade config',
@@ -307,7 +307,7 @@ async function main() {
     console.error('=' .repeat(60));
     console.error('❌ Verification failed!');
     console.error('=' .repeat(60));
-    console.error(error);
+    console.error(_error);
     process.exit(1);
   }
 }

@@ -66,7 +66,7 @@ async function verifyEndpoints() {
     console.log(`✅ getDemoScriptEventCount: ${count} events`);
   }
 } catch (error) {
-  console.log('❌ Failed to import demo-script.ts:', error);
+  console.log('❌ Failed to import demo-script.ts:', _error);
   errors++;
 }
 console.log('');
@@ -90,7 +90,7 @@ console.log('');
     console.log('✅ updateFinancials exported');
   }
   } catch (error) {
-    console.log('❌ Failed to import financial-updates.ts:', error);
+    console.log('❌ Failed to import financial-updates.ts:', _error);
     errors++;
   }
   console.log('');
@@ -110,7 +110,7 @@ console.log('');
     console.log(`✅ CLOCKWORK_ENTITIES: ${clockworkEntities.CLOCKWORK_ENTITIES.length} entities`);
   }
   } catch (error) {
-    console.log('❌ Failed to import clockwork-entities.ts:', error);
+    console.log('❌ Failed to import clockwork-entities.ts:', _error);
     errors++;
   }
   console.log('');

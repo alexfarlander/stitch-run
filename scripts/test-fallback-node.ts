@@ -35,7 +35,7 @@ async function createFallbackTestFlow() {
   try {
     // Step 1: Get the default BMC canvas
     console.log('📋 Step 1: Fetching default BMC canvas...');
-    const { data: bmc, error: bmcError } = await supabase
+    const { data: bmc, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('id')
       .eq('canvas_type', 'bmc')
@@ -49,7 +49,7 @@ async function createFallbackTestFlow() {
     
     // Step 2: Check if test flow already exists
     console.log('📋 Step 2: Checking for existing test flow...');
-    const { data: existing } = await supabase
+    const { data: existing } = await _supabase
       .from('stitch_flows')
       .select('id')
       .eq('name', 'Fallback Node Test')
@@ -84,7 +84,7 @@ async function createFallbackTestFlow() {
       // Unknown node type 1
       {
         id: 'unknown-1',
-        type: 'CustomWorker' as unknown,
+        type: 'CustomWorker' as any,
         position: { x: 100, y: 200 },
         data: {
           label: 'Custom Worker (Unknown)',
@@ -95,7 +95,7 @@ async function createFallbackTestFlow() {
       // Unknown node type 2
       {
         id: 'unknown-2',
-        type: 'MagicProcessor' as unknown,
+        type: 'MagicProcessor',
         position: { x: 100, y: 350 },
         data: {
           label: 'Magic Processor (Unknown)',
@@ -121,7 +121,7 @@ async function createFallbackTestFlow() {
       { id: 'e3', source: 'unknown-2', target: 'output' },
     ];
     
-    const { data: workflow, error } = await supabase
+    const { data: workflow, error } = await _supabase
       .from('stitch_flows')
       .insert({
         name: 'Fallback Node Test',
@@ -157,8 +157,8 @@ async function createFallbackTestFlow() {
     return workflow.id;
     
   } catch (_error) {
-    console.error('❌ Fallback Node Test flow creation failed:', error);
-    throw error;
+    console.error('❌ Fallback Node Test flow creation failed:', _error);
+    throw _error;
   }
 }
 

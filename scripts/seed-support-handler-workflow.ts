@@ -29,7 +29,7 @@ async function main() {
     
     process.exit(0);
   } catch (_error) {
-    console.error('\n❌ Seed failed:', error);
+    console.error('\n❌ Seed failed:', _error);
     process.exit(1);
   }
 }

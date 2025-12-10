@@ -44,7 +44,7 @@ async function applyMigrations() {
       .filter(s => s.length > 0 && !s.startsWith('--'));
 
     for (const statement of statements) {
-      const { error } = await supabase.rpc('exec_sql', { sql: statement + ';' });
+      const { error } = await _supabase.rpc('exec_sql', { sql: statement + ';' });
 
       if (error) {
         console.error(`  ❌ Error in ${migration}:`, error.message);

@@ -25,7 +25,7 @@ async function verifyEntities() {
   console.log('🔍 Verifying entity setup...\n');
 
   // Get the BMC canvas (use the default one)
-  const { data: bmcs, error: bmcError } = await supabase
+  const { data: bmcs, error: bmcError } = await _supabase
     .from('stitch_flows')
     .select('id, name')
     .eq('canvas_type', 'bmc')
@@ -41,7 +41,7 @@ async function verifyEntities() {
   console.log(`✅ Found BMC: ${bmc.name} (${bmc.id})\n`);
 
   // Get all entities for this canvas
-  const { data: entities, error: entitiesError } = await supabase
+  const { data: entities, error: entitiesError } = await _supabase
     .from('stitch_entities')
     .select('*')
     .eq('canvas_id', bmc.id);
@@ -78,7 +78,7 @@ async function verifyEntities() {
   });
 
   // Verify nodes exist
-  const { data: flow, error: flowError } = await supabase
+  const { data: flow, error: flowError } = await _supabase
     .from('stitch_flows')
     .select('graph')
     .eq('id', bmc.id)
@@ -89,7 +89,7 @@ async function verifyEntities() {
     process.exit(1);
   }
 
-  const nodeIds = new Set(flow.graph.nodes.map((n: unknown) => n.id));
+  const nodeIds = new Set(flow.graph.nodes.map((n: any) => n.id));
   
   console.log('📊 Validation:\n');
   
@@ -120,6 +120,6 @@ async function verifyEntities() {
 }
 
 verifyEntities().catch((error) => {
-  console.error('❌ Verification failed:', error);
+  console.error('❌ Verification failed:', _error);
   process.exit(1);
 });

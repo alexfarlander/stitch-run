@@ -52,7 +52,7 @@ async function main() {
   try {
     // Step 1: Get BMC canvas
     console.log('📋 Step 1: Fetching BMC canvas...');
-    const { data: bmc, error: bmcError } = await supabase
+    const { data: bmc, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'bmc')
@@ -71,7 +71,7 @@ async function main() {
     
     // Step 2: Get all workflows
     console.log('📋 Step 2: Fetching workflows...');
-    const { data: workflows, error: workflowsError } = await supabase
+    const { data: workflows, error: workflowsError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'workflow')
@@ -102,7 +102,7 @@ async function main() {
       }
       
       // Find the item node in the graph
-      const nodeIndex = graph.nodes.findIndex((n: unknown) => n.id === itemNodeId);
+      const nodeIndex = graph.nodes.findIndex((n: any) => n.id === itemNodeId);
       
       if (nodeIndex === -1) {
         console.log(`⚠️  Item node not found: ${itemNodeId} for workflow ${workflow.name}`);
@@ -126,7 +126,7 @@ async function main() {
     
     // Step 4: Save updated BMC graph
     console.log('📋 Step 4: Saving updated BMC graph...');
-    const { error: updateError } = await supabase
+    const { error: updateError } = await _supabase
       .from('stitch_flows')
       .update({ graph })
       .eq('id', bmc.id);
@@ -140,7 +140,7 @@ async function main() {
     // Step 5: Verify the links
     console.log('📋 Step 5: Verifying workflow links...\n');
     
-    const { data: updatedBmc, error: verifyError } = await supabase
+    const { data: updatedBmc, error: verifyError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('id', bmc.id)
@@ -151,15 +151,15 @@ async function main() {
     }
     
     const linkedNodes = updatedBmc.graph.nodes.filter(
-      (n: unknown) => n.data?.linked_workflow_id
+      (n: any) => n.data?.linked_workflow_id
     );
     
     console.log(`✅ Verification complete:`);
-    console.log(`   - Total item nodes: ${updatedBmc.graph.nodes.filter((n: unknown) => n.type === 'section-item').length}`);
+    console.log(`   - Total item nodes: ${updatedBmc.graph.nodes.filter((n: any) => n.type === 'section-item').length}`);
     console.log(`   - Linked item nodes: ${linkedNodes.length}`);
     console.log('');
     
-    linkedNodes.forEach((node: unknown) => {
+    linkedNodes.forEach((node: any) => {
       console.log(`   ✓ ${node.data.label} (${node.id})`);
       console.log(`     → Workflow ID: ${node.data.linked_workflow_id}`);
     });
@@ -181,7 +181,7 @@ async function main() {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');
-    console.error('❌ Linking failed:', error);
+    console.error('❌ Linking failed:', _error);
     console.log('');
     process.exit(1);
   }

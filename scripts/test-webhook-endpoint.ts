@@ -120,7 +120,7 @@ async function testWebhook(testCase: WebhookTestCase): Promise<void> {
       console.log(`   ❌ FAIL: Expected status ${testCase.expectedStatus}, got ${response.status}`);
     }
   } catch (_error) {
-    console.error(`   ❌ ERROR:`, error);
+    console.error(`   ❌ ERROR:`, _error);
   }
 }
 
@@ -128,7 +128,7 @@ async function verifyEntity(entityId: string, testCase: WebhookTestCase): Promis
   const _supabase = getAdminClient();
   
   // Verify entity exists
-  const { data: entity, error: entityError } = await supabase
+  const { data: entity, error: entityError } = await _supabase
     .from('stitch_entities')
     .select('*')
     .eq('id', entityId)
@@ -146,7 +146,7 @@ async function verifyEntity(entityId: string, testCase: WebhookTestCase): Promis
   console.log(`      - Current Node: ${entity.current_node_id}`);
   
   // Verify journey event was created
-  const { data: events, error: eventsError } = await supabase
+  const { data: events, error: eventsError } = await _supabase
     .from('stitch_journey_events')
     .select('*')
     .eq('entity_id', entityId)
@@ -170,7 +170,7 @@ async function verifyEntity(entityId: string, testCase: WebhookTestCase): Promis
 async function checkBMCExists(): Promise<boolean> {
   const _supabase = getAdminClient();
   
-  const { data: bmc, error } = await supabase
+  const { data: bmc, error } = await _supabase
     .from('stitch_flows')
     .select('id, name')
     .eq('canvas_type', 'bmc')
@@ -190,7 +190,7 @@ async function cleanupTestEntities(): Promise<void> {
   console.log('\n🧹 Cleaning up test entities...');
   const _supabase = getAdminClient();
   
-  const { error } = await supabase
+  const { error } = await _supabase
     .from('stitch_entities')
     .delete()
     .like('email', 'test-%@monsters.io');

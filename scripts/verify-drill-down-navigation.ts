@@ -35,7 +35,7 @@ async function main() {
   try {
     // Step 1: Get BMC canvas
     console.log('📋 Step 1: Fetching BMC canvas...');
-    const { data: bmc, error: bmcError } = await supabase
+    const { data: bmc, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'bmc')
@@ -55,8 +55,8 @@ async function main() {
     
     // Step 2: Find all item nodes with linked workflows
     console.log('📋 Step 2: Analyzing item nodes...');
-    const itemNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section-item');
-    const linkedNodes = itemNodes.filter((n: unknown) => n.data?.linked_workflow_id);
+    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
+    const linkedNodes = itemNodes.filter((n: any) => n.data?.linked_workflow_id);
     
     console.log(`✅ Found ${itemNodes.length} item nodes`);
     console.log(`✅ Found ${linkedNodes.length} linked item nodes\n`);
@@ -70,7 +70,7 @@ async function main() {
       const workflowId = node.data.linked_workflow_id;
       
       // Fetch the workflow
-      const { data: workflow, error: workflowError } = await supabase
+      const { data: workflow, error: workflowError } = await _supabase
         .from('stitch_flows')
         .select('*')
         .eq('id', workflowId)

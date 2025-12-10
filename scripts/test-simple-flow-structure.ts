@@ -57,7 +57,7 @@ function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: str
 /**
  * Validates that the output matches the expected schema
  */
-function validateOutputSchema(output: unknown): { valid: boolean; errors: string[] } {
+function validateOutputSchema(output: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   // Check if output exists
@@ -123,7 +123,7 @@ async function main() {
   try {
     // Step 1: Validate workflow structure
     logExecution('info', 'Step 1: Validating Simple Test Flow structure...');
-    const { data: workflow, error: workflowError } = await supabase
+    const { data: workflow, error: workflowError } = await _supabase
       .from('stitch_flows')
       .select('id, name, graph, canvas_type')
       .eq('name', 'Simple Test Flow')
@@ -156,7 +156,7 @@ async function main() {
     ];
     
     for (const expected of expectedNodes) {
-      const node = nodes.find((n: unknown) => n.id === expected.id);
+      const node = nodes.find((n: any) => n.id === expected.id);
       if (!node) {
         logExecution('error', `Node ${expected.id} not found`);
         process.exit(1);
@@ -176,7 +176,7 @@ async function main() {
     }
     
     // Validate Claude worker configuration
-    const claudeNode = nodes.find((n: unknown) => n.id === 'claude');
+    const claudeNode = nodes.find((n: any) => n.id === 'claude');
     if (claudeNode.data.workerType !== 'claude') {
       logExecution('error', `Claude node has wrong workerType: ${claudeNode.data.workerType}`);
       process.exit(1);
@@ -201,7 +201,7 @@ async function main() {
     ];
     
     for (const expected of expectedEdges) {
-      const edge = edges.find((e: unknown) => e.id === expected.id);
+      const edge = edges.find((e: any) => e.id === expected.id);
       if (!edge) {
         logExecution('error', `Edge ${expected.id} not found`);
         process.exit(1);
@@ -308,8 +308,8 @@ async function main() {
     
   } catch (_error) {
     logExecution('error', 'Validation failed', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
+      _error: _error instanceof Error ? _error.message : 'Unknown _error',
+      stack: _error instanceof Error ? _error.stack : undefined,
     });
     process.exit(1);
   }

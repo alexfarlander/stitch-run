@@ -98,17 +98,17 @@ export const createNodeTool = {
             };
         } catch (_error) {
             // Handle validation errors with clear parameter names
-            if (error instanceof z.ZodError) {
-                const errorDetails = error.errors.map(e => ({
+            if (_error instanceof z.ZodError) {
+                const errorDetails = _error.errors.map((e: any) => ({
                     parameter: e.path.join('.') || 'root',
                     message: e.message,
                     code: e.code
                 }));
-                
+
                 const errorMessages = errorDetails
-                    .map(e => `Parameter '${e.parameter}': ${e.message}`)
+                    .map((e: any) => `Parameter '${e.parameter}': ${e.message}`)
                     .join('\n');
-                
+
                 return {
                     content: [
                         {
@@ -127,7 +127,7 @@ export const createNodeTool = {
             }
 
             // Handle Stitch API errors with status codes
-            if (error instanceof StitchAPIError) {
+            if (_error instanceof StitchAPIError) {
                 return {
                     content: [
                         {
@@ -135,10 +135,10 @@ export const createNodeTool = {
                             text: JSON.stringify({
                                 success: false,
                                 error: "Stitch API Error",
-                                statusCode: error.statusCode,
-                                statusText: error.statusText,
-                                message: error.responseBody,
-                                url: error.url
+                                statusCode: _error.statusCode,
+                                statusText: _error.statusText,
+                                message: _error.responseBody,
+                                url: _error.url
                             }, null, 2)
                         }
                     ],
@@ -147,7 +147,7 @@ export const createNodeTool = {
             }
 
             // Handle network errors
-            if (error instanceof StitchNetworkError) {
+            if (_error instanceof StitchNetworkError) {
                 return {
                     content: [
                         {
@@ -156,8 +156,8 @@ export const createNodeTool = {
                                 success: false,
                                 error: "Network Error",
                                 message: "Failed to connect to Stitch platform",
-                                details: error.message,
-                                url: error.url,
+                                details: _error.message,
+                                url: _error.url,
                                 help: "Please check that the Stitch platform is running and accessible"
                             }, null, 2)
                         }
@@ -167,7 +167,7 @@ export const createNodeTool = {
             }
 
             // Handle other errors
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = _error instanceof Error ? _error.message : String(_error);
             return {
                 content: [
                     {

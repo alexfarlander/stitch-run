@@ -41,7 +41,7 @@ async function main() {
     console.log('\n✅ Script completed successfully!');
     process.exit(0);
   } catch (_error) {
-    console.error('\n❌ Script failed:', error);
+    console.error('\n❌ Script failed:', _error);
     process.exit(1);
   }
 }

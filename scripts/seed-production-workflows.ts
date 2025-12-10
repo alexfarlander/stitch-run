@@ -42,7 +42,7 @@ async function main() {
   console.log('\n');
   
   // Store global reference for workflow functions
-  (global as unknown).supabaseAdminClient = supabase;
+  ( global as any).supabaseAdminClient = _supabase;
   
   try {
     // Seed all four production workflows
@@ -51,25 +51,25 @@ async function main() {
     // 1. CRM Sync
     console.log('1️⃣  CRM Sync Workflow');
     console.log('-'.repeat(60));
-    workflowIds.crmSync = await seedCRMSyncWorkflow(supabase);
+    workflowIds.crmSync = await seedCRMSyncWorkflow(_supabase);
     console.log('\n');
     
     // 2. Analytics Update
     console.log('2️⃣  Analytics Update Workflow');
     console.log('-'.repeat(60));
-    workflowIds.analyticsUpdate = await seedAnalyticsUpdateWorkflow(supabase);
+    workflowIds.analyticsUpdate = await seedAnalyticsUpdateWorkflow(_supabase);
     console.log('\n');
     
     // 3. Slack Notify
     console.log('3️⃣  Slack Notify Workflow');
     console.log('-'.repeat(60));
-    workflowIds.slackNotify = await seedSlackNotifyWorkflow(supabase);
+    workflowIds.slackNotify = await seedSlackNotifyWorkflow(_supabase);
     console.log('\n');
     
     // 4. Stripe Sync
     console.log('4️⃣  Stripe Sync Workflow');
     console.log('-'.repeat(60));
-    workflowIds.stripeSync = await seedStripeSyncWorkflow(supabase);
+    workflowIds.stripeSync = await seedStripeSyncWorkflow(_supabase);
     console.log('\n');
     
     // Summary
@@ -83,7 +83,7 @@ async function main() {
     console.log('\n✅ All 4 production workflows are ready!');
     
   } catch (_error) {
-    console.error('\n❌ Production workflows seed failed:', error);
+    console.error('\n❌ Production workflows seed failed:', _error);
     process.exit(1);
   }
 }

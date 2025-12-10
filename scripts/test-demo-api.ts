@@ -27,7 +27,7 @@ async function testDemoAPI() {
 
   // Step 1: Get BMC canvas ID
   console.log('1️⃣  Finding BMC canvas...');
-  const { data: bmc, error: bmcError } = await supabase
+  const { data: bmc, error: bmcError } = await _supabase
     .from('stitch_flows')
     .select('id, name, canvas_type')
     .eq('canvas_type', 'bmc')
@@ -72,7 +72,7 @@ async function testDemoAPI() {
   // Step 3: Verify entities were created
   console.log('3️⃣  Verifying entities...');
   for (const entity of result.entities) {
-    const { data: dbEntity, error: entityError } = await supabase
+    const { data: dbEntity, error: entityError } = await _supabase
       .from('stitch_entities')
       .select('*')
       .eq('id', entity.id)
@@ -93,7 +93,7 @@ async function testDemoAPI() {
   // Step 4: Verify runs were created
   console.log('\n4️⃣  Verifying workflow runs...');
   for (const run of result.runs) {
-    const { data: dbRun, error: runError } = await supabase
+    const { data: dbRun, error: runError } = await _supabase
       .from('stitch_runs')
       .select('*')
       .eq('id', run.runId)

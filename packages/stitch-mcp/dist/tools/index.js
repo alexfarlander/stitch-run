@@ -21,7 +21,7 @@ export function registerTools(server) {
             };
         }
         catch (_error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage = _error instanceof Error ? _error.message : String(_error);
             throw new Error(`Failed to list tools: ${errorMessage}`);
         }
     });
@@ -42,7 +42,7 @@ export function registerTools(server) {
         catch (_error) {
             // Tool handlers already format their own errors nicely
             // Just re-throw to preserve the error structure
-            throw error;
+            throw _error;
         }
     });
 }

@@ -10,7 +10,7 @@ async function main() {
   console.log('Checking for BMC canvas...\n');
   
   // Check all flows
-  const { data: allFlows, error: allError } = await supabase
+  const { data: allFlows, error: allError } = await _supabase
     .from('stitch_flows')
     .select('id, name, canvas_type');
   
@@ -23,7 +23,7 @@ async function main() {
   console.log(JSON.stringify(allFlows, null, 2));
   
   // Check specifically for BMC
-  const { data: bmcCanvas, error: bmcError } = await supabase
+  const { data: bmcCanvas, error: bmcError } = await _supabase
     .from('stitch_flows')
     .select('id, name, canvas_type')
     .eq('canvas_type', 'bmc')

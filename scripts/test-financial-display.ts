@@ -31,9 +31,9 @@ function testFinancialDisplay() {
   
   // Step 1: Find all financial nodes
   console.log('📋 Step 1: Finding financial nodes...');
-  const financialNodes = graph.nodes.filter(node => 
+  const financialNodes = graph.nodes.filter((node: any) => 
     node.type === 'financial-item' || 
-    (node.data as unknown)?.value !== undefined
+    (node.data as any)?.value !== undefined
   );
   
   if (financialNodes.length === 0) {
@@ -47,8 +47,8 @@ function testFinancialDisplay() {
   console.log('📋 Step 2: Verifying financial node data structure...');
   let allValid = true;
   
-  for (const node of financialNodes) {
-    const _data = node.data as unknown;
+  for (const node of (financialNodes as any[])) {
+    const data = node.data as any;
     const hasValue = data.value !== undefined;
     const _hasCurrency = data.currency !== undefined;
     const _hasFormat = data.format !== undefined;
@@ -99,15 +99,15 @@ function testFinancialDisplay() {
   
   // Step 4: Verify node types
   console.log('📋 Step 4: Verifying node types...');
-  const financialItemNodes = financialNodes.filter(n => n.type === 'financial-item');
-  const otherNodes = financialNodes.filter(n => n.type !== 'financial-item');
+  const financialItemNodes = financialNodes.filter((n: any) => n.type === 'financial-item');
+  const otherNodes = financialNodes.filter((n: any) => n.type !== 'financial-item');
   
   console.log(`  Financial-item nodes: ${financialItemNodes.length}`);
   console.log(`  Other nodes with value: ${otherNodes.length}`);
   
   if (otherNodes.length > 0) {
     console.log(`  ⚠️  Warning: Some financial nodes don't use 'financial-item' type:`);
-    otherNodes.forEach(n => {
+    otherNodes.forEach((n: any) => {
       console.log(`    - ${n.id} (type: ${n.type})`);
     });
   }
@@ -117,7 +117,7 @@ function testFinancialDisplay() {
   // Final summary
   console.log('📊 Summary:');
   console.log(`  Total financial nodes: ${financialNodes.length}`);
-  console.log(`  Nodes with value property: ${financialNodes.filter(n => (n.data as unknown).value !== undefined).length}`);
+  console.log(`  Nodes with value property: ${financialNodes.filter((n: any) => (n.data as any).value !== undefined).length}`);
   console.log(`  Nodes using financial-item type: ${financialItemNodes.length}`);
   console.log(`  Data structure valid: ${allValid ? '✅' : '❌'}`);
   console.log(`  Currency formatting valid: ${formattingValid ? '✅' : '❌'}`);

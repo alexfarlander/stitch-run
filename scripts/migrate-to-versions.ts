@@ -87,9 +87,9 @@ const stats: MigrationStats = {
  * Convert legacy graph format to VisualGraph format
  * Legacy format uses StitchNode/StitchEdge, new format uses VisualNode/VisualEdge
  */
-function convertToVisualGraph(legacyGraph: { nodes: unknown[]; edges: unknown[] }): VisualGraph {
+function convertToVisualGraph(legacyGraph: { nodes: any[]; edges: any[] }): VisualGraph {
   return {
-    nodes: legacyGraph.nodes.map(node => ({
+    nodes: legacyGraph.nodes.map((node: any) => ({
       id: node.id,
       type: node.type,
       position: node.position,
@@ -156,7 +156,7 @@ async function migrateFlow(flow: StitchFlow): Promise<void> {
       });
       
       // Set current_version_id to NULL
-      const { error: updateError } = await supabase
+      const { error: updateError } = await _supabase
         .from('stitch_flows')
         .update({ current_version_id: null })
         .eq('id', flow.id);
@@ -178,7 +178,7 @@ async function migrateFlow(flow: StitchFlow): Promise<void> {
     
     // Compilation successful - create initial version
     console.log('   ↳ Creating initial version...');
-    const { data: version, error: versionError } = await supabase
+    const { data: version, error: versionError } = await _supabase
       .from('stitch_flow_versions')
       .insert({
         flow_id: flow.id,
@@ -195,7 +195,7 @@ async function migrateFlow(flow: StitchFlow): Promise<void> {
     
     // Update current_version_id
     console.log('   ↳ Updating current_version_id...');
-    const { error: updateError } = await supabase
+    const { error: updateError } = await _supabase
       .from('stitch_flows')
       .update({ current_version_id: version.id })
       .eq('id', flow.id);
@@ -208,13 +208,13 @@ async function migrateFlow(flow: StitchFlow): Promise<void> {
     stats.flows.successful++;
     
   } catch (_error) {
-    console.log(`   ❌ Migration failed: ${error}`);
+    console.log(`   ❌ Migration failed: ${_error}`);
     stats.flows.failed++;
     stats.errors.push({
       type: 'flow',
       id: flow.id,
       name: flow.name,
-      error: error instanceof Error ? error.message : String(error)
+      error: _error instanceof Error ? _error.message : String(_error)
     });
   }
 }
@@ -226,7 +226,7 @@ async function migrateFlows(): Promise<void> {
   console.log('\n🔄 Starting flow migration...');
   
   // Fetch all flows
-  const { data: flows, error } = await supabase
+  const { data: flows, error } = await _supabase
     .from('stitch_flows')
     .select('*')
     .order('created_at', { ascending: true });
@@ -261,7 +261,7 @@ async function migrateRun(run: StitchRun): Promise<void> {
   
   try {
     // Get the flow's current_version_id
-    const { data: flow, error: flowError } = await supabase
+    const { data: flow, error: flowError } = await _supabase
       .from('stitch_flows')
       .select('current_version_id')
       .eq('id', run.flow_id)
@@ -284,7 +284,7 @@ async function migrateRun(run: StitchRun): Promise<void> {
     }
     
     // Link run to flow's current version
-    const { error: updateError } = await supabase
+    const { error: updateError } = await _supabase
       .from('stitch_runs')
       .update({ flow_version_id: flow.current_version_id })
       .eq('id', run.id);
@@ -296,12 +296,12 @@ async function migrateRun(run: StitchRun): Promise<void> {
     stats.runs.linked++;
     
   } catch (_error) {
-    console.log(`   ❌ Failed to migrate run ${run.id}: ${error}`);
+    console.log(`   ❌ Failed to migrate run ${run.id}: ${_error}`);
     stats.runs.needsReview++;
     stats.errors.push({
       type: 'run',
       id: run.id,
-      error: error instanceof Error ? error.message : String(error)
+      error: _error instanceof Error ? _error.message : String(_error)
     });
   }
 }
@@ -313,7 +313,7 @@ async function migrateRuns(): Promise<void> {
   console.log('\n🔄 Starting run migration...');
   
   // Fetch all runs
-  const { data: runs, error } = await supabase
+  const { data: runs, error } = await _supabase
     .from('stitch_runs')
     .select('*')
     .order('created_at', { ascending: true });
@@ -343,7 +343,7 @@ async function migrate() {
   try {
     // Step 0: Verify versioning tables exist
     console.log('\n🔍 Verifying versioning tables exist...');
-    const { data: tables, error: tableError } = await supabase
+    const { data: tables, error: tableError } = await _supabase
       .from('stitch_flow_versions')
       .select('id')
       .limit(1);
@@ -368,7 +368,7 @@ async function migrate() {
     printSummary();
     
   } catch (_error) {
-    console.error('\n❌ Migration failed:', error);
+    console.error('\n❌ Migration failed:', _error);
     process.exit(1);
   }
 }

@@ -117,7 +117,7 @@ async function testFinancialUpdates() {
     console.log('- Reset functionality: All metrics restored ✓');
     
   } catch (_error) {
-    console.error('❌ Test failed:', error);
+    console.error('❌ Test failed:', _error);
     process.exit(1);
   }
 }

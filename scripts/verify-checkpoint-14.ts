@@ -47,7 +47,7 @@ async function checkBMCSeedData() {
   const _supabase = getAdminClient();
   
   try {
-    const { data: bmc, error } = await supabase
+    const { data: bmc, error } = await _supabase
       .from('stitch_flows')
       .select('id, name, graph')
       .eq('canvas_type', 'bmc')
@@ -61,29 +61,29 @@ async function checkBMCSeedData() {
     addResult('BMC Canvas', true, `Found: ${bmc.name}`, '1');
     
     // Check sections
-    const sections = bmc.graph.nodes.filter((n: unknown) => n.type === 'Section');
+    const sections = bmc.graph.nodes.filter((n: any) => n.type === 'Section');
     addResult('BMC Sections', sections.length === 13, `${sections.length}/13 sections`, '1');
     
     // Check item nodes
-    const itemNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section-item');
+    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
     addResult('Item Nodes', itemNodes.length > 0, `${itemNodes.length} item nodes`, '1');
     
     // Check financial nodes
-    const financialNodes = bmc.graph.nodes.filter((n: unknown) => 
+    const financialNodes = bmc.graph.nodes.filter((n: any) => 
       n.id.includes('mrr') || n.id.includes('arr') || n.id.includes('cost') || n.id.includes('ltv')
     );
     addResult('Financial Nodes', financialNodes.length >= 7, `${financialNodes.length} financial nodes`, '1');
     
     // Check journey edges
-    const journeyEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'journey');
+    const journeyEdges = bmc.graph.edges.filter((e: any) => e.type === 'journey');
     addResult('Journey Edges', journeyEdges.length > 0, `${journeyEdges.length} journey edges`, '1');
     
     // Check system edges
-    const systemEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'system');
+    const systemEdges = bmc.graph.edges.filter((e: any) => e.type === 'system');
     addResult('System Edges', systemEdges.length > 0, `${systemEdges.length} system edges`, '1');
     
     // Check system edge styling
-    const dashedEdges = systemEdges.filter((e: unknown) => 
+    const dashedEdges = systemEdges.filter((e: any) => 
       e.style?.strokeDasharray || e.data?.strokeDasharray
     );
     addResult('System Edge Styling', dashedEdges.length === systemEdges.length, 
@@ -101,7 +101,7 @@ async function checkEntitySeedData() {
   const _supabase = getAdminClient();
   
   try {
-    const { data: entities, error } = await supabase
+    const { data: entities, error } = await _supabase
       .from('stitch_entities')
       .select('*')
       .like('email', '%@monsters.io');

@@ -30,7 +30,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const _supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Make the admin client available globally for the seed function
-(global as unknown).supabaseAdminClient = supabase;
+( global as any).supabaseAdminClient = _supabase;
 
 async function main() {
   console.log('🌱 Lead Capture Workflow Seed Script\n');
@@ -50,7 +50,7 @@ async function main() {
     
   } catch (_error) {
     console.log('\n═'.repeat(60));
-    console.log('\n❌ Seed failed:', error);
+    console.log('\n❌ Seed failed:', _error);
     console.log('');
     process.exit(1);
   }

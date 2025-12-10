@@ -54,7 +54,7 @@ async function seedClockworkEntities(canvasId: string): Promise<void> {
   const entities = getClockworkEntitiesWithAvatars();
   
   // Check which entities already exist (idempotency check)
-  const { data: existingEntities, error: queryError } = await supabase
+  const { data: existingEntities, error: queryError } = await _supabase
     .from('stitch_entities')
     .select('email, id')
     .eq('canvas_id', canvasId);
@@ -70,7 +70,7 @@ async function seedClockworkEntities(canvasId: string): Promise<void> {
   const oldDemoEntities = existingEntities?.filter(e => !clockworkEmails.has(e.email)) || [];
   if (oldDemoEntities.length > 0) {
     console.log(`   🧹 Removing ${oldDemoEntities.length} old demo entities...`);
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await _supabase
       .from('stitch_entities')
       .delete()
       .in('id', oldDemoEntities.map(e => e.id));
@@ -116,7 +116,7 @@ async function seedClockworkEntities(canvasId: string): Promise<void> {
   }));
   
   // Insert new entities
-  const { error: insertError } = await supabase
+  const { error: insertError } = await _supabase
     .from('stitch_entities')
     .insert(entitiesToInsert);
   
@@ -140,7 +140,7 @@ async function main() {
   try {
     // Step 1: Seed BMC canvas (idempotent - returns existing if present)
     console.log('📊 Step 1: Seeding Business Model Canvas...');
-    const bmcId = await seedDefaultBMC(supabase);
+    const bmcId = await seedDefaultBMC(_supabase);
     console.log(`   ✅ BMC ready! Canvas ID: ${bmcId}\n`);
     
     // Step 2: Seed Clockwork entities (idempotent - skips existing)
@@ -152,10 +152,10 @@ async function main() {
     console.log('📊 Step 3: Seeding drill-down workflows...\n');
     
     const workflows = [
-      { name: 'Lead Capture', seed: () => seedLeadCaptureWorkflow(supabase) },
-      { name: 'Demo Scheduling', seed: () => seedDemoSchedulingWorkflow(supabase) },
-      { name: 'Trial Activation', seed: () => seedTrialActivationWorkflow(supabase) },
-      { name: 'Support Handler', seed: () => seedSupportHandlerWorkflow(supabase) },
+      { name: 'Lead Capture', seed: () => seedLeadCaptureWorkflow(_supabase) },
+      { name: 'Demo Scheduling', seed: () => seedDemoSchedulingWorkflow(_supabase) },
+      { name: 'Trial Activation', seed: () => seedTrialActivationWorkflow(_supabase) },
+      { name: 'Support Handler', seed: () => seedSupportHandlerWorkflow(_supabase) },
     ];
     
     console.log('   🔧 Seeding customer journey workflows...');
@@ -164,8 +164,8 @@ async function main() {
         await workflow.seed();
         console.log(`   ✅ ${workflow.name} workflow ready`);
       } catch (_error) {
-        console.error(`   ❌ Failed to seed ${workflow.name}:`, error);
-        throw error;
+        console.error(`   ❌ Failed to seed ${workflow.name}:`, _error);
+        throw _error;
       }
     }
     console.log('');
@@ -174,10 +174,10 @@ async function main() {
     console.log('📊 Step 4: Seeding production system workflows...\n');
     
     const productionWorkflows = [
-      { name: 'CRM Sync', seed: () => seedCRMSyncWorkflow(supabase) },
-      { name: 'Analytics Update', seed: () => seedAnalyticsUpdateWorkflow(supabase) },
-      { name: 'Slack Notify', seed: () => seedSlackNotifyWorkflow(supabase) },
-      { name: 'Stripe Sync', seed: () => seedStripeSyncWorkflow(supabase) },
+      { name: 'CRM Sync', seed: () => seedCRMSyncWorkflow(_supabase) },
+      { name: 'Analytics Update', seed: () => seedAnalyticsUpdateWorkflow(_supabase) },
+      { name: 'Slack Notify', seed: () => seedSlackNotifyWorkflow(_supabase) },
+      { name: 'Stripe Sync', seed: () => seedStripeSyncWorkflow(_supabase) },
     ];
     
     console.log('   ⚙️  Seeding production workflows...');
@@ -186,8 +186,8 @@ async function main() {
         await workflow.seed();
         console.log(`   ✅ ${workflow.name} workflow ready`);
       } catch (_error) {
-        console.error(`   ❌ Failed to seed ${workflow.name}:`, error);
-        throw error;
+        console.error(`   ❌ Failed to seed ${workflow.name}:`, _error);
+        throw _error;
       }
     }
     console.log('');
@@ -208,7 +208,7 @@ async function main() {
     };
     
     // Get all workflows
-    const { data: allWorkflows, error: fetchWorkflowsError } = await supabase
+    const { data: allWorkflows, error: fetchWorkflowsError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'workflow')
@@ -219,7 +219,7 @@ async function main() {
     }
     
     // Get current BMC graph
-    const { data: currentBmc, error: fetchBmcError } = await supabase
+    const { data: currentBmc, error: fetchBmcError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('id', bmcId)
@@ -238,7 +238,7 @@ async function main() {
       
       if (!itemNodeId) continue;
       
-      const nodeIndex = graph.nodes.findIndex((n: unknown) => n.id === itemNodeId);
+      const nodeIndex = graph.nodes.findIndex((n: any) => n.id === itemNodeId);
       
       if (nodeIndex === -1) continue;
       
@@ -258,7 +258,7 @@ async function main() {
     
     // Save updated BMC graph if any links were added
     if (linkedCount > 0) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await _supabase
         .from('stitch_flows')
         .update({ graph })
         .eq('id', bmcId);
@@ -277,7 +277,7 @@ async function main() {
     console.log('📊 Step 5: Verifying complete setup...\n');
     
     // Verify BMC structure
-    const { data: bmc, error: bmcError } = await supabase
+    const { data: bmc, error: bmcError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('id', bmcId)
@@ -288,7 +288,7 @@ async function main() {
     }
     
     // Verify entities
-    const { data: allEntities, error: entitiesError } = await supabase
+    const { data: allEntities, error: entitiesError } = await _supabase
       .from('stitch_entities')
       .select('*')
       .eq('canvas_id', bmcId);
@@ -298,7 +298,7 @@ async function main() {
     }
     
     // Verify workflows
-    const { data: verifiedWorkflows, error: workflowsError } = await supabase
+    const { data: verifiedWorkflows, error: workflowsError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'workflow')
@@ -309,10 +309,10 @@ async function main() {
     }
     
     // Count node types
-    const sectionNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section');
-    const itemNodes = bmc.graph.nodes.filter((n: unknown) => n.type === 'section-item');
-    const journeyEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'journey');
-    const systemEdges = bmc.graph.edges.filter((e: unknown) => e.type === 'system');
+    const sectionNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section');
+    const itemNodes = bmc.graph.nodes.filter((n: any) => n.type === 'section-item');
+    const journeyEdges = bmc.graph.edges.filter((e: any) => e.type === 'journey');
+    const systemEdges = bmc.graph.edges.filter((e: any) => e.type === 'system');
     
     // Count entity positions
     const entitiesOnNodes = allEntities?.filter(e => e.current_node_id) || [];
@@ -329,7 +329,7 @@ async function main() {
     
     console.log('   🔧 Drill-Down Workflows:');
     console.log(`      - Total Workflows: ${verifiedWorkflows?.length || 0}`);
-    verifiedWorkflows?.forEach((wf: unknown) => {
+    verifiedWorkflows?.forEach((wf: any) => {
       const nodeCount = wf.graph?.nodes?.length || 0;
       console.log(`      - ${wf.name}: ${nodeCount} nodes`);
     });
@@ -354,7 +354,7 @@ async function main() {
     
     // Show sample entities
     console.log('   🦇 Sample Entities:');
-    allEntities?.slice(0, 5).forEach((entity: unknown) => {
+    allEntities?.slice(0, 5).forEach((entity: any) => {
       const position = entity.current_node_id 
         ? `at node ${entity.current_node_id}`
         : entity.current_edge_id
@@ -415,7 +415,7 @@ async function main() {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');
-    console.error('❌ Seed failed:', error);
+    console.error('❌ Seed failed:', _error);
     console.log('');
     process.exit(1);
   }

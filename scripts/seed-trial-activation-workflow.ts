@@ -41,7 +41,7 @@ async function main() {
     console.error('=' .repeat(60));
     console.error('❌ Seed failed!');
     console.error('=' .repeat(60));
-    console.error(error);
+    console.error(_error);
     process.exit(1);
   }
 }

@@ -47,7 +47,7 @@ async function main() {
     const _supabase = createServerClient();
     
     // First check if any BMC exists
-    const { data: bmcs, error: queryError } = await supabase
+    const { data: bmcs, error: queryError } = await _supabase
       .from('stitch_flows')
       .select('id, name, canvas_type')
       .eq('canvas_type', 'bmc');
@@ -122,7 +122,7 @@ async function main() {
     }
   } catch (_error) {
     logError('Unexpected error during verification');
-    console.error(error);
+    console.error(_error);
     process.exit(1);
   }
 }

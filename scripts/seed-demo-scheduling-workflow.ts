@@ -38,7 +38,7 @@ async function main() {
     console.error('=' .repeat(60));
     console.error('❌ Demo Scheduling workflow seed failed!');
     console.error('=' .repeat(60));
-    console.error(error);
+    console.error(_error);
     process.exit(1);
   }
 }

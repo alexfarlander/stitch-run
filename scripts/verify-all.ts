@@ -130,7 +130,7 @@ async function main() {
     const _supabase = createServerClient();
 
     // Get BMC canvas
-    const { data: bmcs } = await supabase
+    const { data: bmcs } = await _supabase
       .from('stitch_flows')
       .select('id, name, canvas_type')
       .eq('canvas_type', 'bmc');
@@ -145,7 +145,7 @@ async function main() {
     }
 
     // Get Video Factory V2 workflow
-    const { data: workflows } = await supabase
+    const { data: workflows } = await _supabase
       .from('stitch_flows')
       .select('id, name, canvas_type')
       .eq('canvas_type', 'workflow')
@@ -205,7 +205,7 @@ async function main() {
     }
   } catch (_error) {
     logError('Unexpected error during master verification');
-    console.error(error);
+    console.error(_error);
     process.exit(1);
   }
 }

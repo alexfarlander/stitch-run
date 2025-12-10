@@ -53,7 +53,7 @@ function logExecution(level: 'info' | 'success' | 'error' | 'warn', message: str
 /**
  * Validates that the output matches the expected schema
  */
-function validateOutput(output: unknown): { valid: boolean; errors: string[] } {
+function validateOutput(output: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   
   // Check if output exists
@@ -104,7 +104,7 @@ async function waitForNodeCompletion(
   nodeId: string,
   timeoutMs: number = 60000
 ): Promise<{ status: string; output?: unknown; error?: string }> {
-  const _startTime = Date.now();
+  const startTime = Date.now();
   
   while (Date.now() - startTime < timeoutMs) {
     // Query the run state
@@ -173,7 +173,7 @@ async function main() {
   try {
     // Step 1: Find the Simple Test Flow workflow
     logExecution('info', 'Step 1: Finding Simple Test Flow workflow...');
-    const { data: workflow, error: workflowError } = await supabase
+    const { data: workflow, error: workflowError } = await _supabase
       .from('stitch_flows')
       .select('id, name, graph')
       .eq('name', 'Simple Test Flow')
@@ -221,7 +221,7 @@ async function main() {
     let inputReady = false;
     const inputStartTime = Date.now();
     while (Date.now() - inputStartTime < 10000) {
-      const { data: currentRun, error } = await supabase
+      const { data: currentRun, error } = await _supabase
         .from('stitch_runs')
         .select('node_states')
         .eq('id', run.id)
@@ -264,7 +264,7 @@ async function main() {
     logExecution('success', 'Input node marked as completed');
     
     // Get the updated run and flow
-    const { data: updatedRun, error: runError } = await supabase
+    const { data: updatedRun, error: runError } = await _supabase
       .from('stitch_runs')
       .select('*')
       .eq('id', run.id)
@@ -274,7 +274,7 @@ async function main() {
       throw new Error(`Failed to fetch updated run: ${runError?.message}`);
     }
     
-    const _flow = await getFlowAdmin(workflow.id);
+    const flow = await getFlowAdmin(workflow.id);
     if (!flow) {
       throw new Error('Failed to fetch flow');
     }

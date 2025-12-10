@@ -28,24 +28,24 @@ async function resetDatabase() {
   try {
     // Delete in correct order to respect foreign keys
     console.log('   Deleting entities...');
-    await supabase.from('stitch_entities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
+    await _supabase.from('stitch_entities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
     console.log('   Deleting webhook events...');
-    await supabase.from('stitch_webhook_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
+    await _supabase.from('stitch_webhook_events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
     console.log('   Deleting webhook configs...');
-    await supabase.from('stitch_webhook_configs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
+    await _supabase.from('stitch_webhook_configs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
     console.log('   Deleting runs...');
-    await supabase.from('stitch_runs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
+    await _supabase.from('stitch_runs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
     console.log('   Deleting flows...');
-    await supabase.from('stitch_flows').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    
+    await _supabase.from('stitch_flows').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
     console.log('✅ Database reset complete\n');
   } catch (_error) {
-    console.error('❌ Reset failed:', error);
-    throw error;
+    console.error('❌ Reset failed:', _error);
+    throw _error;
   }
 }
 
@@ -73,7 +73,7 @@ async function main() {
     console.log('\n🚀 Visit http://localhost:3000 to see your canvas');
     
   } catch (_error) {
-    console.error('\n❌ Script failed:', error);
+    console.error('\n❌ Script failed:', _error);
     process.exit(1);
   }
 }

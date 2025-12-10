@@ -27,7 +27,7 @@ async function testRunStatus() {
   console.log('🧪 Testing Run Status Indicators...\n');
   
   // Get the BMC canvas
-  const { data: canvases, error: canvasError } = await supabase
+  const { data: canvases, error: canvasError } = await _supabase
     .from('stitch_flows')
     .select('*')
     .eq('canvas_type', 'bmc')
@@ -43,14 +43,14 @@ async function testRunStatus() {
   console.log(`✅ Found BMC canvas: ${canvas.name} (${canvas.id})`);
   
   // Initialize node states from graph
-  const nodeStates: unknown = {};
+  const nodeStates: any = {};
   for (const node of canvas.graph.nodes) {
     nodeStates[node.id] = { status: 'pending' };
   }
   
   // Create a test run
   console.log('\n📝 Creating test run...');
-  const { data: run, error: runError } = await supabase
+  const { data: run, error: runError } = await _supabase
     .from('stitch_runs')
     .insert({
       flow_id: canvas.id,
@@ -75,9 +75,9 @@ async function testRunStatus() {
   
   // Get some node IDs from the canvas
   const nodeIds = canvas.graph.nodes
-    .filter((n: unknown) => n.type === 'section')
+    .filter((n: any) => n.type === 'section')
     .slice(0, 3)
-    .map((n: unknown) => n.id);
+    .map((n: any) => n.id);
   
   if (nodeIds.length === 0) {
     console.error('❌ No section nodes found in canvas');
@@ -88,7 +88,7 @@ async function testRunStatus() {
   
   // Helper function to update node state
   async function updateNode(nodeId: string, status: string, error?: string) {
-    await supabase.rpc('update_node_state', {
+    await _supabase.rpc('update_node_state', {
       p_run_id: run.id,
       p_node_id: nodeId,
       p_status: status,

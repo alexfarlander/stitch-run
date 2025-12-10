@@ -42,7 +42,7 @@ async function verifyFinancialDisplay() {
   
   // Step 1: Fetch BMC canvas
   console.log('📋 Step 1: Fetching BMC canvas...');
-  const { data: bmcList, error: fetchError } = await supabase
+  const { data: bmcList, error: fetchError } = await _supabase
     .from('stitch_flows')
     .select('id, name, graph')
     .eq('canvas_type', 'bmc')
@@ -161,6 +161,6 @@ async function verifyFinancialDisplay() {
 
 // Run verification
 verifyFinancialDisplay().catch((error) => {
-  console.error('❌ Verification failed with error:', error);
+  console.error('❌ Verification failed with error:', _error);
   process.exit(1);
 });

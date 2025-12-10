@@ -27,7 +27,7 @@ async function verifyParallelEdgeExecution() {
   
   try {
     // Get the BMC canvas
-    const { data: bmcCanvases, error: canvasError } = await supabase
+    const { data: bmcCanvases, error: canvasError } = await _supabase
       .from('stitch_flows')
       .select('id, name, graph')
       .eq('canvas_type', 'bmc')
@@ -55,18 +55,18 @@ async function verifyParallelEdgeExecution() {
     
     // Test 2: Verify function handles nodes with both edge types (Requirement 12.1)
     console.log('Test 2: Parallel Execution (Requirement 12.1)');
-    const nodeWithBothEdges = graph.nodes.find((node: unknown) => {
+    const nodeWithBothEdges = graph.nodes.find((node: any) => {
       const journeyEdges = graph.edges.filter(
-        (e: unknown) => e.source === node.id && (e.type === 'journey' || !e.type)
+        (e: any) => e.source === node.id && (e.type === 'journey' || !e.type)
       );
       const systemEdges = graph.edges.filter(
-        (e: unknown) => e.source === node.id && e.type === 'system'
+        (e: any) => e.source === node.id && e.type === 'system'
       );
       return journeyEdges.length > 0 && systemEdges.length > 0;
     });
     
     if (nodeWithBothEdges) {
-      const { data: entities } = await supabase
+      const { data: entities } = await _supabase
         .from('stitch_entities')
         .select('*')
         .eq('canvas_id', bmcCanvas.id)
@@ -98,15 +98,15 @@ async function verifyParallelEdgeExecution() {
     
     // Test 3: Verify entity movement not blocked (Requirement 12.2)
     console.log('Test 3: Non-Blocking Entity Movement (Requirement 12.2)');
-    const nodeWithJourneyEdge = graph.nodes.find((node: unknown) => {
+    const nodeWithJourneyEdge = graph.nodes.find((node: any) => {
       const journeyEdges = graph.edges.filter(
-        (e: unknown) => e.source === node.id && (e.type === 'journey' || !e.type)
+        (e: any) => e.source === node.id && (e.type === 'journey' || !e.type)
       );
       return journeyEdges.length > 0;
     });
     
     if (nodeWithJourneyEdge) {
-      const { data: entities } = await supabase
+      const { data: entities } = await _supabase
         .from('stitch_entities')
         .select('*')
         .eq('canvas_id', bmcCanvas.id)
@@ -122,7 +122,7 @@ async function verifyParallelEdgeExecution() {
           bmcCanvas.id
         );
         
-        const { data: updatedEntity } = await supabase
+        const { data: updatedEntity } = await _supabase
           .from('stitch_entities')
           .select('current_node_id')
           .eq('id', testEntity.id)
@@ -156,19 +156,19 @@ async function verifyParallelEdgeExecution() {
     
     // Test 5: Verify concurrent system edge execution (Requirement 12.4)
     console.log('Test 5: Concurrent System Edge Execution (Requirement 12.4)');
-    const nodeWithMultipleSystemEdges = graph.nodes.find((node: unknown) => {
+    const nodeWithMultipleSystemEdges = graph.nodes.find((node: any) => {
       const systemEdges = graph.edges.filter(
-        (e: unknown) => e.source === node.id && e.type === 'system'
+        (e: any) => e.source === node.id && e.type === 'system'
       );
       return systemEdges.length > 1;
     });
     
     if (nodeWithMultipleSystemEdges) {
       const systemEdges = graph.edges.filter(
-        (e: unknown) => e.source === nodeWithMultipleSystemEdges.id && e.type === 'system'
+        (e: any) => e.source === nodeWithMultipleSystemEdges.id && e.type === 'system'
       );
       
-      const { data: entities } = await supabase
+      const { data: entities } = await _supabase
         .from('stitch_entities')
         .select('*')
         .eq('canvas_id', bmcCanvas.id)

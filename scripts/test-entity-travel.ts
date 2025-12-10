@@ -33,7 +33,7 @@ async function main() {
   try {
     // Step 1: Get the BMC canvas
     console.log('📊 Step 1: Finding BMC canvas...');
-    const { data: bmcCanvas, error: canvasError } = await supabase
+    const { data: bmcCanvas, error: canvasError } = await _supabase
       .from('stitch_flows')
       .select('*')
       .eq('canvas_type', 'bmc')
@@ -50,7 +50,7 @@ async function main() {
     
     // Step 2: Get an entity
     console.log('📊 Step 2: Finding test entity...');
-    const { data: entities, error: entitiesError } = await supabase
+    const { data: entities, error: entitiesError } = await _supabase
       .from('stitch_entities')
       .select('*')
       .eq('canvas_id', bmcCanvas.id)
@@ -75,7 +75,7 @@ async function main() {
     }
     
     const journeyEdges = bmcCanvas.graph.edges.filter(
-      (edge: unknown) => edge.source === currentNodeId && (edge.type === 'journey' || !edge.type)
+      (edge: any) => edge.source === currentNodeId && (edge.type === 'journey' || !edge.type)
     );
     
     if (journeyEdges.length === 0) {
@@ -92,7 +92,7 @@ async function main() {
     console.log(`   🚀 Moving ${testEntity.name} along edge ${testEdge.id}...\n`);
     
     // Start travel
-    const { error: startError } = await supabase
+    const { error: startError } = await _supabase
       .from('stitch_entities')
       .update({
         current_node_id: null,
@@ -109,7 +109,7 @@ async function main() {
     }
     
     // Create edge_start event
-    const { error: eventError } = await supabase
+    const { error: eventError } = await _supabase
       .from('stitch_journey_events')
       .insert({
         entity_id: testEntity.id,
@@ -134,7 +134,7 @@ async function main() {
     
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const { data: travelingEntity, error: checkError } = await supabase
+    const { data: travelingEntity, error: checkError } = await _supabase
       .from('stitch_entities')
       .select('*')
       .eq('id', testEntity.id)
@@ -192,7 +192,7 @@ async function main() {
     
     await new Promise(resolve => setTimeout(resolve, 2500));
     
-    const { data: arrivedEntity, error: arrivalError } = await supabase
+    const { data: arrivedEntity, error: arrivalError } = await _supabase
       .from('stitch_entities')
       .select('*')
       .eq('id', testEntity.id)
@@ -264,7 +264,7 @@ async function main() {
     console.log('');
     console.log('═'.repeat(60));
     console.log('');
-    console.error('❌ Test failed:', error);
+    console.error('❌ Test failed:', _error);
     console.log('');
     process.exit(1);
   }
