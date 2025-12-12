@@ -2,93 +2,196 @@
 
 Welcome to the Stitch platform documentation. This directory contains comprehensive documentation for the workflow orchestration system.
 
-## Documentation Structure
-
-### 🏗️ [Architecture](architecture/)
-System design, execution models, database schema, and technical architecture decisions.
-
-- [Execution Model](architecture/execution-model.md) - Edge-walking execution system
-- [Database Schema](architecture/database-schema.md) - Data models and relationships
-- [API Design](architecture/api-design.md) - REST API patterns and conventions
-- [Type System](architecture/type-system.md) - TypeScript architecture
-
-### 🔧 [Development](development/)
-Developer-focused guides for working with the codebase.
-
-- [Getting Started](development/getting-started.md) - Quick start guide
-- [Coding Standards](development/coding-standards.md) - Code style and conventions
-- [Testing Guide](development/testing-guide.md) - Testing strategies and tools
-- [Deployment](development/deployment.md) - Deployment procedures
-- [Troubleshooting](development/troubleshooting.md) - Common issues and solutions
-
-### ✅ [Implementation](implementation/)
-Current implementation status and detailed technical documentation.
-
-- [API Documentation](implementation/api/) - API endpoint details
-- [Backend Systems](implementation/backend/) - Core system components
-- [Frontend Components](implementation/frontend/) - UI architecture
-- [Database Layer](implementation/database-layer.md) - Data access patterns
-
-### 🚀 [Features](features/)
-Feature-specific documentation and implementation details.
-
-- [Canvas as Data](features/canvas-as-data/) - Visual canvas system
-- [Entity Tracking](features/entity-tracking/) - Customer journey tracking
-- [AI Manager](features/ai-manager/) - AI integration system
-- [Webhook System](features/webhook-system/) - External integrations
-- [Demo Orchestrator](features/demo-orchestrator/) - Demonstration system
-
-### 📋 [Tasks](tasks/)
-Implementation task reports and progress tracking.
-
-- [Tasks 01-10](tasks/TASK_01-10/) - Early implementation tasks
-- [Tasks 11-20](tasks/TASK_11-20/) - Mid implementation tasks
-- [Tasks 21-27](tasks/TASK_21-27/) - Later implementation tasks
-- [Entity Tracking](tasks/entity-tracking/) - Entity system tasks
-
-### 🔍 [Reviews](reviews/)
-Code reviews, gap analyses, and quality assurance documentation.
-
-- [Code Review 2025-12-05](reviews/2025-12-05-code-review.md) - Comprehensive code review
-- [Gap Analysis - GPT](reviews/gaps-gpt-5-2.md) - AI-powered gap analysis
-- [Gap Analysis - Gemini](reviews/gaps-gemini-3.md) - Architecture review
-- [Gap Analysis - Opus](reviews/gaps-opus-4-5.md) - Implementation assessment
-
-### 📝 [Checklists](checklists/)
-Coding checklists and implementation guidelines.
-
-- [Race Conditions & Types](checklists/race-conditions-and-types.md) - Data integrity fixes
-- [Maintainability Refactor](checklists/maintainability-refactor.md) - Code quality improvements
-- [Security Hardening](checklists/security-hardening.md) - Security enhancements
-- [Edge Walker Architecture](checklists/edge-walker-architecture.md) - Architecture fixes
-
-### 📊 [Reports](reports/)
-Status reports, summaries, and project documentation.
-
-- [Checkpoint Summaries](reports/checkpoint-summaries/) - Project milestone reports
-- [Implementation Reports](reports/) - Detailed status reports
-
-### 🎯 [Strategy](strategy/)
-Business strategy, product roadmap, and planning documents.
-
-- [Roadmap Documents](strategy/) - Product planning and strategy
-- [Technical Strategy](strategy/) - Technical direction and decisions
-
 ## Quick Start
 
-1. **New to Stitch?** Start with [Getting Started](development/getting-started.md)
-2. **Understanding the system?** Read the [Architecture Overview](architecture/)
-3. **Contributing code?** Check the [Coding Standards](development/coding-standards.md)
-4. **Implementing features?** See the [Implementation Guide](implementation/)
-5. **Understanding requirements?** Review the [Strategy Documents](strategy/)
+**New to Stitch?**
+1. Read [Strategy](strategy/Stitch_Strategy.md) to understand the vision
+2. Review [Architecture](architecture/) to understand the system
+3. Follow [Development Guide](development/) to start contributing
+4. Explore [Specs](specs/) to see current feature work
 
-## Need Help?
-
-- **Bug reports**: Check [Troubleshooting](development/troubleshooting.md)
-- **API documentation**: See [API Guide](implementation/api/)
-- **Code reviews**: Review [Quality Assurance](reviews/) documents
-- **Task tracking**: Check [Implementation Tasks](tasks/)
+**Looking for something specific?**
+- **How do I...?** → See [Guides](guides/)
+- **What's the current plan?** → See [Strategy](strategy/roadmap-5-clockwork.md)
+- **How is X implemented?** → See [Specs](specs/) and [Architecture](architecture/)
+- **How do I contribute?** → See [Development](development/)
+- **What's the code quality?** → See [Quality](quality/)
 
 ---
 
-*Last updated: December 13, 2025*
+## Documentation Structure
+
+### 🎯 [Strategy](strategy/)
+**Foundation documents** - Business strategy, product vision, and roadmap.
+
+Core documents:
+- [Product Strategy](strategy/Stitch_Strategy.md) - Vision and business strategy
+- [Current Roadmap](strategy/roadmap-5-clockwork.md) - Product priorities
+- [Tenancy Strategy](strategy/tenancy-strategy.md) - Multi-tenancy approach
+
+**Use when:** Understanding product direction, planning features, making architectural decisions.
+
+---
+
+### 📐 [Specs](specs/)
+**Specification-driven development** - Feature specifications with requirements, design, tasks, and progress tracking.
+
+Structure:
+```
+[number]-[name]/
+├── README.md          # Overview and status
+├── requirements.md    # User stories and acceptance criteria
+├── design.md         # Architecture and design decisions
+├── tasks.md          # Implementation tasks
+├── progress/         # Task completion reports
+└── reference/        # Feature-specific docs (API, testing, etc.)
+```
+
+**Use when:** Implementing features, understanding requirements, tracking progress.
+
+**Key specs:**
+- [001: Core Architecture](specs/001-core-architecture/) - Foundational system design
+- [002: Canvas as Data](specs/002-canvas-as-data/) - Canvas architecture
+- [003: Workflow Management UI](specs/003-workflow-management-ui/) - UI implementation
+
+[See all specs →](specs/README.md)
+
+---
+
+### 🏗️ [Architecture](architecture/)
+**System design** - Technical architecture, execution models, and database schema.
+
+Core documents:
+- [Execution Model](architecture/execution-model.md) - Edge-walking execution system
+- [Database Schema](architecture/database-schema.md) - Data models and relationships
+- [API Design](architecture/api-design.md) - REST API patterns
+- [Type System](architecture/type-system.md) - TypeScript architecture
+
+**Use when:** Understanding system internals, making architectural decisions, designing integrations.
+
+---
+
+### 🔧 [Development](development/)
+**Developer guides** - Setup, conventions, and development workflow.
+
+Core documents:
+- [Getting Started](development/) - Development environment setup
+- [Conventions](development/conventions/) - Coding standards and patterns
+  - [Routing](development/conventions/routing.md)
+  - [Worker API Keys](development/conventions/worker-api-keys.md)
+  - [Error Tracking](development/conventions/error-tracking.md)
+
+**Use when:** Setting up development environment, understanding conventions, contributing code.
+
+---
+
+### 📚 [Guides](guides/)
+**How-to guides** - Practical guides for users and developers.
+
+Categories:
+- User guides (workflows, canvas, entities)
+- Developer guides (custom workers, debugging)
+- Integration guides (webhooks, APIs)
+
+**Use when:** Learning to use features, implementing common patterns, troubleshooting.
+
+---
+
+### ✅ [Quality](quality/)
+**Quality assurance** - Code review checklists, reviews, and gap analyses.
+
+Contents:
+- [Checklists](quality/) - Implementation and security checklists
+- [Reviews](quality/reviews/) - Code reviews and assessments
+- [Gap Analyses](quality/reviews/gap-analyses/) - Feature completeness reviews
+
+**Use when:** Reviewing code, planning improvements, assessing quality.
+
+---
+
+### 📦 [Archive](archive/)
+**Historical documentation** - Preserved for reference but no longer actively maintained.
+
+Contents:
+- `tasks/` - Historical task implementation reports
+- `reports/` - Point-in-time status reports
+- `implementation/` - Historical implementation snapshots
+- `features/` - Superseded feature documentation
+
+**Use when:** Understanding historical context, researching past decisions.
+
+[Read archive guide →](archive/README.md)
+
+---
+
+## Navigation Tips
+
+### Finding Information
+
+**"How do I create a workflow?"**
+→ Start with [Guides](guides/) → See [Specs](specs/003-workflow-management-ui/) for details
+
+**"What's the database schema?"**
+→ [Architecture: Database Schema](architecture/database-schema.md)
+
+**"How do I implement feature X?"**
+→ Find relevant spec in [Specs](specs/) → Follow requirements, design, and tasks
+
+**"How do I contribute?"**
+→ [Development: Conventions](development/conventions/)
+
+**"What's missing in the codebase?"**
+→ [Quality: Gap Analyses](quality/reviews/gap-analyses/)
+
+### Contributing Documentation
+
+1. **Feature specs:** Add to or create new spec in `/specs/`
+2. **How-to guides:** Add to `/guides/`
+3. **Architecture changes:** Update `/architecture/`
+4. **Code conventions:** Update `/development/conventions/`
+5. **Quality reviews:** Add to `/quality/reviews/`
+
+### Document Lifecycle
+
+- **Active docs:** Living documents, regularly updated
+  - `/specs/`, `/architecture/`, `/development/`, `/guides/`, `/quality/`
+
+- **Foundation docs:** Stable, infrequent updates
+  - `/strategy/`
+
+- **Historical docs:** Preserved but not maintained
+  - `/archive/`
+
+---
+
+## Documentation Standards
+
+### File Naming
+- Use kebab-case: `feature-name.md`
+- Be descriptive: `worker-api-key-handling.md` not `keys.md`
+- Include dates for reviews: `2025-12-13-review.md`
+
+### Document Structure
+- Start with clear title and status/date
+- Include table of contents for long docs
+- Use relative links for cross-references
+- Add "Last updated" date at bottom
+
+### Maintenance
+- Update docs when code changes
+- Mark outdated docs clearly
+- Archive superseded documentation
+- Review quarterly for accuracy
+
+---
+
+## Need Help?
+
+- **Using Stitch:** See [Guides](guides/)
+- **Development questions:** See [Development](development/)
+- **Bug reports:** Check spec issues or create new spec
+- **Feature requests:** Review [Roadmap](strategy/roadmap-5-clockwork.md)
+
+---
+
+*Documentation structure updated: 2025-12-13*

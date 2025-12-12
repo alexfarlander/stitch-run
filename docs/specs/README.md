@@ -34,10 +34,13 @@ Each spec follows this structure:
 ├── requirements.md     # User stories and acceptance criteria
 ├── design.md          # Architecture and design decisions
 ├── tasks.md           # Implementation tasks
-└── summaries/         # Task completion summaries
-    ├── task-01-[name].md
-    ├── task-02-[name].md
-    └── ...
+├── progress/          # Task completion reports (renamed from summaries)
+│   ├── task-01-[name].md
+│   └── task-02-[name].md
+└── reference/         # Feature-specific documentation (optional)
+    ├── API.md
+    ├── testing.md
+    └── examples.md
 ```
 
 ## Naming Conventions
