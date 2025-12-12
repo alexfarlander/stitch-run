@@ -1,57 +1,56 @@
 # Development Guide
 
-This section contains guides and documentation for developers working on the Stitch platform.
+Developer-focused guides for working with the Stitch platform codebase.
 
-## Getting Started
+## Quick Start
 
-- **[Getting Started](getting-started.md)** - Quick setup and development environment
-- **[Coding Standards](coding-standards.md)** - Code style, conventions, and best practices
-- **[Testing Guide](testing-guide.md)** - Testing strategies, tools, and patterns
+- **Getting Started** - Setup and environment configuration (TODO: create)
+- **Coding Standards** - Code style and conventions (TODO: create)
+- **Testing Guide** - Testing strategies and tools (TODO: create)
+
+## Conventions
+
+Standards and patterns used across the codebase:
+
+- [Routing Conventions](conventions/routing.md) - API route patterns and structure
+- [Worker API Keys](conventions/worker-api-keys.md) - API key management for workers
+- [Error Tracking](conventions/error-tracking.md) - Error tracking and monitoring setup
 
 ## Development Workflow
 
 ### Local Development
-- **Environment Setup**: Node.js, TypeScript, database configuration
-- **Running the Application**: Development server and debugging
-- **Database Management**: Local database setup and migrations
+1. Clone repository
+2. Install dependencies: `npm install`
+3. Setup database: See `/architecture/database-schema.md`
+4. Run development server: `npm run dev`
 
 ### Code Quality
-- **Linting**: ESLint configuration and rules
-- **Type Checking**: TypeScript strict mode and type safety
-- **Code Reviews**: Review process and checklists
+- **Linting**: Run `npm run lint`
+- **Type Checking**: Run `npm run type-check`
+- **Testing**: Run `npm test`
 
-### Testing
+### Making Changes
+1. Create feature branch from main
+2. Follow coding standards and conventions
+3. Write tests for new functionality
+4. Run quality checks before committing
+5. Create pull request with clear description
+
+## Testing
+
 - **Unit Tests**: Component and utility testing with Vitest
 - **Integration Tests**: API and workflow testing
-- **E2E Tests**: Full user journey testing (planned)
 - **Property-Based Testing**: Advanced testing with fast-check
 
-## API & Integration
-
-- **[API Conventions](ROUTING_CONVENTIONS.md)** - REST API design patterns
-- **[Error Handling](error-tracking-setup.md)** - Error tracking and monitoring setup
-- **[Worker API Keys](WORKER_API_KEY_HANDLING.md)** - API key management for workers
-
-## Troubleshooting
-
-- **[Common Issues](troubleshooting.md)** - Frequently encountered problems and solutions
-- **[Debugging Guide](troubleshooting.md)** - Debugging workflows and execution
-- **Performance Issues**: Optimization techniques and profiling
-
-## Development Tools
-
-- **Scripts**: Available npm scripts and their purposes
-- **Database Tools**: Migration management and data seeding
-- **Testing Tools**: Test running, coverage, and CI/CD integration
-
-## Contributing
-
-- **Pull Request Process**: How to submit changes
-- **Code Review Guidelines**: What reviewers look for
-- **Release Process**: How changes get deployed
+See individual spec directories for feature-specific testing guides.
 
 ## Related Documentation
 
-- [Implementation](../implementation/) - Current codebase structure
-- [Architecture](../architecture/) - System design decisions
-- [Tasks](../tasks/) - Implementation progress and issues
+- [Architecture](/architecture/) - System design and architecture
+- [Specs](/specs/) - Feature specifications and implementation
+- [Quality](/quality/) - Code review checklists and quality standards
+- [Guides](/guides/) - User and developer how-to guides
+
+---
+
+*Last updated: 2025-12-13*
