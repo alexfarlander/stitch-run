@@ -1,0 +1,422 @@
+%% Type Relationships Diagram
+%% Shows the TypeScript type hierarchy and relationships in Stitch
+%% Requirements: 1.5, 9.5
+
+classDiagram
+    %% ============================================================================
+    %% Visual Graph Layer (UI Representation)
+    %% ============================================================================
+    
+    class VisualGraph {
+        +VisualNode[] nodes
+        +VisualEdge[] edges
+    }
+    
+    class VisualNode {
+        +string id
+        +string type
+        +Position position
+        +NodeData data
+        +string? parentNode
+        +string? extent
+        +CSSProperties? style
+        +number? width
+        +number? height
+    }
+    
+    class VisualEdge {
+        +string id
+        +string source
+        +string target
+        +string? sourceHandle
+        +string? targetHandle
+        +string? type
+        +boolean? animated
+        +CSSProperties? style
+        +EdgeData? data
+    }
+    
+    class NodeData {
+        +string label
+        +string? worker_type
+        +Record config
+        +Record~InputSchema~ inputs
+        +Record~OutputSchema~ outputs
+        +EntityMovementConfig? entityMovement
+    }
+    
+    class EdgeData {
+        +EdgeMapping? mapping
+        +any additional
+    }
+    
+    %% ============================================================================
+    %% Execution Graph Layer (Runtime Representation)
+    %% ============================================================================
+    
+    class ExecutionGraph {
+        +Record~ExecutionNode~ nodes
+        +Record~string[]~ adjacency
+        +Record~EdgeMapping~ edgeData
+        +string[] entryNodes
+        +string[] terminalNodes
+    }
+    
+    class ExecutionNode {
+        +string id
+        +string type
+        +string? worker_type
+        +Record? config
+        +Record~InputSchema~? inputs
+        +Record~OutputSchema~? outputs
+        +EntityMovementConfig? entityMovement
+    }
+    
+    %% ============================================================================
+    %% Schema Types (Shared)
+    %% ============================================================================
+    
+    class InputSchema {
+        +string type
+        +boolean required
+        +string? description
+        +any? default
+    }
+    
+    class OutputSchema {
+        +string type
+        +string? description
+    }
+    
+    class EdgeMapping {
+        +string targetInput
+        +string sourceOutputPath
+    }
+    
+    class EntityMovementConfig {
+        +EntityMovementAction? onSuccess
+        +EntityMovementAction? onFailure
+    }
+    
+    class EntityMovementAction {
+        +string targetSectionId
+        +string completeAs
+        +string? setEntityType
+    }
+    
+    %% ============================================================================
+    %% Entity Layer (Tracking)
+    %% ============================================================================
+    
+    class StitchEntity {
+        +string id
+        +string canvas_id
+        +string name
+        +string? email
+        +string? avatar_url
+        +EntityType entity_type
+        +string? current_node_id
+        +string? current_edge_id
+        +number? edge_progress
+        +string? destination_node_id
+        +JourneyEvent[] journey
+        +EntityMetadata metadata
+        +string created_at
+        +string updated_at
+        +string? completed_at
+    }
+    
+    class EntityType {
+        <<enumeration>>
+        lead
+        customer
+        churned
+    }
+    
+    class JourneyEvent {
+        +string timestamp
+        +string type
+        +string? node_id
+        +string? edge_id
+        +string? from_node_id
+        +string? workflow_run_id
+        +string? note
+    }
+    
+    class EntityMetadata {
+        +string? source
+        +string? campaign
+        +number? cac
+        +number? ltv
+        +string? plan
+    }
+    
+    class TypedJourneyEvent {
+        <<union>>
+        DatabaseJourneyEvent
+        FallbackJourneyEvent
+    }
+    
+    class DatabaseJourneyEvent {
+        +string source = "database"
+        +string id
+        +string entity_id
+        +string event_type
+        +string? node_id
+        +string? edge_id
+        +number? progress
+        +string timestamp
+        +Record metadata
+    }
+    
+    class FallbackJourneyEvent {
+        +string source = "fallback"
+        +string type
+        +string? node_id
+        +string? edge_id
+        +string? from_node_id
+        +string? workflow_run_id
+        +string timestamp
+        +string? note
+    }
+    
+    %% ============================================================================
+    %% Worker Layer (Integration)
+    %% ============================================================================
+    
+    class WorkerDefinition {
+        +string id
+        +string name
+        +string type
+        +string description
+        +Record~InputSchema~ input
+        +Record~OutputSchema~ output
+        +WorkerConfig? config
+    }
+    
+    class WorkerConfig {
+        +string? endpoint
+        +string? model
+    }
+    
+    class WorkerPayload {
+        +string runId
+        +string nodeId
+        +NodeConfig config
+        +any input
+        +string callbackUrl
+    }
+    
+    class WorkerCallback {
+        +string status
+        +any? output
+        +string? error
+    }
+    
+    %% ============================================================================
+    %% Workflow Execution Layer (Runtime State)
+    %% ============================================================================
+    
+    class StitchRun {
+        +string id
+        +string flow_id
+        +string? flow_version_id
+        +string? entity_id
+        +Record~NodeState~ node_states
+        +TriggerMetadata trigger
+        +string created_at
+        +string updated_at
+    }
+    
+    class NodeState {
+        +NodeStatus status
+        +any? output
+        +string? error
+        +number? upstream_completed_count
+        +number? expected_upstream_count
+        +Record? upstream_outputs
+    }
+    
+    class NodeStatus {
+        <<enumeration>>
+        pending
+        running
+        completed
+        failed
+        waiting_for_user
+    }
+    
+    class TriggerMetadata {
+        +string type
+        +string? source
+        +string? event_id
+        +string timestamp
+    }
+    
+    class StitchFlow {
+        +string id
+        +string name
+        +FlowGraph graph
+        +string canvas_type
+        +string? parent_id
+        +string? current_version_id
+        +string created_at
+        +string updated_at
+    }
+    
+    class FlowGraph {
+        +StitchNode[] nodes
+        +StitchEdge[] edges
+    }
+    
+    class StitchNode {
+        +string id
+        +NodeType type
+        +Position position
+        +NodeConfig data
+        +string? parentId
+        +string? extent
+        +CSSProperties? style
+        +number? width
+        +number? height
+    }
+    
+    class StitchEdge {
+        +string id
+        +string source
+        +string target
+        +string? sourceHandle
+        +string? targetHandle
+        +string? type
+        +boolean? animated
+        +CSSProperties? style
+        +EdgeDataWithStats? data
+    }
+    
+    class NodeConfig {
+        +string? webhookUrl
+        +string? workerType
+        +string? arrayPath
+        +string? prompt
+        +string? label
+    }
+    
+    %% ============================================================================
+    %% API Layer (Request/Response)
+    %% ============================================================================
+    
+    class CreateCanvasRequest {
+        +string name
+        +string format
+        +string|VisualGraph content
+    }
+    
+    class CreateCanvasResponse {
+        +string id
+        +VisualGraph canvas
+    }
+    
+    class RunWorkflowRequest {
+        +Record input
+        +string? entityId
+    }
+    
+    class RunWorkflowResponse {
+        +string runId
+        +string versionId
+        +string status
+        +string statusUrl
+    }
+    
+    class GetStatusResponse {
+        +string runId
+        +string status
+        +Record~NodeStateResponse~ nodes
+        +Record? finalOutputs
+        +string statusUrl
+    }
+    
+    class WorkflowCreationRequest {
+        +string? mermaid
+        +VisualGraph? graph
+        +Record~NodeConfig~? nodeConfigs
+        +Record~EdgeMapping~? edgeMappings
+    }
+    
+    %% ============================================================================
+    %% Relationships
+    %% ============================================================================
+    
+    %% Visual Graph Composition
+    VisualGraph *-- VisualNode : contains
+    VisualGraph *-- VisualEdge : contains
+    VisualNode *-- NodeData : has
+    VisualEdge *-- EdgeData : has
+    NodeData *-- InputSchema : defines
+    NodeData *-- OutputSchema : defines
+    NodeData *-- EntityMovementConfig : configures
+    EdgeData *-- EdgeMapping : contains
+    
+    %% Execution Graph Composition
+    ExecutionGraph *-- ExecutionNode : indexes
+    ExecutionGraph *-- EdgeMapping : indexes
+    ExecutionNode *-- InputSchema : validates
+    ExecutionNode *-- OutputSchema : validates
+    ExecutionNode *-- EntityMovementConfig : uses
+    
+    %% Entity Movement Configuration
+    EntityMovementConfig *-- EntityMovementAction : defines
+    
+    %% Entity Composition
+    StitchEntity *-- EntityType : has
+    StitchEntity *-- JourneyEvent : tracks
+    StitchEntity *-- EntityMetadata : contains
+    
+    %% Journey Event Types
+    TypedJourneyEvent <|-- DatabaseJourneyEvent : implements
+    TypedJourneyEvent <|-- FallbackJourneyEvent : implements
+    
+    %% Worker Composition
+    WorkerDefinition *-- InputSchema : defines
+    WorkerDefinition *-- OutputSchema : defines
+    WorkerDefinition *-- WorkerConfig : configures
+    WorkerPayload *-- NodeConfig : includes
+    
+    %% Workflow Execution Composition
+    StitchRun *-- NodeState : tracks
+    StitchRun *-- TriggerMetadata : records
+    NodeState *-- NodeStatus : has
+    StitchFlow *-- FlowGraph : contains
+    FlowGraph *-- StitchNode : contains
+    FlowGraph *-- StitchEdge : contains
+    StitchNode *-- NodeConfig : has
+    
+    %% API Relationships
+    CreateCanvasRequest ..> VisualGraph : creates
+    CreateCanvasResponse ..> VisualGraph : returns
+    RunWorkflowRequest ..> StitchRun : initiates
+    RunWorkflowResponse ..> StitchRun : references
+    GetStatusResponse ..> NodeState : exposes
+    WorkflowCreationRequest ..> VisualGraph : creates
+    WorkflowCreationRequest ..> EdgeMapping : configures
+    
+    %% Transformation Relationships
+    VisualGraph ..> ExecutionGraph : compiles to
+    VisualNode ..> ExecutionNode : strips to
+    StitchNode ..> VisualNode : similar to
+    StitchEdge ..> VisualEdge : similar to
+    
+    %% Cross-Layer References
+    StitchRun ..> StitchEntity : may track
+    StitchRun ..> StitchFlow : executes
+    ExecutionNode ..> WorkerDefinition : implements
+    WorkerPayload ..> StitchRun : references
+    WorkerCallback ..> NodeState : updates
+    EntityMovementAction ..> StitchNode : targets
+    
+    %% Notes
+    note for VisualGraph "UI Layer: Complete representation\nwith positions, styles, and\nReact Flow properties"
+    note for ExecutionGraph "Runtime Layer: Optimized for\nO(1) lookups with indexed\nnodes and adjacency map"
+    note for StitchEntity "Tracking Layer: Represents\nindividuals moving through\nthe canvas"
+    note for WorkerDefinition "Integration Layer: Defines\nexternal service contracts"
+    note for StitchRun "Execution Layer: Runtime state\nof workflow execution"

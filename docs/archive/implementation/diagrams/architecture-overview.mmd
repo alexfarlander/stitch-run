@@ -1,0 +1,136 @@
+graph TB
+    subgraph "Frontend Layer"
+        UI[React UI Components]
+        Canvas[Canvas Components<br/>BMCCanvas, WorkflowCanvas]
+        Nodes[Node Components<br/>Worker, Splitter, Collector, UX]
+        Entity[Entity Visualization<br/>EntityOverlay, EntityDot]
+        Hooks[React Hooks<br/>useFlow, useEntities, useRunStatus]
+    end
+
+    subgraph "API Layer"
+        CanvasAPI[Canvas API<br/>/api/canvas]
+        WorkflowAPI[Workflow API<br/>/api/runs]
+        WebhookAPI[Webhook API<br/>/api/webhooks]
+        CallbackAPI[Callback API<br/>/api/stitch/callback]
+        AIManagerAPI[AI Manager API<br/>/api/ai-manager]
+    end
+
+    subgraph "Core Systems"
+        subgraph "Execution Engine"
+            EdgeWalker[Edge Walker<br/>Orchestration]
+            NodeHandlers[Node Handlers<br/>Worker, UX, Splitter, Collector]
+            StatusMachine[Status Transitions<br/>State Machine]
+        end
+
+        subgraph "Canvas System"
+            VersionMgr[Version Manager<br/>Versioning]
+            OEGCompiler[OEG Compiler<br/>Graph Optimization]
+            GraphValidator[Graph Validator<br/>Validation]
+            MermaidParser[Mermaid Parser<br/>Import/Export]
+        end
+
+        subgraph "Worker System"
+            WorkerRegistry[Worker Registry<br/>Type Mapping]
+            WorkerImpls[Worker Implementations<br/>Claude, MiniMax, ElevenLabs, Shotstack]
+        end
+
+        subgraph "Webhook System"
+            WebhookProcessor[Webhook Processor<br/>Orchestration]
+            Adapters[Adapters<br/>Stripe, Typeform, Calendly, n8n]
+            EntityMapper[Entity Mapper<br/>Data Extraction]
+        end
+
+        subgraph "AI Manager"
+            LLMClient[LLM Client<br/>Claude Integration]
+            ContextBuilder[Context Builder<br/>Graph Simplification]
+            ActionExecutor[Action Executor<br/>Response Parsing]
+        end
+    end
+
+    subgraph "Data Layer"
+        DB[(Supabase PostgreSQL<br/>Database)]
+        Realtime[Supabase Realtime<br/>WebSocket Subscriptions]
+    end
+
+    subgraph "External Services"
+        ClaudeAPI[Claude API]
+        MinimaxAPI[MiniMax API]
+        ElevenLabsAPI[ElevenLabs API]
+        ShotstackAPI[Shotstack API]
+        WebhookSources[Webhook Sources<br/>Stripe, Typeform, Calendly]
+    end
+
+    %% Frontend to API connections
+    UI --> CanvasAPI
+    Canvas --> CanvasAPI
+    Canvas --> WorkflowAPI
+    Hooks --> CanvasAPI
+    Hooks --> WorkflowAPI
+    Hooks --> Realtime
+
+    %% API to Core Systems connections
+    CanvasAPI --> VersionMgr
+    CanvasAPI --> OEGCompiler
+    CanvasAPI --> GraphValidator
+    CanvasAPI --> MermaidParser
+    
+    WorkflowAPI --> EdgeWalker
+    WorkflowAPI --> VersionMgr
+    
+    WebhookAPI --> WebhookProcessor
+    
+    CallbackAPI --> EdgeWalker
+    
+    AIManagerAPI --> LLMClient
+    AIManagerAPI --> ContextBuilder
+    AIManagerAPI --> ActionExecutor
+
+    %% Core System internal connections
+    EdgeWalker --> NodeHandlers
+    EdgeWalker --> StatusMachine
+    NodeHandlers --> WorkerRegistry
+    WorkerRegistry --> WorkerImpls
+    
+    WebhookProcessor --> Adapters
+    WebhookProcessor --> EntityMapper
+    WebhookProcessor --> EdgeWalker
+    
+    ActionExecutor --> VersionMgr
+    ActionExecutor --> EdgeWalker
+    
+    OEGCompiler --> GraphValidator
+
+    %% Core Systems to Database
+    EdgeWalker --> DB
+    NodeHandlers --> DB
+    VersionMgr --> DB
+    WebhookProcessor --> DB
+    EntityMapper --> DB
+    WorkerRegistry --> DB
+
+    %% Database to Realtime
+    DB --> Realtime
+
+    %% Worker Implementations to External Services
+    WorkerImpls --> ClaudeAPI
+    WorkerImpls --> MinimaxAPI
+    WorkerImpls --> ElevenLabsAPI
+    WorkerImpls --> ShotstackAPI
+    
+    LLMClient --> ClaudeAPI
+
+    %% External Webhooks to API
+    WebhookSources --> WebhookAPI
+
+    %% Styling
+    classDef frontend fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef api fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef core fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef data fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef external fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+
+    class UI,Canvas,Nodes,Entity,Hooks frontend
+    class CanvasAPI,WorkflowAPI,WebhookAPI,CallbackAPI,AIManagerAPI api
+    class EdgeWalker,NodeHandlers,StatusMachine,VersionMgr,OEGCompiler,GraphValidator,MermaidParser,WorkerRegistry,WorkerImpls,WebhookProcessor,Adapters,EntityMapper,LLMClient,ContextBuilder,ActionExecutor core
+    class DB,Realtime data
+    class ClaudeAPI,MinimaxAPI,ElevenLabsAPI,ShotstackAPI,WebhookSources external

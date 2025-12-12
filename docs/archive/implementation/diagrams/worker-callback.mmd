@@ -1,0 +1,297 @@
+sequenceDiagram
+    participant Engine as Edge Walker
+    participant Handler as Worker Handler
+    participant DB as Supabase Database
+    participant Worker as External Worker<br/>(Claude, MiniMax, etc.)
+    participant Callback as Callback API<br/>/api/stitch/callback
+    participant Realtime as Supabase Realtime
+    participant UI as Frontend UI
+
+    Note over Engine,UI: Async Worker Pattern: Fire and Callback
+
+    %% Phase 1: Fire Worker (Async)
+    rect rgb(240, 248, 255)
+        Note over Engine,Worker: Phase 1: Fire Worker (Non-Blocking)
+        
+        Engine->>Handler: fireWorkerNode(runId, nodeId, config, input)
+        activate Handler
+        
+        Note over Handler: Build worker payload<br/>following Stitch Protocol
+        
+        Handler->>Handler: constructCallbackUrl(runId, nodeId)
+        Note over Handler: ${NEXT_PUBLIC_BASE_URL}<br/>/api/stitch/callback<br/>/{runId}/{nodeId}
+        
+        Handler->>Handler: buildWorkerPayload()
+        Note over Handler: {<br/>  runId,<br/>  nodeId,<br/>  config,<br/>  input,<br/>  callbackUrl<br/>}
+        
+        Handler->>DB: Update node state<br/>status: 'running'<br/>output: input (stored)
+        activate DB
+        DB-->>Handler: State updated
+        deactivate DB
+        
+        DB->>Realtime: Broadcast node update
+        Realtime->>UI: WebSocket: node running
+        
+        alt Integrated Worker
+            Note over Handler: Check workerRegistry<br/>for in-process worker
+            Handler->>Handler: worker.execute(payload)
+            Note over Handler: Worker handles own callback
+            
+        else Webhook Worker (Most Common)
+            Handler->>Worker: POST to webhookUrl<br/>{runId, nodeId, config, input, callbackUrl}
+            Note over Handler,Worker: HTTP POST with 30s timeout<br/>Fire and forget pattern
+            
+            alt Success
+                Worker-->>Handler: 202 Accepted
+                Note over Handler: Worker received payload<br/>Processing asynchronously
+                
+            else Network Error
+                Worker-->>Handler: Timeout / Connection Error
+                Handler->>DB: Update node state<br/>status: 'failed'<br/>error: 'Worker unreachable'
+                DB->>Realtime: Broadcast failure
+                Realtime->>UI: WebSocket: node failed
+                
+            else HTTP Error
+                Worker-->>Handler: 4xx / 5xx Error
+                Handler->>DB: Update node state<br/>status: 'failed'<br/>error: 'HTTP {status}'
+                DB->>Realtime: Broadcast failure
+                Realtime->>UI: WebSocket: node failed
+            end
+        end
+        
+        Handler-->>Engine: Worker fired (async)
+        deactivate Handler
+        
+        Note over Engine: Edge-walking continues<br/>Node remains 'running'<br/>Process ends here
+    end
+
+    %% Worker Processing
+    rect rgb(255, 250, 240)
+        Note over Worker: Worker Processing Phase<br/>(May take seconds to minutes)
+        
+        Note over Worker: Worker receives payload<br/>Processes request<br/>Generates output
+        
+        alt Success Case
+            Note over Worker: Processing completed<br/>Generate output data
+            
+        else Failure Case
+            Note over Worker: Processing failed<br/>Generate error message
+        end
+    end
+
+    %% Phase 2: Callback (Resume)
+    rect rgb(240, 255, 240)
+        Note over Worker,UI: Phase 2: Callback (Resume Execution)
+        
+        alt Success Callback
+            Worker->>Callback: POST /api/stitch/callback/{runId}/{nodeId}<br/>{status: 'completed', output: {...}}
+            activate Callback
+            
+            Note over Callback: Validate callback payload<br/>- status is 'completed' or 'failed'<br/>- output is object (for completed)<br/>- error is string (for failed)
+            
+            Callback->>DB: Load current run state
+            activate DB
+            DB-->>Callback: run with node_states
+            deactivate DB
+            
+            Note over Callback: Validate run and node exist<br/>Node must be in 'running' state
+            
+            Callback->>Callback: Merge callback output<br/>with stored input
+            Note over Callback: mergedOutput = {<br/>  ...storedInput,<br/>  ...callback.output<br/>}
+            
+            Callback->>DB: Update node state<br/>status: 'completed'<br/>output: mergedOutput
+            activate DB
+            DB-->>Callback: State updated
+            deactivate DB
+            
+            DB->>Realtime: Broadcast node completion
+            Realtime->>UI: WebSocket: node completed<br/>with output
+            
+            Note over Callback: Check for entity movement<br/>configuration
+            
+            alt Entity Movement Configured
+                Callback->>DB: Move entity to target section<br/>Update entity type if specified
+                DB->>Realtime: Broadcast entity update
+                Realtime->>UI: WebSocket: entity moved
+            end
+            
+            Note over Callback: Trigger edge-walking<br/>to fire downstream nodes
+            
+            Callback->>Engine: walkEdges(nodeId, updatedRun)
+            activate Engine
+            
+            Note over Engine: Load execution graph<br/>Find downstream nodes<br/>Check dependencies<br/>Fire ready nodes
+            
+            Engine->>Engine: Recursive edge-walking
+            Note over Engine: May fire more workers<br/>Continues until terminal nodes
+            
+            Engine-->>Callback: Edge-walking complete
+            deactivate Engine
+            
+            Callback-->>Worker: 200 OK {success: true}
+            deactivate Callback
+            
+        else Failure Callback
+            Worker->>Callback: POST /api/stitch/callback/{runId}/{nodeId}<br/>{status: 'failed', error: 'Error message'}
+            activate Callback
+            
+            Note over Callback: Validate callback payload
+            
+            Callback->>DB: Load current run state
+            activate DB
+            DB-->>Callback: run with node_states
+            deactivate DB
+            
+            Callback->>DB: Update node state<br/>status: 'failed'<br/>error: 'Error message'
+            activate DB
+            DB-->>Callback: State updated
+            deactivate DB
+            
+            DB->>Realtime: Broadcast node failure
+            Realtime->>UI: WebSocket: node failed<br/>with error
+            
+            Note over Callback: Check for entity movement<br/>onFailure configuration
+            
+            alt Entity Movement on Failure
+                Callback->>DB: Move entity to failure section<br/>Mark journey as failure
+                DB->>Realtime: Broadcast entity update
+                Realtime->>UI: WebSocket: entity moved
+            end
+            
+            Note over Callback: Edge-walking NOT triggered<br/>Failed nodes don't propagate<br/>Downstream nodes remain pending
+            
+            Callback-->>Worker: 200 OK {success: true}
+            deactivate Callback
+            
+            Note over UI: User can retry failed node<br/>via /api/stitch/retry
+        end
+    end
+
+    %% Output Merging Example
+    rect rgb(255, 255, 240)
+        Note over Callback,DB: Output Merging (Pass-Through Pattern)
+        
+        Note over Callback: Example: Audio Generation Node
+        
+        Note over Callback: Stored Input (from upstream):<br/>{<br/>  text: "Hello world",<br/>  language: "en"<br/>}
+        
+        Note over Callback: Callback Output:<br/>{<br/>  audio_url: "https://cdn.../audio.mp3",<br/>  duration: 3.5<br/>}
+        
+        Note over Callback: Merged Output:<br/>{<br/>  text: "Hello world",<br/>  language: "en",<br/>  audio_url: "https://cdn.../audio.mp3",<br/>  duration: 3.5<br/>}
+        
+        Note over Callback: Downstream nodes receive<br/>complete data pipeline
+    end
+
+    %% Entity Movement Example
+    rect rgb(250, 240, 255)
+        Note over Callback,UI: Entity Movement on Callback
+        
+        Note over Callback: Worker Config:<br/>{<br/>  entityMovement: {<br/>    onSuccess: {<br/>      targetSectionId: "customers",<br/>      completeAs: "success",<br/>      setEntityType: "customer"<br/>    },<br/>    onFailure: {<br/>      targetSectionId: "failed-leads",<br/>      completeAs: "failure"<br/>    }<br/>  }<br/>}
+        
+        alt Success Path
+            Note over Callback: Entity moves to "customers"<br/>Type changes to "customer"<br/>Journey marked as success
+            
+        else Failure Path
+            Note over Callback: Entity moves to "failed-leads"<br/>Journey marked as failure
+        end
+    end
+
+    %% Parallel Execution
+    rect rgb(255, 245, 240)
+        Note over Engine,UI: Parallel Worker Callbacks
+        
+        Note over Engine: Splitter creates:<br/>worker_0, worker_1, worker_2
+        
+        par Parallel Callback 0
+            Worker->>Callback: Callback for worker_0
+            Callback->>DB: Update worker_0: 'completed'
+            DB->>Realtime: Broadcast
+            Realtime->>UI: Update worker_0
+            
+        and Parallel Callback 1
+            Worker->>Callback: Callback for worker_1
+            Callback->>DB: Update worker_1: 'completed'
+            DB->>Realtime: Broadcast
+            Realtime->>UI: Update worker_1
+            
+        and Parallel Callback 2
+            Worker->>Callback: Callback for worker_2
+            Callback->>DB: Update worker_2: 'completed'
+            DB->>Realtime: Broadcast
+            Realtime->>UI: Update worker_2
+        end
+        
+        Note over Callback: Last callback triggers<br/>edge-walking to Collector
+        
+        Callback->>Engine: walkEdges(worker_2, run)
+        Note over Engine: Collector checks all paths<br/>All completed ✓<br/>Merges outputs<br/>Fires downstream
+    end
+
+    %% Error Handling
+    rect rgb(255, 240, 240)
+        Note over Callback,UI: Error Scenarios
+        
+        alt Invalid Callback Payload
+            Worker->>Callback: POST with invalid data
+            Callback-->>Worker: 400 BAD_REQUEST<br/>{error: "Missing required field: status"}
+            
+        else Node Not Found
+            Worker->>Callback: POST with wrong nodeId
+            Callback-->>Worker: 404 NOT_FOUND<br/>{error: "Node not found in run"}
+            
+        else Node Not Running
+            Worker->>Callback: POST to completed node
+            Callback-->>Worker: 400 BAD_REQUEST<br/>{error: "Node is not in running state"}
+            
+        else Database Error
+            Worker->>Callback: POST callback
+            Callback->>DB: Update fails
+            DB-->>Callback: Error
+            Callback-->>Worker: 500 INTERNAL_ERROR<br/>{error: "Database update failed"}
+        end
+    end
+
+    %% Retry Flow
+    rect rgb(245, 245, 255)
+        Note over UI,Engine: Manual Retry Flow
+        
+        Note over UI: User clicks retry<br/>on failed node
+        
+        UI->>Callback: POST /api/stitch/retry/{runId}/{nodeId}
+        activate Callback
+        
+        Callback->>DB: Update node state<br/>status: 'pending'<br/>Clear error
+        activate DB
+        DB-->>Callback: State updated
+        deactivate DB
+        
+        DB->>Realtime: Broadcast update
+        Realtime->>UI: WebSocket: node pending
+        
+        Callback->>Engine: Check dependencies<br/>Fire if ready
+        activate Engine
+        
+        alt Dependencies Met
+            Engine->>Handler: fireWorkerNode(...)
+            Note over Handler: Retry follows same<br/>fire-and-callback pattern
+            
+        else Dependencies Not Met
+            Note over Engine: Node stays pending<br/>Waits for upstream
+        end
+        
+        Engine-->>Callback: Retry initiated
+        deactivate Engine
+        
+        Callback-->>UI: 200 OK
+        deactivate Callback
+    end
+
+    %% Key Principles
+    Note over Engine,UI: Key Principles of Async Worker Pattern
+    Note over Engine,UI: 1. Fire Phase: Non-blocking, node marked 'running'
+    Note over Engine,UI: 2. Worker Phase: External processing (seconds to minutes)
+    Note over Engine,UI: 3. Callback Phase: Resume execution, trigger edge-walking
+    Note over Engine,UI: 4. Output Merging: Pass-through data pipeline
+    Note over Engine,UI: 5. Entity Movement: Automatic on success/failure
+    Note over Engine,UI: 6. Error Handling: Failed nodes don't propagate
+    Note over Engine,UI: 7. Retry Support: Manual retry from failed state

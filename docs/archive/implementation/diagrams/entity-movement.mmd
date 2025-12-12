@@ -1,0 +1,289 @@
+sequenceDiagram
+    participant External as External Service<br/>(Stripe, Typeform, etc.)
+    participant WebhookAPI as Webhook API<br/>/api/webhooks/[slug]
+    participant Processor as Webhook Processor
+    participant Adapter as Webhook Adapter
+    participant DB as Database
+    participant EntityDB as Entity Tables
+    participant JourneyDB as Journey Events
+    participant EdgeWalker as Edge Walker
+    participant Realtime as Supabase Realtime
+    participant UI as Canvas UI
+
+    Note over External,UI: Entity Movement Flow: Webhook → Entity Creation → Workflow Execution
+
+    %% Webhook Receipt
+    External->>WebhookAPI: POST /api/webhooks/my-endpoint<br/>{webhook payload}<br/>X-Webhook-Signature: signature
+    activate WebhookAPI
+    
+    Note over WebhookAPI: Extract raw body<br/>for signature validation
+    
+    WebhookAPI->>WebhookAPI: Parse JSON payload<br/>Preserve raw body string
+    
+    WebhookAPI->>Processor: processWebhook(slug, rawBody, payload, signature)
+    activate Processor
+
+    %% Step 1: Configuration Lookup
+    Note over Processor: Step 1: Look up webhook config
+    
+    Processor->>DB: getWebhookConfigBySlug(slug)
+    activate DB
+    DB-->>Processor: webhook_config<br/>{source, secret, workflow_id,<br/>entry_edge_id, entity_mapping}
+    deactivate DB
+
+    %% Step 2: Event Logging
+    Note over Processor: Step 2: Create audit record<br/>(before validation)
+    
+    Processor->>DB: createWebhookEvent()<br/>status: 'pending'
+    activate DB
+    DB-->>Processor: webhook_event {id}
+    deactivate DB
+
+    %% Step 3: Active Check
+    Note over Processor: Step 3: Verify webhook is active
+    
+    alt Webhook Inactive
+        Processor->>DB: updateWebhookEvent()<br/>status: 'failed'<br/>error: 'inactive'
+        Processor-->>WebhookAPI: Error: Webhook inactive
+        WebhookAPI-->>External: 404 Not Found
+    end
+
+    %% Step 4-5: Adapter Processing
+    Note over Processor: Step 4-5: Validate & Extract
+    
+    Processor->>Adapter: processAdapterLogic(config, rawBody, payload, headers)
+    activate Adapter
+    
+    Note over Adapter: Select adapter by source<br/>(stripe, typeform, calendly, n8n, generic)
+    
+    Adapter->>Adapter: verifySignature(rawBody, headers, secret)
+    
+    alt Invalid Signature
+        Adapter-->>Processor: Error: Invalid signature
+        Processor->>DB: updateWebhookEvent()<br/>status: 'failed'<br/>error: 'invalid signature'
+        Processor-->>WebhookAPI: Error: Unauthorized
+        WebhookAPI-->>External: 401 Unauthorized
+    end
+    
+    Note over Adapter: Signature valid ✓
+    
+    Adapter->>Adapter: extractEntity(payload, config)
+    
+    Note over Adapter: Use source-specific extraction<br/>or JSONPath mapping
+    
+    Adapter-->>Processor: entityData<br/>{name, email, entity_type,<br/>avatar_url, metadata}
+    deactivate Adapter
+
+    %% Step 6: Processing Status
+    Note over Processor: Step 6: Update status
+    
+    Processor->>DB: updateWebhookEvent()<br/>status: 'processing'
+    activate DB
+    DB-->>Processor: Updated
+    deactivate DB
+
+    %% Step 7: Entity Creation/Update
+    Note over Processor: Step 7: Create or update entity
+    
+    Processor->>EntityDB: SELECT * FROM stitch_entities<br/>WHERE canvas_id = ? AND email = ?
+    activate EntityDB
+    
+    alt Entity Exists (by email)
+        EntityDB-->>Processor: existing_entity
+        
+        Note over Processor: Update existing entity<br/>with new data
+        
+        Processor->>EntityDB: UPDATE stitch_entities<br/>SET name, entity_type, metadata<br/>WHERE id = existing_entity.id
+        EntityDB-->>Processor: updated_entity
+        
+    else Entity Does Not Exist
+        Note over Processor: Create new entity
+        
+        Processor->>EntityDB: INSERT INTO stitch_entities<br/>{canvas_id, name, email,<br/>entity_type, avatar_url, metadata}
+        EntityDB-->>Processor: new_entity
+    end
+    
+    deactivate EntityDB
+
+    %% Step 8: Visual Journey Placement
+    Note over Processor: Step 8: Place entity on entry edge<br/>(visual journey start)
+    
+    Processor->>EntityDB: startJourney(entity.id, entry_edge_id)
+    activate EntityDB
+    
+    Note over EntityDB: Call RPC: start_journey()<br/>Atomic update
+    
+    EntityDB->>EntityDB: UPDATE stitch_entities<br/>SET current_edge_id = entry_edge_id<br/>edge_progress = 0.0<br/>current_node_id = NULL
+    
+    EntityDB->>JourneyDB: INSERT INTO stitch_journey_events<br/>{entity_id, event_type: 'edge_start',<br/>edge_id, timestamp}
+    
+    EntityDB-->>Processor: entity (on edge)
+    deactivate EntityDB
+    
+    EntityDB->>Realtime: Broadcast entity update
+    Realtime->>UI: WebSocket: entity on edge
+    
+    Note over UI: Entity appears on entry edge<br/>Animation begins
+
+    %% Step 9: Workflow Run Creation
+    Note over Processor: Step 9: Create workflow run
+    
+    Processor->>DB: createRun(workflow_id)<br/>{entity_id, trigger: {<br/>  type: 'webhook',<br/>  source, event_id, timestamp<br/>}}
+    activate DB
+    DB-->>Processor: workflow_run {id}
+    deactivate DB
+
+    %% Step 10: Execution Start
+    Note over Processor: Step 10: Start workflow execution
+    
+    Processor->>DB: getFlow(workflow_id)
+    activate DB
+    DB-->>Processor: flow {graph}
+    deactivate DB
+    
+    Note over Processor: Find entry edge<br/>Get target node
+    
+    Processor->>EdgeWalker: fireNode(entryEdge.target, flow, run)
+    activate EdgeWalker
+    
+    Note over EdgeWalker: Start edge-walking execution<br/>(see execution-flow.mmd)
+    
+    EdgeWalker->>DB: Update node state<br/>status: 'running'
+    DB->>Realtime: Broadcast node update
+    Realtime->>UI: WebSocket: node running
+    
+    EdgeWalker-->>Processor: Node fired
+    deactivate EdgeWalker
+
+    %% Step 11: Completion
+    Note over Processor: Step 11: Mark webhook complete
+    
+    Processor->>DB: updateWebhookEvent()<br/>status: 'completed'<br/>entity_id, workflow_run_id
+    activate DB
+    DB-->>Processor: Updated
+    deactivate DB
+    
+    Processor-->>WebhookAPI: Success<br/>{webhookEventId, entityId, workflowRunId}
+    deactivate Processor
+    
+    WebhookAPI-->>External: 200 OK<br/>{success: true, entityId, workflowRunId}
+    deactivate WebhookAPI
+
+    %% Entity Movement Through Workflow
+    rect rgb(240, 248, 255)
+        Note over EdgeWalker,UI: Entity Movement During Workflow Execution
+        
+        Note over EdgeWalker: As nodes complete,<br/>entity moves through workflow
+        
+        EdgeWalker->>EntityDB: moveAlongEdge(entity.id, progress)
+        activate EntityDB
+        
+        EntityDB->>EntityDB: UPDATE stitch_entities<br/>SET edge_progress = progress
+        
+        EntityDB->>Realtime: Broadcast progress update
+        deactivate EntityDB
+        
+        Realtime->>UI: WebSocket: entity progress
+        
+        Note over UI: Entity animates along edge<br/>progress: 0.0 → 1.0
+        
+        Note over EdgeWalker: Node completes,<br/>entity arrives at node
+        
+        EdgeWalker->>EntityDB: arriveAtNode(entity.id, node.id)
+        activate EntityDB
+        
+        Note over EntityDB: Call RPC: arrive_at_node()<br/>Atomic update
+        
+        EntityDB->>EntityDB: UPDATE stitch_entities<br/>SET current_node_id = node.id<br/>current_edge_id = NULL<br/>edge_progress = NULL
+        
+        EntityDB->>JourneyDB: INSERT INTO stitch_journey_events<br/>{entity_id, event_type: 'node_arrival',<br/>node_id, timestamp}
+        
+        EntityDB->>Realtime: Broadcast arrival
+        deactivate EntityDB
+        
+        Realtime->>UI: WebSocket: entity at node
+        
+        Note over UI: Entity appears at node<br/>Animation completes
+        
+        Note over EdgeWalker: Continue edge-walking<br/>to next node
+        
+        EdgeWalker->>EntityDB: startJourney(entity.id, next_edge_id)
+        activate EntityDB
+        
+        EntityDB->>EntityDB: UPDATE stitch_entities<br/>SET current_edge_id = next_edge_id<br/>edge_progress = 0.0
+        
+        EntityDB->>JourneyDB: INSERT INTO stitch_journey_events<br/>{entity_id, event_type: 'edge_start',<br/>edge_id: next_edge_id}
+        
+        EntityDB->>Realtime: Broadcast edge start
+        deactivate EntityDB
+        
+        Realtime->>UI: WebSocket: entity on next edge
+        
+        Note over UI: Entity begins next journey<br/>Animation continues
+    end
+
+    %% Worker Node Entity Movement
+    rect rgb(255, 250, 240)
+        Note over EdgeWalker,UI: Worker Node Entity Movement to Section
+        
+        Note over EdgeWalker: Worker node completes<br/>with entity movement action
+        
+        EdgeWalker->>EntityDB: moveEntityToSection(entity.id, section_id,<br/>completeAs, metadata, setEntityType)
+        activate EntityDB
+        
+        Note over EntityDB: Move entity to target section<br/>Optionally convert entity type
+        
+        EntityDB->>EntityDB: UPDATE stitch_entities<br/>SET current_node_id = section_id<br/>current_edge_id = NULL<br/>entity_type = setEntityType (if provided)
+        
+        EntityDB->>JourneyDB: INSERT INTO stitch_journey_events<br/>{entity_id, event_type: 'node_arrival',<br/>node_id: section_id,<br/>metadata: {completion_status,<br/>movement_type: 'worker_entity_movement',<br/>entity_type_changed}}
+        
+        EntityDB->>Realtime: Broadcast section arrival
+        deactivate EntityDB
+        
+        Realtime->>UI: WebSocket: entity at section
+        
+        Note over UI: Entity appears in BMC section<br/>(e.g., Lead → Customer conversion)
+    end
+
+    %% Journey History
+    rect rgb(240, 255, 240)
+        Note over UI,JourneyDB: Journey History Tracking
+        
+        UI->>JourneyDB: getJourneyHistory(entity.id)
+        activate JourneyDB
+        
+        JourneyDB-->>UI: journey_events[]<br/>[{event_type, node_id, edge_id,<br/>timestamp, metadata}]
+        deactivate JourneyDB
+        
+        Note over UI: Display entity journey timeline<br/>Show path through workflow<br/>Track conversions and movements
+    end
+
+    %% Error Handling
+    rect rgb(255, 240, 240)
+        Note over External,WebhookAPI: Error Handling Scenarios
+        
+        alt Signature Verification Fails
+            Note over Adapter: Invalid HMAC signature
+            Adapter-->>Processor: Error: Invalid signature
+            Processor->>DB: updateWebhookEvent()<br/>status: 'failed'<br/>error: 'signature verification failed'
+            Processor-->>WebhookAPI: 401 Unauthorized
+            
+        else Entity Extraction Fails
+            Note over Adapter: Missing required fields<br/>(name, email, entity_type)
+            Adapter-->>Processor: Error: Invalid entity data
+            Processor->>DB: updateWebhookEvent()<br/>status: 'failed'<br/>error: 'entity extraction failed'
+            Processor-->>WebhookAPI: 400 Bad Request
+            
+        else Workflow Not Found
+            Note over Processor: Invalid workflow_id in config
+            Processor->>DB: updateWebhookEvent()<br/>status: 'failed'<br/>error: 'workflow not found'
+            Processor-->>WebhookAPI: 500 Internal Server Error
+            
+        else Entry Edge Invalid
+            Note over Processor: entry_edge_id not in graph
+            Processor->>DB: updateWebhookEvent()<br/>status: 'failed'<br/>error: 'entry edge not found'
+            Processor-->>WebhookAPI: 500 Internal Server Error
+        end
+        
+        Note over DB: All errors logged in<br/>stitch_webhook_events<br/>for debugging and audit
+    end
