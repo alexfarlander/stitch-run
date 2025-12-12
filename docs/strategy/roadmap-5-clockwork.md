@@ -507,7 +507,7 @@ This is the work to be done, prioritized.
     3. Creates all drill-down workflows.
     4. Seeds the Halloween entities.
     5. Sets initial Revenue/Cost values.
-- [ ] **Task:** Document a "Demo Script" in `docs/demo-script.md` with:
+- [ ] **Task:** Document a "Demo Script" in `features/demo-orchestrator/demo-script.md` with:
     - Talking points for each section.
     - Actions to trigger (e.g., "Click Play to see entity movement").
     - Expected visual results (e.g., "Werewolf moves from Marketing to Sales").
