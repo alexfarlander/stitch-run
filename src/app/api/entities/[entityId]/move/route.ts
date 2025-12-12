@@ -18,6 +18,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/client';
 import { createJourneyEvent } from '@/lib/db/entities';
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 interface MoveEntityRequest {
   targetNodeId: string;
 }
@@ -38,7 +42,7 @@ export async function POST(
       );
     }
 
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
 
     // Fetch the entity
     const { data: entity, error: entityError } = await supabase
@@ -70,7 +74,15 @@ export async function POST(
     }
 
     const canvasData = canvas.canvas as unknown;
-    const targetNode = canvasData.nodes?.find((n: unknown) => n.id === targetNodeId);
+    if (!isPlainObject(canvasData)) {
+      return NextResponse.json(
+        { error: 'Canvas data is invalid' },
+        { status: 500 }
+      );
+    }
+
+    const nodes = Array.isArray(canvasData.nodes) ? canvasData.nodes : [];
+    const targetNode = nodes.find((n: unknown) => isPlainObject(n) && n.id === targetNodeId);
 
     if (!targetNode) {
       return NextResponse.json(
@@ -82,11 +94,12 @@ export async function POST(
     // Requirement 14.2: Verify edge exists if moving between different nodes
     const sourceNodeId = entity.current_node_id;
     if (sourceNodeId && sourceNodeId !== targetNodeId) {
-      const edges = canvasData.edges || [];
+      const edges = Array.isArray(canvasData.edges) ? canvasData.edges : [];
       const connectingEdge = edges.find(
         (e: unknown) =>
-          (e.source === sourceNodeId && e.target === targetNodeId) ||
-          (e.source === targetNodeId && e.target === sourceNodeId)
+          isPlainObject(e) &&
+          ((e.source === sourceNodeId && e.target === targetNodeId) ||
+            (e.source === targetNodeId && e.target === sourceNodeId))
       );
 
       if (!connectingEdge) {
@@ -136,7 +149,7 @@ export async function POST(
       entity: updatedEntity,
       journeyEvent,
     });
-  } catch (_error) {
+  } catch (error) {
     console.error('Error moving entity:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

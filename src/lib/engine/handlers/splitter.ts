@@ -32,7 +32,10 @@ export function extractArray(input: unknown, arrayPath: string): unknown[] {
     if (current === null || current === undefined) {
       throw new Error(`Array not found at configured path: ${arrayPath}`);
     }
-    current = current[part];
+    if (typeof current !== 'object') {
+      throw new Error(`Array not found at configured path: ${arrayPath}`);
+    }
+    current = (current as Record<string, unknown>)[part];
   }
 
   // Validate that we got an array
@@ -131,7 +134,7 @@ export async function fireSplitterNode(
     };
 
     await updateNodeStates(runId, updates);
-  } catch (_error) {
+  } catch (error) {
     // Handle extraction errors (Requirement 10.5)
     let errorMessage = 'Failed to process splitter node';
     if (error instanceof Error) {

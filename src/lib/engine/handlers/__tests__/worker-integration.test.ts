@@ -167,7 +167,7 @@ describe('Worker Integration', () => {
       const claudeWorker = workerRegistry.getWorker('claude');
       expect(claudeWorker).toBeDefined();
       expect(typeof claudeWorker.execute).toBe('function');
-    } catch (_error) {
+    } catch (error) {
       // If it throws, it should be about missing API key
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toContain('ANTHROPIC_API_KEY');
@@ -178,7 +178,7 @@ describe('Worker Integration', () => {
       const minimaxWorker = workerRegistry.getWorker('minimax');
       expect(minimaxWorker).toBeDefined();
       expect(typeof minimaxWorker.execute).toBe('function');
-    } catch (_error) {
+    } catch (error) {
       // If it throws, it should be about missing credentials
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toMatch(/MINIMAX/);
@@ -189,7 +189,7 @@ describe('Worker Integration', () => {
       const elevenlabsWorker = workerRegistry.getWorker('elevenlabs');
       expect(elevenlabsWorker).toBeDefined();
       expect(typeof elevenlabsWorker.execute).toBe('function');
-    } catch (_error) {
+    } catch (error) {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toContain('ELEVENLABS_API_KEY');
     }
@@ -199,7 +199,7 @@ describe('Worker Integration', () => {
       const shotstackWorker = workerRegistry.getWorker('shotstack');
       expect(shotstackWorker).toBeDefined();
       expect(typeof shotstackWorker.execute).toBe('function');
-    } catch (_error) {
+    } catch (error) {
       expect(error).toBeInstanceOf(Error);
       expect((error as Error).message).toContain('SHOTSTACK_API_KEY');
     }

@@ -12,6 +12,7 @@
 import { WebhookAdapter, ExtractedEntity } from './types';
 import { WebhookConfig } from '@/types/stitch';
 import crypto from 'crypto';
+import { secureCompare, isTimestampFresh } from '../security';
 
 /**
  * Stripe webhook adapter
@@ -44,21 +45,24 @@ export const stripeAdapter: WebhookAdapter = {
     }, {} as Record<string, string>);
     
     if (!parts.t || !parts.v1) return false;
-    
+
+    // Check timestamp freshness for replay protection
+    const timestamp = parseInt(parts.t, 10);
+    if (isNaN(timestamp) || !isTimestampFresh(timestamp)) {
+      return false;
+    }
+
     // Reconstruct the signed payload: timestamp.rawBody
     const signedPayload = `${parts.t}.${rawBody}`;
-    
+
     try {
       // Compute expected signature
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(signedPayload);
       const computed = hmac.digest('hex');
-      
+
       // Timing-safe comparison to prevent timing attacks
-      return crypto.timingSafeEqual(
-        Buffer.from(parts.v1),
-        Buffer.from(computed)
-      );
+      return secureCompare(computed, parts.v1);
     } catch {
       return false;
     }
@@ -120,6 +124,7 @@ export const stripeAdapter: WebhookAdapter = {
    * (e.g., 'checkout.session.completed', 'customer.subscription.created')
    */
   getEventType: (payload: unknown): string => {
-    return payload.type || 'unknown_stripe_event';
+    const p = payload as any;
+    return p?.type || 'unknown_stripe_event';
   }
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import { RevenueSection } from '@/components/canvas/sections';
+import type { ComponentProps } from 'react';
 
 /**
  * Test page for RevenueSection component
@@ -9,6 +10,8 @@ import { RevenueSection } from '@/components/canvas/sections';
  * with demo data before integrating it into the BMC canvas.
  */
 export default function TestRevenueSectionPage() {
+  type RevenueSectionProps = ComponentProps<typeof RevenueSection>;
+
   // Mock node props for testing
   const mockNodeProps = {
     id: 'test-revenue-section',
@@ -23,7 +26,14 @@ export default function TestRevenueSectionPage() {
     selected: false,
     dragging: false,
     isConnectable: false,
-  } as unknown;
+    // Provide reasonable defaults for other NodeProps fields that React Flow passes
+    zIndex: 0,
+    xPos: 0,
+    yPos: 0,
+    selectable: true,
+    deletable: false,
+    draggable: false,
+  } as unknown as RevenueSectionProps;
 
   return (
     <div className="min-h-screen bg-slate-950 p-8">

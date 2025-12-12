@@ -60,7 +60,7 @@ export function MediaGrid({
           className
         )}
       >
-        {Array.from({ length: 8 }).map((_, i) => (
+        {[...Array(8).keys()].map((i) => (
           <MediaCardSkeleton key={i} />
         ))}
       </div>

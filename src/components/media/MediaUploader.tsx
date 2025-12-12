@@ -132,7 +132,7 @@ export function MediaUploader({
           progress: 0,
         });
       }, 2000);
-    } catch (_err) {
+    } catch (err) {
       setUploadState({
         status: 'error',
         progress: 0,

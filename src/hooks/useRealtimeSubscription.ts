@@ -70,7 +70,7 @@ export function useRealtimeSubscription<T = any>(
     // Wrapper to ensure we only call callback if component is still mounted
     const wrappedCallback = (payload: unknown) => {
       if (mountedRef.current) {
-        callbackRef.current(payload);
+        callbackRef.current(payload as T);
       }
     };
 
@@ -92,13 +92,13 @@ export function useRealtimeSubscription<T = any>(
       const channel = supabase
         .channel(key)
         .on(
-          'postgres_changes' as unknown,
+          'postgres_changes' as any,
           {
             event: config.event || '*',
             schema: 'public',
             table: config.table,
             filter: config.filter,
-          },
+          } as any,
           (payload: unknown) => {
             // Invoke all registered callbacks for this channel
             const currentEntry = subscriptionRegistry.get(key);

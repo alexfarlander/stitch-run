@@ -17,6 +17,7 @@ import {
   TrendingUp,
   ChevronRight
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useCanvasNavigation } from '@/hooks/useCanvasNavigation';
 
 interface SectionNodeData {
@@ -25,7 +26,7 @@ interface SectionNodeData {
   child_canvas_id?: string;
 }
 
-const iconMap: Record<string, unknown> = {
+const iconMap: Record<string, LucideIcon> = {
   Marketing: Megaphone,
   Sales: ShoppingCart,
   Data: Database,
@@ -50,7 +51,7 @@ const categoryColors = {
 
 export const SectionNode = memo(({ data }: NodeProps) => {
   const nodeData = data as unknown as SectionNodeData;
-  const Icon = iconMap[nodeData.label] || Package;
+  const Icon: LucideIcon = iconMap[nodeData.label] || Package;
   const colors = categoryColors[nodeData.category];
   const { drillInto } = useCanvasNavigation();
 

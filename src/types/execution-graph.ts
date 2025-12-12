@@ -17,6 +17,27 @@
 import { InputSchema, OutputSchema, EntityMovementConfig, EdgeMapping } from './canvas-schema';
 
 // ============================================================================
+// Execution Edge Types
+// ============================================================================
+
+/**
+ * Compact edge representation for execution graph
+ * Preserves edge ID and type information needed for:
+ * 1. System edges (background tasks that don't block logical flow)
+ * 2. Visual journey animation (knowing which specific edge to animate)
+ */
+export interface CompactEdge {
+  /** The VisualEdge ID (needed for animation and tracking) */
+  id: string;
+  /** Target Node ID */
+  target: string;
+  /** Edge type: 'journey' (default, logical dependency) or 'system' (background task) */
+  type: string;
+  /** Optional edge data (mapping, labels, etc.) */
+  data?: Record<string, unknown>;
+}
+
+// ============================================================================
 // Execution Node Types
 // ============================================================================
 
@@ -72,18 +93,31 @@ export interface ExecutionGraph {
   /**
    * Edge data indexed by "source->target" for mapping lookup
    * Example: { "nodeA->nodeB": { prompt: "output.text" }, ... }
-   * 
+   *
    * This enables O(1) lookup of data mappings during edge traversal
    */
   edgeData: Record<string, EdgeMapping>;
-  
+
+  /**
+   * Full outbound edge list indexed by Source Node ID
+   * Contains detailed edge info (ID, Type) needed for:
+   * 1. System Edges (background tasks that don't create logical dependencies)
+   * 2. Visual Journey Travel (knowing WHICH specific edge to animate)
+   *
+   * Example: { "nodeA": [{ id: "e1", target: "nodeB", type: "system", ... }] }
+   *
+   * Note: System edges appear here but NOT in adjacency map, since they
+   * don't create logical dependencies for node firing.
+   */
+  outboundEdges: Record<string, CompactEdge[]>;
+
   /**
    * Entry points (nodes with no incoming edges)
    * These are the starting nodes for workflow execution
    * Example: ["start", "input1"]
    */
   entryNodes: string[];
-  
+
   /**
    * Terminal nodes (nodes with no outgoing edges)
    * These indicate workflow completion when all are finished

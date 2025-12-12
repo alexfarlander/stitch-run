@@ -55,7 +55,7 @@ describe('POST /api/canvas/[id]/run', () => {
     );
 
     const response = await POST(request, { params: { id: testFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('runId');
@@ -79,12 +79,12 @@ describe('POST /api/canvas/[id]/run', () => {
     );
 
     const response = await POST(request, { params: { id: testFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     
     // Verify version was created
-    const _supabase = createServerClient();
+    const supabase = createServerClient();
     const { data: version, error } = await supabase
       .from('stitch_flow_versions')
       .select('*')
@@ -111,7 +111,7 @@ describe('POST /api/canvas/[id]/run', () => {
     );
 
     const response = await POST(request, { params: { id: nonExistentId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(404);
     expect(data).toHaveProperty('error');
@@ -127,7 +127,7 @@ describe('POST /api/canvas/[id]/run', () => {
     );
 
     const response = await POST(request, { params: { id: testFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(400);
     expect(data).toHaveProperty('error');
@@ -172,7 +172,7 @@ describe('POST /api/canvas/[id]/run', () => {
 
   it('should accept optional entityId parameter', async () => {
     // Create a test entity first
-    const _supabase = createServerClient();
+    const supabase = createServerClient();
     const { data: entity, error: entityError } = await supabase
       .from('stitch_entities')
       .insert({
@@ -203,7 +203,7 @@ describe('POST /api/canvas/[id]/run', () => {
     );
 
     const response = await POST(request, { params: { id: testFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('runId');

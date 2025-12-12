@@ -60,7 +60,7 @@ export function EventsLogPanel({ events, onClear }: EventsLogPanelProps) {
       setIsRunning(true);
       setLoopCount(1);
       toast.success('Demo started!');
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to start demo:', error);
       toast.error('Failed to start demo');
     } finally {
@@ -82,7 +82,7 @@ export function EventsLogPanel({ events, onClear }: EventsLogPanelProps) {
       setIsRunning(false);
       setLoopCount(0);
       toast.info(`Demo stopped after ${result.loopsCompleted || 0} loops`);
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to stop demo:', error);
       toast.error('Failed to stop demo');
     } finally {
@@ -109,7 +109,7 @@ export function EventsLogPanel({ events, onClear }: EventsLogPanelProps) {
       setLoopCount(0);
       onClear(); // Clear events too
       toast.success('Demo reset');
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to reset demo:', error);
       toast.error('Failed to reset demo');
     } finally {

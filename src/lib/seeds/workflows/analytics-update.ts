@@ -168,7 +168,7 @@ export async function seedAnalyticsUpdateWorkflow(supabase?: SupabaseClient): Pr
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Analytics Update workflow seed failed:', error);
     throw error;
   }

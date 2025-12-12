@@ -1,8 +1,6 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { StitchCanvas, BMCCanvas } from '@/components/canvas';
+import { BMCCanvas, WorkflowCanvas } from '@/components/canvas';
 import { supabase } from '@/lib/supabase/client';
 import { StitchFlow } from '@/types/stitch';
 import { getCanvasNavigation } from '@/lib/navigation/canvas-navigation';
@@ -18,18 +16,18 @@ export default function CanvasPage() {
   // Sync navigation state with URL and handle drill-down navigation
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const navigation = getCanvasNavigation();
     const breadcrumbs = navigation.getBreadcrumbs();
-    
+
     // Check if URL canvas is in the breadcrumb stack
     const canvasIndex = breadcrumbs.findIndex(b => b.id === canvasId);
-    
+
     if (canvasIndex >= 0 && canvasIndex < breadcrumbs.length - 1) {
       // User navigated back via browser - sync the stack
       navigation.navigateTo(canvasIndex);
     }
-    
+
     // Subscribe to navigation changes (for drill-down)
     const unsubscribe = navigation.subscribe(() => {
       const newCanvasId = navigation.getCurrentCanvasId();
@@ -37,7 +35,7 @@ export default function CanvasPage() {
         router.push(`/canvas/${newCanvasId}`);
       }
     });
-    
+
     return unsubscribe;
   }, [canvasId, router]);
 
@@ -95,7 +93,7 @@ export default function CanvasPage() {
         {canvas.canvas_type === 'bmc' ? (
           <BMCCanvas flow={canvas} />
         ) : (
-          <StitchCanvas flow={canvas} editable={true} />
+          <WorkflowCanvas flow={canvas} />
         )}
       </div>
     </div>

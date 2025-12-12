@@ -109,10 +109,7 @@ describe('Collector Handler Property Tests', () => {
             const actualIncompleteIndex = incompleteIndex % upstreamCount;
             
             // Create upstream node IDs
-            const upstreamNodeIds = Array.from(
-              { length: upstreamCount },
-              (_, i) => `upstream-${i}`
-            );
+            const upstreamNodeIds = [...Array(upstreamCount).keys()].map((i) => `upstream-${i}`);
             
             // Create node states where one upstream is not completed
             const nodeStates: Record<string, NodeState> = {};
@@ -275,7 +272,7 @@ describe('Collector Handler Property Tests', () => {
           fc.integer({ min: 2, max: 10 }),
           (baseNodeId, arrayLength) => {
             // Create parallel path states with ordered outputs
-            const orderedOutputs = Array.from({ length: arrayLength }, (_, i) => i);
+            const orderedOutputs = [...Array(arrayLength).keys()];
             
             const nodeStates: Record<string, NodeState> = {};
             for (let i = 0; i < arrayLength; i++) {

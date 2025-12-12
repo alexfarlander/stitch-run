@@ -5,6 +5,7 @@ import { Handle, Position, NodeProps } from '@xyflow/react';
 import * as LucideIcons from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { StitchEntity } from '@/types/entity';
+import type { ComponentType } from 'react';
 
 interface FinancialItemNodeData {
   label: string;
@@ -32,7 +33,8 @@ function formatCurrency(value: number, currency: string = 'USD'): string {
 
 const FinancialItemNodeComponent = memo(({ data, selected }: NodeProps) => {
   const nodeData = data as unknown as FinancialItemNodeData;
-  const IconComponent = (LucideIcons as unknown)[nodeData.icon] || LucideIcons.DollarSign;
+  const iconMap = LucideIcons as unknown as Record<string, ComponentType<{ className?: string }>>;
+  const IconComponent = iconMap[nodeData.icon] || LucideIcons.DollarSign;
 
   const displayValue = nodeData.value !== undefined
     ? formatCurrency(nodeData.value, nodeData.currency)

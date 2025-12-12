@@ -113,7 +113,7 @@ export async function POST(
     );
     return applyRateLimitHeaders(response, rateLimitResult);
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Webhook API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

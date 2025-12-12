@@ -43,7 +43,7 @@ const VALID_CANVAS_TYPES = ['bmc', 'workflow', 'detail'] as const;
  */
 export async function checkForeignKeys(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Get the flow
@@ -140,7 +140,7 @@ export async function checkForeignKeys(flowId: string): Promise<VerificationErro
       });
     }
     // If runs query succeeds, the foreign key is valid (enforced by database)
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'foreign_key',
       message: `Unexpected error checking foreign keys for flow ${flowId}`,
@@ -157,7 +157,7 @@ export async function checkForeignKeys(flowId: string): Promise<VerificationErro
  */
 export async function checkNodeTypes(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Get the flow
@@ -207,7 +207,7 @@ export async function checkNodeTypes(flowId: string): Promise<VerificationError[
         },
       });
     }
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'node_type',
       message: `Unexpected error checking node types for flow ${flowId}`,
@@ -224,7 +224,7 @@ export async function checkNodeTypes(flowId: string): Promise<VerificationError[
  */
 export async function checkEdgeReferences(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Get the flow
@@ -274,7 +274,7 @@ export async function checkEdgeReferences(flowId: string): Promise<VerificationE
         });
       }
     }
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'edge_reference',
       message: `Unexpected error checking edge references for flow ${flowId}`,
@@ -292,7 +292,7 @@ export async function checkEdgeReferences(flowId: string): Promise<VerificationE
  */
 export async function checkParentNodes(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Get the flow
@@ -344,7 +344,7 @@ export async function checkParentNodes(flowId: string): Promise<VerificationErro
         });
       }
     }
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'parent_node',
       message: `Unexpected error checking parent nodes for flow ${flowId}`,
@@ -363,7 +363,7 @@ export async function checkParentNodes(flowId: string): Promise<VerificationErro
  */
 export async function checkTopology(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Get the flow
@@ -427,7 +427,7 @@ export async function checkTopology(flowId: string): Promise<VerificationError[]
         }
       }
     }
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'topology',
       message: `Unexpected error checking topology for flow ${flowId}`,
@@ -444,7 +444,7 @@ export async function checkTopology(flowId: string): Promise<VerificationError[]
  */
 export async function checkRealtimeConfig(): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Query the realtime.subscription table to check if stitch_runs is enabled
@@ -513,7 +513,7 @@ export async function checkRealtimeConfig(): Promise<VerificationError[]> {
         });
       }
     }
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'realtime',
       message: 'Unexpected error checking Realtime configuration',
@@ -532,7 +532,7 @@ export async function checkRealtimeConfig(): Promise<VerificationError[]> {
  */
 export async function checkJourneyEdges(flowId: string): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Get the flow
@@ -640,7 +640,7 @@ export async function checkJourneyEdges(flowId: string): Promise<VerificationErr
         },
       });
     }
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'journey_edge',
       message: `Unexpected error checking journey edges for flow ${flowId}`,
@@ -657,7 +657,7 @@ export async function checkJourneyEdges(flowId: string): Promise<VerificationErr
  */
 export async function checkRLSPolicies(): Promise<VerificationError[]> {
   const errors: VerificationError[] = [];
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   try {
     // Tables that should have RLS policies allowing SELECT
@@ -733,7 +733,7 @@ export async function checkRLSPolicies(): Promise<VerificationError[]> {
         });
       }
     }
-  } catch (_error) {
+  } catch (error) {
     errors.push({
       type: 'rls',
       message: 'Unexpected error checking RLS policies',

@@ -66,7 +66,7 @@ export function useMediaLibrary(
         media: mediaList,
         loading: false,
       }));
-    } catch (_err) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load media';
       setState(prev => ({
         ...prev,
@@ -93,7 +93,7 @@ export function useMediaLibrary(
       }));
       
       return newMedia;
-    } catch (_err) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload media';
       setState(prev => ({
         ...prev,
@@ -119,7 +119,7 @@ export function useMediaLibrary(
         media: prev.media.filter(m => m.id !== id),
         loading: false,
       }));
-    } catch (_err) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove media';
       setState(prev => ({
         ...prev,
@@ -150,7 +150,7 @@ export function useMediaLibrary(
       }));
       
       return updatedMedia;
-    } catch (_err) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update media';
       setState(prev => ({
         ...prev,
@@ -167,7 +167,7 @@ export function useMediaLibrary(
   const download = useCallback(async (id: string): Promise<string> => {
     try {
       return await getDownloadUrl(id);
-    } catch (_err) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get download URL';
       setState(prev => ({
         ...prev,

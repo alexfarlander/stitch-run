@@ -2,7 +2,7 @@
  * Canvas components exports
  */
 
-export { StitchCanvas } from './StitchCanvas';
+export { WorkflowCanvas } from './WorkflowCanvas';
 export { BMCCanvas } from './BMCCanvas';
 export { BaseNode } from './nodes/BaseNode';
 export { WorkerNode } from './nodes/WorkerNode';

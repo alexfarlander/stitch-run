@@ -113,7 +113,7 @@ describe('ClaudeLLMClient', () => {
       
       try {
         await client.complete('Test');
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('INVALID_API_KEY');
         expect((error as LLMError).retryable).toBe(false);
@@ -133,7 +133,7 @@ describe('ClaudeLLMClient', () => {
       
       try {
         await client.complete('Test');
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('INVALID_REQUEST');
         expect((error as LLMError).retryable).toBe(false);
@@ -154,7 +154,7 @@ describe('ClaudeLLMClient', () => {
       try {
         await client.complete('Test');
         throw new Error('Should have thrown');
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('RATE_LIMIT');
         expect((error as LLMError).retryable).toBe(true);
@@ -175,7 +175,7 @@ describe('ClaudeLLMClient', () => {
       try {
         await client.complete('Test');
         throw new Error('Should have thrown');
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('SERVER_ERROR');
         expect((error as LLMError).retryable).toBe(true);
@@ -259,7 +259,7 @@ describe('ClaudeLLMClient', () => {
       
       mockCreate.mockRejectedValue({ status: 429 });
       
-      const _startTime = Date.now();
+      const startTime = Date.now();
       
       try {
         await client.complete('Test');
@@ -284,8 +284,10 @@ describe('ClaudeLLMClient', () => {
       });
       
       // Mock a request that respects abort signal
-      mockCreate.mockImplementation((_params, options) => {
-        return new Promise((_, reject) => {
+      mockCreate.mockImplementation((params, options) => {
+        void params;
+        return new Promise((resolve, reject) => {
+          void resolve;
           if (options?.signal) {
             options.signal.addEventListener('abort', () => {
               const error = new Error('Aborted');
@@ -299,7 +301,7 @@ describe('ClaudeLLMClient', () => {
       try {
         await client.complete('Test');
         throw new Error('Should have thrown');
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(LLMError);
         expect((error as LLMError).code).toBe('TIMEOUT');
       }

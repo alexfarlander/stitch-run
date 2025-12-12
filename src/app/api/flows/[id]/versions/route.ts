@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createVersion, listVersions } from '@/lib/canvas/version-manager';
+import { createVersion, listVersions, ValidationFailureError } from '@/lib/canvas/version-manager';
 import { VisualGraph } from '@/types/canvas-schema';
 
 /**
@@ -58,23 +58,21 @@ export async function POST(
     
   } catch (error: unknown) {
     console.error('Error creating version:', error);
-    
+
     // Handle validation errors
-    if (error.name === 'ValidationFailureError') {
+    if (error instanceof ValidationFailureError) {
       return NextResponse.json(
         {
           error: 'Graph validation failed',
-          validationErrors: error.errors
+          validationErrors: error.errors,
         },
         { status: 400 }
       );
     }
-    
+
     // Handle other errors
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -106,10 +104,7 @@ export async function GET(
     
   } catch (error: unknown) {
     console.error('Error listing versions:', error);
-    
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

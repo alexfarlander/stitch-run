@@ -16,7 +16,7 @@ describe('Flow Versions API', () => {
 
   beforeEach(async () => {
     // Create a test flow
-    const _flow = await createFlow('Test Flow for Versions', {
+    const flow = await createFlow('Test Flow for Versions', {
       nodes: [],
       edges: [],
     });
@@ -28,7 +28,7 @@ describe('Flow Versions API', () => {
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -82,7 +82,7 @@ describe('Flow Versions API', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { id: testFlowId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Track for cleanup
       if (data.versionId) testVersionIds.push(data.versionId);
@@ -137,7 +137,7 @@ describe('Flow Versions API', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { id: testFlowId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Verify response
       expect(response.status).toBe(400);
@@ -158,7 +158,7 @@ describe('Flow Versions API', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { id: testFlowId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Verify response
       expect(response.status).toBe(400);
@@ -247,7 +247,7 @@ describe('Flow Versions API', () => {
           method: 'GET',
         });
         const response = await GET(request, { params: { id: emptyFlow.id } });
-        const _data = await response.json();
+        const data = await response.json();
 
         // Verify response
         expect(response.status).toBe(200);
@@ -286,7 +286,7 @@ describe('Flow Versions API', () => {
       });
       const createResponse = await POST(createRequest, { params: { id: testFlowId } });
       const createData = await createResponse.json();
-      const _versionId = createData.versionId;
+      const versionId = createData.versionId;
       testVersionIds.push(versionId);
 
       // Retrieve the version
@@ -319,7 +319,7 @@ describe('Flow Versions API', () => {
       const response = await GET_VERSION(request, {
         params: { id: testFlowId, vid: fakeVersionId }
       });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Verify response
       expect(response.status).toBe(404);
@@ -355,7 +355,7 @@ describe('Flow Versions API', () => {
         });
         const createResponse = await POST(createRequest, { params: { id: testFlowId } });
         const createData = await createResponse.json();
-        const _versionId = createData.versionId;
+        const versionId = createData.versionId;
         testVersionIds.push(versionId);
 
         // Try to retrieve the version using the other flow's ID

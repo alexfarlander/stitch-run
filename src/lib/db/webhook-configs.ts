@@ -18,7 +18,7 @@ import { WebhookConfig } from '@/types/stitch';
 export async function createWebhookConfig(
   config: Omit<WebhookConfig, 'id' | 'created_at' | 'updated_at'>
 ): Promise<WebhookConfig> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_configs')
@@ -53,7 +53,7 @@ export async function createWebhookConfig(
 export async function getWebhookConfigBySlug(
   endpointSlug: string
 ): Promise<WebhookConfig | null> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_configs')
@@ -83,7 +83,7 @@ export async function getWebhookConfigBySlug(
 export async function getWebhookConfigBySlugAdmin(
   endpointSlug: string
 ): Promise<WebhookConfig | null> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_configs')
@@ -112,7 +112,7 @@ export async function getWebhookConfigBySlugAdmin(
 export async function getWebhookConfigsByCanvas(
   canvasId: string
 ): Promise<WebhookConfig[]> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_configs')
@@ -140,7 +140,7 @@ export async function updateWebhookConfig(
   id: string,
   updates: Partial<Omit<WebhookConfig, 'id' | 'created_at' | 'updated_at'>>
 ): Promise<WebhookConfig> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   const { data, error } = await supabase
     .from('stitch_webhook_configs')
@@ -167,7 +167,7 @@ export async function updateWebhookConfig(
  * @throws Error if deletion fails
  */
 export async function deleteWebhookConfig(id: string): Promise<void> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   const { error } = await supabase
     .from('stitch_webhook_configs')

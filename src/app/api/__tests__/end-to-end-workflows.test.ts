@@ -28,7 +28,7 @@ describe('End-to-End Workflow Integration Tests', () => {
     for (const canvasId of testCanvasIds) {
       try {
         await deleteFlow(canvasId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }

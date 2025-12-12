@@ -376,56 +376,80 @@ export function JourneyHistoryPanel({ entityId, entityName, fallbackJourney }: P
                       {/* Metadata - display meaningful business context */}
                       {metadata && Object.keys(metadata).length > 0 && (
                         <div className="text-xs text-gray-400 mt-1 space-y-0.5">
-                          {metadata.started_date && (
-                            <div>
-                              Started: {new Date(metadata.started_date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </div>
+                          {(() => {
+                            const startedDate = metadata['started_date'];
+                            if (typeof startedDate !== 'string' && typeof startedDate !== 'number') return null;
+                            const d = new Date(startedDate);
+                            if (Number.isNaN(d.getTime())) return null;
+                            return (
+                              <div>
+                                Started:{' '}
+                                {d.toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </div>
+                            );
+                          })()}
+                          {(() => {
+                            const endsDate = metadata['ends_date'];
+                            if (typeof endsDate !== 'string' && typeof endsDate !== 'number') return null;
+                            const d = new Date(endsDate);
+                            if (Number.isNaN(d.getTime())) return null;
+                            return (
+                              <div>
+                                Ends:{' '}
+                                {d.toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </div>
+                            );
+                          })()}
+                          {(() => {
+                            const scheduled = metadata['scheduled_date'];
+                            if (typeof scheduled !== 'string' && typeof scheduled !== 'number') return null;
+                            const d = new Date(scheduled);
+                            if (Number.isNaN(d.getTime())) return null;
+                            return (
+                              <div>
+                                Scheduled:{' '}
+                                {d.toLocaleString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                            );
+                          })()}
+                          {typeof metadata['account_manager'] === 'string' && (
+                            <div>Account Manager: {metadata['account_manager']}</div>
                           )}
-                          {metadata.ends_date && (
-                            <div>
-                              Ends: {new Date(metadata.ends_date).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </div>
+                          {typeof metadata['assigned_to'] === 'string' && (
+                            <div>Assigned to: {metadata['assigned_to']}</div>
                           )}
-                          {metadata.scheduled_date && (
-                            <div>
-                              Scheduled: {new Date(metadata.scheduled_date).toLocaleString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </div>
+                          {typeof metadata['campaign'] === 'string' && (
+                            <div>Campaign: {metadata['campaign']}</div>
                           )}
-                          {metadata.account_manager && (
-                            <div>Account Manager: {metadata.account_manager}</div>
+                          {typeof metadata['source'] === 'string' && (
+                            <div>Source: {metadata['source']}</div>
                           )}
-                          {metadata.assigned_to && (
-                            <div>Assigned to: {metadata.assigned_to}</div>
+                          {typeof metadata['plan'] === 'string' && (
+                            <div>Plan: {metadata['plan']}</div>
                           )}
-                          {metadata.campaign && (
-                            <div>Campaign: {metadata.campaign}</div>
+                          {(() => {
+                            const amount = metadata['amount'];
+                            if (typeof amount === 'number') return <div>Amount: ${amount}</div>;
+                            if (typeof amount === 'string' && amount.trim() !== '') return <div>Amount: ${amount}</div>;
+                            return null;
+                          })()}
+                          {typeof metadata['status'] === 'string' && (
+                            <div>Status: {metadata['status']}</div>
                           )}
-                          {metadata.source && (
-                            <div>Source: {metadata.source}</div>
-                          )}
-                          {metadata.plan && (
-                            <div>Plan: {metadata.plan}</div>
-                          )}
-                          {metadata.amount !== undefined && (
-                            <div>Amount: ${metadata.amount}</div>
-                          )}
-                          {metadata.status && (
-                            <div>Status: {metadata.status}</div>
-                          )}
-                          {metadata.note && (
-                            <div className="italic">{metadata.note}</div>
+                          {typeof metadata['note'] === 'string' && (
+                            <div className="italic">{metadata['note']}</div>
                           )}
                           {/* Show other metadata fields that aren't in the special list */}
                           {Object.entries(metadata)

@@ -209,7 +209,7 @@ export function withErrorTracking<T extends (...args: unknown[]) => Promise<unkn
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args);
-    } catch (_error) {
+    } catch (error) {
       trackError(error instanceof Error ? error : new Error(String(error)), context);
       throw error; // Re-throw after tracking
     }

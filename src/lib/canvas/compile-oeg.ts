@@ -9,6 +9,7 @@
 
 import { VisualGraph, VisualNode } from '@/types/canvas-schema';
 import { ExecutionGraph, ExecutionNode } from '@/types/execution-graph';
+import type { EdgeMapping } from '@/types/canvas-schema';
 import { validateGraph, ValidationError } from './validate-graph';
 
 // ============================================================================
@@ -56,27 +57,45 @@ export function compileToOEG(visualGraph: VisualGraph): CompileResult {
     return { success: false, errors };
   }
   
-  // 2. OPTIMIZATION - Build adjacency map (Requirement 3.1)
+  // 2. OPTIMIZATION - Build adjacency map and outbound edges (Requirement 3.1)
   // Use Object.create(null) to avoid prototype pollution issues with special keys like __proto__
   const adjacency: Record<string, string[]> = Object.create(null);
-  const edgeData: Record<string, unknown> = Object.create(null);
-  
-  // Initialize adjacency for all nodes
+  const edgeData: Record<string, EdgeMapping> = Object.create(null);
+  const outboundEdges: Record<string, import('@/types/execution-graph').CompactEdge[]> = Object.create(null);
+
+  // Initialize adjacency and outboundEdges for all nodes
   for (const node of visualGraph.nodes) {
     adjacency[node.id] = [];
+    outboundEdges[node.id] = [];
   }
-  
-  // Build adjacency map and edge data index
+
+  // Build adjacency map, edge data index, and outbound edges list
   for (const edge of visualGraph.edges) {
-    // Add to adjacency map
-    if (!adjacency[edge.source]) {
-      adjacency[edge.source] = [];
+    const edgeType = edge.type || 'journey';
+
+    // 1. ALWAYS add to outboundEdges (for system edges and visual animation)
+    if (!outboundEdges[edge.source]) {
+      outboundEdges[edge.source] = [];
     }
-    adjacency[edge.source].push(edge.target);
-    
-    // Index edge data by "source->target" (Requirement 3.6)
+    outboundEdges[edge.source].push({
+      id: edge.id,
+      target: edge.target,
+      type: edgeType,
+      data: edge.data
+    });
+
+    // 2. Add to adjacency ONLY if NOT a system edge
+    // System edges are background tasks that don't create logical dependencies
+    if (edgeType !== 'system') {
+      if (!adjacency[edge.source]) {
+        adjacency[edge.source] = [];
+      }
+      adjacency[edge.source].push(edge.target);
+    }
+
+    // 3. Index edge data by "source->target" (Requirement 3.6)
     if (edge.data?.mapping) {
-      edgeData[`${edge.source}->${edge.target}`] = edge.data.mapping;
+      edgeData[`${edge.source}->${edge.target}`] = edge.data.mapping as EdgeMapping;
     }
   }
   
@@ -111,6 +130,7 @@ export function compileToOEG(visualGraph: VisualGraph): CompileResult {
       nodes,
       adjacency,
       edgeData,
+      outboundEdges,
       entryNodes,
       terminalNodes
     }

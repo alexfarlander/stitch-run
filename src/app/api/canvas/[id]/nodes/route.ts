@@ -112,7 +112,7 @@ async function createNodeHandler(
     }
 
     // Check if canvas exists (Requirement 1.1)
-    const _flow = await getFlow(canvasId, true);
+    const flow = await getFlow(canvasId, true);
     if (!flow) {
       throw new APIError(
         'NOT_FOUND',
@@ -124,8 +124,11 @@ async function createNodeHandler(
     // Get current visual graph
     let currentGraph: VisualGraph;
 
-    if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
-      currentGraph = (flow as unknown).current_version.visual_graph;
+    const flowWithVersion = flow as typeof flow & {
+      current_version?: { visual_graph?: VisualGraph };
+    };
+    if (flow.current_version_id && flowWithVersion.current_version?.visual_graph) {
+      currentGraph = flowWithVersion.current_version.visual_graph;
     } else {
       // Fallback to legacy graph format - convert to VisualGraph
       currentGraph = {
@@ -194,7 +197,7 @@ async function createNodeHandler(
 
     return NextResponse.json(response, { status: 201 });
 
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }

@@ -21,7 +21,7 @@ describe('Error Handling Integration Tests', () => {
     for (const canvasId of testCanvasIds) {
       try {
         await deleteFlow(canvasId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -36,7 +36,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Invalid JSON');
@@ -50,7 +50,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPut(request, { params: { id: 'test-id' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Invalid JSON');
@@ -64,7 +64,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await runPost(request, { params: { id: 'test-id' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Invalid JSON');
@@ -78,7 +78,7 @@ describe('Error Handling Integration Tests', () => {
       const request = new NextRequest(`http://localhost/api/canvas/${fakeId}`);
       
       const response = await canvasGet(request, { params: { id: fakeId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.code).toBe('NOT_FOUND');
@@ -96,7 +96,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPut(request, { params: { id: fakeId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.code).toBe('NOT_FOUND');
@@ -107,7 +107,7 @@ describe('Error Handling Integration Tests', () => {
       const request = new NextRequest(`http://localhost/api/canvas/${fakeId}`);
 
       const response = await canvasDelete(request, { params: { id: fakeId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.code).toBe('NOT_FOUND');
@@ -122,7 +122,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await runPost(request, { params: { id: fakeId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.code).toBe('NOT_FOUND');
@@ -136,7 +136,7 @@ describe('Error Handling Integration Tests', () => {
       );
 
       const response = await statusGet(request, { params: { id: fakeId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.code).toBe('NOT_FOUND');
@@ -152,7 +152,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('BAD_REQUEST');
@@ -172,7 +172,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('VALIDATION_ERROR');
@@ -191,7 +191,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('VALIDATION_ERROR');
@@ -210,7 +210,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('BAD_REQUEST');
@@ -221,7 +221,7 @@ describe('Error Handling Integration Tests', () => {
       const request = new NextRequest('http://localhost/api/canvas/');
       
       const response = await canvasGet(request, { params: { id: '' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('BAD_REQUEST');
@@ -232,7 +232,7 @@ describe('Error Handling Integration Tests', () => {
       const request = new NextRequest('http://localhost/api/canvas/test-id/status');
 
       const response = await statusGet(request, { params: { id: 'test-id' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('BAD_REQUEST');
@@ -253,7 +253,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('PARSE_ERROR');
@@ -272,7 +272,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.code).toBe('PARSE_ERROR');
@@ -290,7 +290,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(data).toHaveProperty('error');
       expect(data).toHaveProperty('code');
@@ -306,7 +306,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(data).toHaveProperty('details');
       expect(Array.isArray(data.details)).toBe(true);
@@ -318,7 +318,7 @@ describe('Error Handling Integration Tests', () => {
       const request = new NextRequest(`http://localhost/api/canvas/${fakeId}`);
 
       const response = await canvasGet(request, { params: { id: fakeId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(data).toHaveProperty('error');
       expect(data).toHaveProperty('code');
@@ -357,7 +357,7 @@ describe('Error Handling Integration Tests', () => {
       });
 
       const response = await canvasPost(request);
-      const _data = await response.json();
+      const data = await response.json();
       
       if (data.id) {
         testCanvasIds.push(data.id);

@@ -19,7 +19,7 @@ export class SceneParserWorker implements IWorker {
   private mockMode: boolean = false;
 
   constructor() {
-    const _config = getConfig();
+    const config = getConfig();
     
     if (!config.workers.anthropicApiKey) {
       this.mockMode = true;
@@ -47,9 +47,9 @@ export class SceneParserWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: unknown
+    input: any
   ): Promise<void> {
-    const _startTime = Date.now();
+    const startTime = Date.now();
 
     logWorker('info', 'Scene Parser worker execution started', {
       worker: 'scene-parser',
@@ -191,23 +191,24 @@ Guidelines:
       let parsedResponse: unknown;
       try {
         parsedResponse = JSON.parse(cleanJson);
-      } catch (_error) {
+      } catch (error) {
         // Log the raw text for debugging
         console.error('Failed to parse raw output:', cleanJson);
         throw new Error(`Failed to parse Claude response as JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
       // Validate response structure
-      if (!parsedResponse.scenes || !Array.isArray(parsedResponse.scenes)) {
+      const parsedAny = parsedResponse as any;
+      if (!parsedAny.scenes || !Array.isArray(parsedAny.scenes)) {
         throw new Error('Claude response must contain a "scenes" array');
       }
 
-      if (parsedResponse.scenes.length === 0) {
+      if (parsedAny.scenes.length === 0) {
         throw new Error('Claude response contains empty scenes array');
       }
 
       // Validate each scene structure
-      const scenes = parsedResponse.scenes;
+      const scenes = parsedAny.scenes as any[];
       for (let i = 0; i < scenes.length; i++) {
         const scene = scenes[i];
         
@@ -247,7 +248,7 @@ Guidelines:
         },
       });
 
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

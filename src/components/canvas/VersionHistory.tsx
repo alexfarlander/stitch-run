@@ -194,7 +194,7 @@ export function VersionHistory({
         }
         const data = await response.json();
         setVersions(data.versions || []);
-      } catch (_err) {
+      } catch (err) {
         console.error('Failed to load versions:', err);
         setError(err instanceof Error ? err.message : 'Failed to load versions');
       } finally {
@@ -218,7 +218,7 @@ export function VersionHistory({
       if (data.version && onViewVersion) {
         onViewVersion(data.version);
       }
-    } catch (_err) {
+    } catch (err) {
       console.error('Failed to load version:', err);
       setError(err instanceof Error ? err.message : 'Failed to load version');
     }
@@ -236,7 +236,7 @@ export function VersionHistory({
         setSelectedVersion(data.version);
         setRevertDialogOpen(true);
       }
-    } catch (_err) {
+    } catch (err) {
       console.error('Failed to load version:', err);
       setError(err instanceof Error ? err.message : 'Failed to load version');
     }
@@ -281,7 +281,7 @@ export function VersionHistory({
 
       setRevertDialogOpen(false);
       setSelectedVersion(null);
-    } catch (_err) {
+    } catch (err) {
       console.error('Failed to revert version:', err);
       setError(err instanceof Error ? err.message : 'Failed to revert version');
     } finally {

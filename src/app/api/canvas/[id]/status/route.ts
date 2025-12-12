@@ -146,7 +146,7 @@ export async function GET(
 
     return NextResponse.json(response, { status: 200 });
 
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }

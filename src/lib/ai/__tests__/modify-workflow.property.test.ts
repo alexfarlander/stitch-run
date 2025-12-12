@@ -33,7 +33,7 @@ const mockVersionStorage = new Map<string, {
 // Mock database functions
 vi.mock('@/lib/db/flows', () => ({
   getFlow: vi.fn(async (flowId: string) => {
-    const _flow = mockFlowStorage.get(flowId);
+    const flow = mockFlowStorage.get(flowId);
     if (!flow) return null;
     return flow;
   }),
@@ -46,14 +46,14 @@ vi.mock('@/lib/canvas/version-manager', () => ({
     return version;
   }),
   createVersion: vi.fn(async (flowId: string, visualGraph: VisualGraph, commitMessage?: string) => {
-    const _versionId = `version-${flowId}-${Date.now()}`;
+    const versionId = `version-${flowId}-${Date.now()}`;
     mockVersionStorage.set(versionId, {
       id: versionId,
       flow_id: flowId,
       visual_graph: visualGraph,
     });
     
-    const _flow = mockFlowStorage.get(flowId);
+    const flow = mockFlowStorage.get(flowId);
     if (flow) {
       flow.current_version_id = versionId;
     }
@@ -177,7 +177,7 @@ const visualGraphArbitrary: fc.Arbitrary<VisualGraph> = fc
  * Setup mock database with a canvas
  */
 function setupMockCanvas(canvasId: string, canvas: VisualGraph): void {
-  const _versionId = `version-${canvasId}`;
+  const versionId = `version-${canvasId}`;
   
   mockFlowStorage.set(canvasId, {
     id: canvasId,
@@ -262,7 +262,7 @@ describe('MODIFY_WORKFLOW Property Tests', () => {
             
             // Property holds: All edges reference existing nodes
             return true;
-          } catch (_error) {
+          } catch (error) {
             // If modification fails validation, that's acceptable
             // The property is about successful modifications having valid edges
             if (error instanceof Error && error.message.includes('validation')) {

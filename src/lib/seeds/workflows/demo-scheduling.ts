@@ -214,7 +214,7 @@ export async function seedDemoSchedulingWorkflow(supabase?: SupabaseClient): Pro
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Demo Scheduling workflow seed failed:', error);
     throw error;
   }

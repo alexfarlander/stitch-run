@@ -13,6 +13,7 @@ import {
   validateRequiredFields,
   APIError
 } from '@/lib/api/error-handler';
+import type { ErrorCode } from '@/types/canvas-api';
 import {
   createLLMClient,
   LLMError
@@ -106,7 +107,7 @@ export async function POST(
       }
 
       // Load canvas from database
-      const _flow = await getFlow(canvasId, true);
+      const flow = await getFlow(canvasId, true);
       
       if (!flow) {
         throw new APIError(
@@ -149,7 +150,7 @@ export async function POST(
     let llmClient;
     try {
       llmClient = createLLMClient();
-    } catch (_error) {
+    } catch (error) {
       // Handle LLM client creation errors (e.g., missing API key)
       if (error instanceof LLMError) {
         throw new APIError(
@@ -165,7 +166,7 @@ export async function POST(
     let llmResponse: string;
     try {
       llmResponse = await llmClient.complete(prompt);
-    } catch (_error) {
+    } catch (error) {
       // Handle LLM-specific errors
       if (error instanceof LLMError) {
         throw new APIError(
@@ -182,7 +183,7 @@ export async function POST(
     let parsedResponse: AIManagerResponse;
     try {
       parsedResponse = parseAndValidateResponse(llmResponse);
-    } catch (_error) {
+    } catch (error) {
       // Handle parsing/validation errors
       if (error instanceof ActionExecutorError) {
         const details: string[] = [error.code];
@@ -202,13 +203,13 @@ export async function POST(
     // Step 7: Execute action based on parsed response
     let result: unknown;
     try {
-      result = await executeAction(parsedResponse, {
-        createWorkflow: handleCreateWorkflow as unknown,
-        modifyWorkflow: handleModifyWorkflow as unknown,
-        runWorkflow: handleRunWorkflow as unknown,
-        getStatus: handleGetStatus as unknown
+      result = await executeAction<unknown>(parsedResponse, {
+        createWorkflow: handleCreateWorkflow,
+        modifyWorkflow: handleModifyWorkflow,
+        runWorkflow: handleRunWorkflow,
+        getStatus: handleGetStatus
       });
-    } catch (_error) {
+    } catch (error) {
       // Handle action execution errors
       if (error instanceof ActionExecutorError) {
         // Map error codes to HTTP status codes
@@ -233,12 +234,18 @@ export async function POST(
           }
         }
 
-        throw new APIError(
-          error.code as unknown,
-          statusCode,
-          error.message,
-          detailsArray
-        );
+        const apiCode: ErrorCode =
+          error.code === 'NOT_FOUND'
+            ? 'NOT_FOUND'
+            : error.code === 'VALIDATION_ERROR'
+              ? 'VALIDATION_ERROR'
+              : error.code === 'PARSE_ERROR'
+                ? 'PARSE_ERROR'
+                : error.code === 'DATABASE_ERROR'
+                  ? 'INTERNAL_ERROR'
+                  : 'INTERNAL_ERROR';
+
+        throw new APIError(apiCode, statusCode, error.message, detailsArray);
       }
       throw error;
     }
@@ -250,7 +257,7 @@ export async function POST(
       result: result
     });
 
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }

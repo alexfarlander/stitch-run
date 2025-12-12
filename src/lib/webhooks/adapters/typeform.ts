@@ -12,6 +12,7 @@
 import { WebhookAdapter, ExtractedEntity } from './types';
 import { WebhookConfig } from '@/types/stitch';
 import crypto from 'crypto';
+import { secureCompare } from '../security';
 
 /**
  * Typeform webhook adapter
@@ -44,9 +45,9 @@ export const typeformAdapter: WebhookAdapter = {
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(rawBody);
       const computed = hmac.digest('base64');
-      
-      // Direct comparison (Typeform uses base64, not hex)
-      return expected === computed;
+
+      // Timing-safe comparison (Typeform uses base64, not hex)
+      return secureCompare(expected, computed);
     } catch {
       return false;
     }
@@ -74,14 +75,14 @@ export const typeformAdapter: WebhookAdapter = {
     const answers = payload.form_response?.answers || [];
     
     // Find email field (type === 'email')
-    const emailAnswer = answers.find((a: unknown) => a.type === 'email');
+    const emailAnswer = answers.find((a: any) => a?.type === 'email');
     const email = emailAnswer?.email;
     
     // Find name field (type === 'text' and field ref/title contains 'name')
-    const nameAnswer = answers.find((a: unknown) => 
-      a.type === 'text' && (
-        a.field?.ref?.toLowerCase().includes('name') ||
-        a.field?.title?.toLowerCase().includes('name')
+    const nameAnswer = answers.find((a: any) => 
+      a?.type === 'text' && (
+        a?.field?.ref?.toLowerCase().includes('name') ||
+        a?.field?.title?.toLowerCase().includes('name')
       )
     );
     const name = nameAnswer?.text || undefined;
@@ -105,6 +106,7 @@ export const typeformAdapter: WebhookAdapter = {
    * (typically 'form_response')
    */
   getEventType: (payload: unknown): string => {
-    return payload.event_type || 'form_response';
+    const p = payload as any;
+    return p?.event_type || 'form_response';
   }
 };

@@ -21,10 +21,10 @@ import { isValidWorkerType, getAvailableWorkerTypes } from '@/lib/workers/regist
  * Valid node types
  */
 export const NodeType = {
-  WORKER: 'worker',
-  UX: 'ux',
-  SPLITTER: 'splitter',
-  COLLECTOR: 'collector',
+  WORKER: 'Worker',
+  UX: 'UX',
+  SPLITTER: 'Splitter',
+  COLLECTOR: 'Collector',
   SECTION: 'section',
 } as const;
 
@@ -36,11 +36,19 @@ export type NodeTypeValue = typeof NodeType[keyof typeof NodeType];
 export const VALID_COMPLETE_AS_VALUES = ['success', 'failure', 'neutral'] as const;
 export type CompleteAsValue = typeof VALID_COMPLETE_AS_VALUES[number];
 
+function isValidCompleteAsValue(value: string): value is CompleteAsValue {
+  return (VALID_COMPLETE_AS_VALUES as readonly string[]).includes(value);
+}
+
 /**
  * Valid entity types
  */
 export const VALID_ENTITY_TYPES = ['customer', 'churned', 'lead'] as const;
 export type EntityType = typeof VALID_ENTITY_TYPES[number];
+
+function isValidEntityType(value: string): value is EntityType {
+  return (VALID_ENTITY_TYPES as readonly string[]).includes(value);
+}
 
 // ============================================================================
 // Validation Error Types
@@ -264,7 +272,7 @@ export function validateWorkerTypes(graph: VisualGraph): ValidationError[] {
   const errors: ValidationError[] = [];
 
   for (const node of graph.nodes) {
-    if (node.type === 'worker' && node.data.worker_type) {
+    if (node.type === NodeType.WORKER && node.data.worker_type) {
       if (!isValidWorkerType(node.data.worker_type)) {
         errors.push({
           type: 'invalid_worker',
@@ -407,11 +415,11 @@ export function validateSplitterCollectorPairs(graph: VisualGraph): ValidationEr
   }
 
   // Find all splitter and collector nodes
-  const splitters = graph.nodes.filter(n => 
-    n.type.toLowerCase() === NodeType.SPLITTER
+  const splitters = graph.nodes.filter(n =>
+    n.type === NodeType.SPLITTER
   );
-  const collectors = graph.nodes.filter(n => 
-    n.type.toLowerCase() === NodeType.COLLECTOR
+  const collectors = graph.nodes.filter(n =>
+    n.type === NodeType.COLLECTOR
   );
 
   // Only validate if there are both splitters and collectors in the graph
@@ -720,7 +728,7 @@ function validateEntityMovementAction(
       field: `${actionType}.completeAs`,
       message: `Worker node "${nodeId}" entityMovement.${actionType} missing required "completeAs"`,
     });
-  } else if (!VALID_COMPLETE_AS_VALUES.includes(action.completeAs as unknown)) {
+  } else if (!isValidCompleteAsValue(action.completeAs)) {
     errors.push({
       type: 'invalid_entity_movement',
       node: nodeId,
@@ -738,7 +746,7 @@ function validateEntityMovementAction(
         field: `${actionType}.setEntityType`,
         message: `Worker node "${nodeId}" entityMovement.${actionType}.setEntityType must be a string`,
       });
-    } else if (!VALID_ENTITY_TYPES.includes(action.setEntityType as unknown)) {
+    } else if (!isValidEntityType(action.setEntityType)) {
       errors.push({
         type: 'invalid_entity_movement',
         node: nodeId,

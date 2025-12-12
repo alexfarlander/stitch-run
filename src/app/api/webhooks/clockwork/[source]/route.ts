@@ -14,6 +14,7 @@ import { mapWebhookSourceToNode } from '@/lib/webhooks/node-map';
 import { createJourneyEvent } from '@/lib/db/entities';
 import { getAdminClient } from '@/lib/supabase/client';
 import { StitchEntity } from '@/types/stitch';
+import { RateLimiters, getClientIdentifier, applyRateLimitHeaders } from '@/lib/api/rate-limiter';
 
 /**
  * Determines entity type based on webhook source
@@ -126,7 +127,7 @@ async function moveEntityToNode(
 ): Promise<void> {
   const supabase = getAdminClient();
 
-  const updateData: unknown = {
+  const updateData: Record<string, unknown> = {
     current_node_id: nodeId,
     current_edge_id: null,
     edge_progress: null,
@@ -157,6 +158,24 @@ export async function POST(
   { params }: { params: Promise<{ source: string }> }
 ) {
   try {
+    // Step 0: Rate limiting - prevent abuse
+    const { source: sourceParam } = await params;
+    const clientIp = getClientIdentifier(request);
+    const identifier = `${sourceParam}:${clientIp}`; // Rate limit per source + IP
+
+    const rateLimitResult = await RateLimiters.webhook.check(identifier);
+    if (!rateLimitResult.success) {
+      const response = NextResponse.json(
+        {
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded. Please try again later.',
+          statusCode: 429
+        },
+        { status: 429 }
+      );
+      return applyRateLimitHeaders(response, rateLimitResult);
+    }
+
     // Extract source from params (Requirement 5.1)
     const { source } = await params;
 
@@ -262,8 +281,26 @@ export async function POST(
 
     // 5. Walk parallel edges - journey edges and system edges fire simultaneously
     // (Requirements 12.1, 12.2, 12.3, 12.4, 12.5)
+    // Get the flow to access current version for graph lookup
+    const { getFlow } = await import('@/lib/db/flows');
+    const flow = await getFlow(canvasId);
+    if (!flow || !flow.current_version_id) {
+      console.warn('[Webhook] Canvas has no current version, skipping edge walking');
+      return NextResponse.json({ success: true, entityId: entity.id });
+    }
+
+    // Create a minimal run object for walkParallelEdges
     const { walkParallelEdges } = await import('@/lib/engine/edge-walker');
-    const edgeResults = await walkParallelEdges(targetNodeId, entity.id, canvasId);
+    const stubRun = {
+      id: 'clockwork-demo',
+      flow_id: canvasId,
+      flow_version_id: flow.current_version_id,
+      node_states: {},
+      entity_id: entity.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const edgeResults = await walkParallelEdges(targetNodeId, entity.id, stubRun as any);
 
     // Log edge execution results (Requirement 12.5)
     console.log(`[Webhook] Parallel edge execution completed:`, {

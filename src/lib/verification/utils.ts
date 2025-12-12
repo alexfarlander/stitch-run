@@ -77,7 +77,7 @@ export async function runChecks(
       } else {
         result.summary.passedChecks++;
       }
-    } catch (_error) {
+    } catch (error) {
       // If a check throws an exception, treat it as a failed check
       result.errors.push(
         createError(

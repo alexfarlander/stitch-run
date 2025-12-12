@@ -192,7 +192,7 @@ export async function seedStripeSyncWorkflow(supabase?: SupabaseClient): Promise
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Stripe Sync workflow seed failed:', error);
     throw error;
   }

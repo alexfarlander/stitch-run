@@ -14,7 +14,7 @@ import {
 } from '../entities';
 
 describe('Entity Query Functions', () => {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   let testCanvasId: string;
   let testEntityId: string;
 

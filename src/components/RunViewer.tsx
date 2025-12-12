@@ -6,7 +6,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { StitchCanvas } from '@/components/canvas';
+import { WorkflowCanvas } from '@/components/canvas/WorkflowCanvas';
 import { UXInteractionPanel } from '@/components/UXInteractionPanel';
 import { useRealtimeRun } from '@/hooks/useRealtimeRun';
 import { StitchFlow, StitchRun } from '@/types/stitch';
@@ -66,8 +66,8 @@ export function RunViewer({ initialRun, flow }: RunViewerProps) {
 
   return (
     <>
-      <StitchCanvas flow={flow} run={run || undefined} />
-      
+      <WorkflowCanvas flow={flow} runId={run?.id || initialRun.id} />
+
       {/* Show UX interaction panel if a UX node is waiting */}
       {activeUXNode && (
         <UXInteractionPanel

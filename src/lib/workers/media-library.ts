@@ -20,9 +20,9 @@ export class MediaLibraryWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: unknown
+    input: any
   ): Promise<void> {
-    const _startTime = Date.now();
+    const startTime = Date.now();
     
     logWorker('info', 'Media Library worker started', {
       worker: 'media-library',
@@ -121,7 +121,8 @@ export class MediaLibraryWorker implements IWorker {
           
           const loadedItems = await Promise.all(
             itemsToLoad.map(async (item: unknown) => {
-              const id = item.media_id || item.id;
+              const it = item as any;
+              const id = it?.media_id || it?.id;
               if (!id) {
                 logWorker('warn', 'Skipping item without ID', {
                   worker: 'media-library',
@@ -196,7 +197,7 @@ export class MediaLibraryWorker implements IWorker {
         output: result,
       });
 
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       

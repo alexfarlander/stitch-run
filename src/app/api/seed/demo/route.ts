@@ -20,7 +20,7 @@ export async function POST() {
       data: result
     }, { status: 200 });
     
-  } catch (_error) {
+  } catch (error) {
     console.error('Seed demo journey error:', error);
     
     return NextResponse.json({

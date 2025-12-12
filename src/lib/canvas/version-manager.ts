@@ -92,7 +92,7 @@ export async function createVersion(
     );
   }
   
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
   
   // Insert version (Requirement 10.3)
   const { data: version, error: insertError } = await supabase
@@ -140,7 +140,7 @@ export async function createVersion(
  * @throws Error if database operation fails
  */
 export async function getVersion(versionId: string): Promise<FlowVersion | null> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
   
   const { data, error } = await supabase
     .from('stitch_flow_versions')
@@ -170,7 +170,7 @@ export async function getVersion(versionId: string): Promise<FlowVersion | null>
  * @throws Error if database operation fails
  */
 export async function getVersionAdmin(versionId: string): Promise<FlowVersion | null> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   const { data, error } = await supabase
     .from('stitch_flow_versions')
@@ -205,7 +205,7 @@ export async function getVersionAdmin(versionId: string): Promise<FlowVersion | 
  * @throws Error if database operation fails
  */
 export async function listVersions(flowId: string): Promise<FlowVersionMetadata[]> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
   
   const { data, error } = await supabase
     .from('stitch_flow_versions')
@@ -247,7 +247,7 @@ export async function autoVersionOnRun(
   flowId: string,
   currentVisualGraph: VisualGraph
 ): Promise<string> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
   
   // Get current version
   const { data: flow, error: flowError } = await supabase
@@ -324,11 +324,12 @@ function deepEqual(a: any, b: unknown): boolean {
       return obj.map(sortKeys);
     }
     
-    const sorted: unknown = {};
-    Object.keys(obj).sort().forEach(key => {
-      sorted[key] = sortKeys(obj[key]);
+    const rec = obj as Record<string, unknown>;
+    const sorted: Record<string, unknown> = {};
+    Object.keys(rec).sort().forEach((key) => {
+      sorted[key] = sortKeys(rec[key]);
     });
-    return sorted;
+    return sorted as unknown;
   };
   
   return JSON.stringify(sortKeys(a)) === JSON.stringify(sortKeys(b));

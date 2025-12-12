@@ -86,7 +86,7 @@ export function AIAssistantContent({
       }
 
       return await response.json();
-    } catch (_error) {
+    } catch (error) {
       if (retryCount < AI_RETRY_CONFIG.MAX_RETRIES) {
         const delay = Math.min(
           AI_RETRY_CONFIG.INITIAL_DELAY_MS *
@@ -127,28 +127,34 @@ export function AIAssistantContent({
             // For link generation, call the API directly to generate the link
             try {
               const node = graph.nodes[0];
-              const config = node.data?.config || {};
+              const rawConfig = node.data?.config;
+              const config =
+                rawConfig && typeof rawConfig === 'object' && !Array.isArray(rawConfig)
+                  ? (rawConfig as Record<string, unknown>)
+                  : {};
               
               const response = await fetch('/api/generate-link', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  utm_source: config.utm_source || 'direct',
-                  utm_campaign: config.utm_campaign,
-                  utm_medium: config.utm_medium,
-                  utm_content: config.utm_content,
-                  utm_term: config.utm_term,
-                  redirect_to: config.redirect_to || '/',
+                  utm_source: typeof config['utm_source'] === 'string' ? config['utm_source'] : 'direct',
+                  utm_campaign: typeof config['utm_campaign'] === 'string' ? config['utm_campaign'] : undefined,
+                  utm_medium: typeof config['utm_medium'] === 'string' ? config['utm_medium'] : undefined,
+                  utm_content: typeof config['utm_content'] === 'string' ? config['utm_content'] : undefined,
+                  utm_term: typeof config['utm_term'] === 'string' ? config['utm_term'] : undefined,
+                  redirect_to: typeof config['redirect_to'] === 'string' ? config['redirect_to'] : '/',
                   canvas_id: canvasId,
-                  create_entity: config.create_entity !== false,
+                  create_entity: config['create_entity'] !== false,
                 }),
               });
 
               if (response.ok) {
                 const result = await response.json();
+                const redirectTo =
+                  typeof config['redirect_to'] === 'string' ? config['redirect_to'] : '/';
                 const assistantMessage: Message = {
                   role: 'assistant',
-                  content: `✅ Link ready!\n\n${result.tracking_url}\n\n🎯 Redirects: ${config.redirect_to || '/'}\n📊 Source: ${result.utm_params.source}${result.utm_params.campaign ? `\n📢 Campaign: ${result.utm_params.campaign}` : ''}\n\nShare this link and watch leads appear in your canvas!`,
+                  content: `✅ Link ready!\n\n${result.tracking_url}\n\n🎯 Redirects: ${redirectTo}\n📊 Source: ${result.utm_params.source}${result.utm_params.campaign ? `\n📢 Campaign: ${result.utm_params.campaign}` : ''}\n\nShare this link and watch leads appear in your canvas!`,
                 };
                 setMessages(prev => [...prev, assistantMessage]);
               } else {

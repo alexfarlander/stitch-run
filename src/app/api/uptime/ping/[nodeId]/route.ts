@@ -143,7 +143,7 @@ export async function POST(
       { status: 200 }
     );
     
-  } catch (_error) {
+  } catch (error) {
     console.error('MCP uptime API error:', error);
     return NextResponse.json(
       { 

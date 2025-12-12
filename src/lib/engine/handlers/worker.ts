@@ -20,7 +20,7 @@ import { logWorkerCall, logExecutionError, logNodeExecution } from '../logger';
  * @returns The full callback URL
  */
 export function constructCallbackUrl(runId: string, nodeId: string): string {
-  const _config = getConfig();
+  const config = getConfig();
   
   // Validate that baseUrl is set (getConfig already validates, but double-check)
   if (!config.baseUrl) {
@@ -80,8 +80,8 @@ export async function applyEntityMovement(
   const { moveEntityToSection } = await import('@/lib/db/entities');
 
   // Check if entityMovement is configured
-  const workerConfig = config as unknown;
-  if (!workerConfig.entityMovement) {
+  const workerConfig = config as any;
+  if (!workerConfig?.entityMovement) {
     return; // No entity movement configured
   }
 
@@ -93,9 +93,9 @@ export async function applyEntityMovement(
 
   // Determine which movement action to apply
   let movementAction;
-  if (status === 'completed' && workerConfig.entityMovement.onSuccess) {
+  if (status === 'completed' && workerConfig.entityMovement?.onSuccess) {
     movementAction = workerConfig.entityMovement.onSuccess;
-  } else if (status === 'failed' && workerConfig.entityMovement.onFailure) {
+  } else if (status === 'failed' && workerConfig.entityMovement?.onFailure) {
     movementAction = workerConfig.entityMovement.onFailure;
   }
 
@@ -116,7 +116,7 @@ export async function applyEntityMovement(
       },
       movementAction.setEntityType  // Pass entity type conversion if specified
     );
-  } catch (_error) {
+  } catch (error) {
     logExecutionError('Failed to apply entity movement', error, {
       runId,
       nodeId,
@@ -171,7 +171,7 @@ export async function fireWorkerNode(
       await worker.execute(runId, nodeId, config, input);
       // Integrated worker handles its own callbacks and state updates
       return;
-    } catch (_error) {
+    } catch (error) {
       // Handle worker execution errors (Requirement 10.5)
       let errorMessage = 'Integrated worker execution failed';
       if (error instanceof Error) {
@@ -264,7 +264,7 @@ export async function fireWorkerNode(
 
     // Worker webhook fired successfully
     // Node remains in 'running' state until callback is received
-  } catch (_error) {
+  } catch (error) {
     // Handle network errors, timeouts, unreachable URLs (Requirement 4.5, 10.5)
     let errorMessage = 'Worker webhook unreachable';
     

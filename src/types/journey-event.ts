@@ -13,7 +13,13 @@ export type DatabaseJourneyEvent = {
   source: 'database';
   id: string;
   entity_id: string;
-  event_type: 'node_arrival' | 'edge_start' | 'edge_progress' | 'node_complete' | 'manual_move';
+  event_type:
+    | 'node_arrival'
+    | 'edge_start'
+    | 'edge_progress'
+    | 'node_complete'
+    | 'node_failure'
+    | 'manual_move';
   node_id: string | null;
   edge_id: string | null;
   progress: number | null;
@@ -42,6 +48,10 @@ export type FallbackJourneyEvent = {
  */
 export type TypedJourneyEvent = DatabaseJourneyEvent | FallbackJourneyEvent;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * Type guard for database events
  * @param event - Journey event to check
@@ -68,31 +78,39 @@ export function isFallbackEvent(event: TypedJourneyEvent): event is FallbackJour
  * @returns Typed journey event with source discriminator
  */
 export function normalizeJourneyEvent(raw: unknown): TypedJourneyEvent {
+  if (!isRecord(raw)) {
+    return {
+      source: 'fallback',
+      type: 'unknown',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   // Database events have 'event_type' field
   if ('event_type' in raw && raw.event_type) {
     return {
       source: 'database',
-      id: raw.id || '',
-      entity_id: raw.entity_id || '',
-      event_type: raw.event_type,
-      node_id: raw.node_id || null,
-      edge_id: raw.edge_id || null,
-      progress: raw.progress ?? null,
-      timestamp: raw.timestamp || new Date().toISOString(),
-      metadata: raw.metadata || {},
+      id: typeof raw.id === 'string' ? raw.id : '',
+      entity_id: typeof raw.entity_id === 'string' ? raw.entity_id : '',
+      event_type: raw.event_type as DatabaseJourneyEvent['event_type'],
+      node_id: typeof raw.node_id === 'string' ? raw.node_id : null,
+      edge_id: typeof raw.edge_id === 'string' ? raw.edge_id : null,
+      progress: typeof raw.progress === 'number' ? raw.progress : null,
+      timestamp: typeof raw.timestamp === 'string' ? raw.timestamp : new Date().toISOString(),
+      metadata: isRecord(raw.metadata) ? raw.metadata : {},
     } as DatabaseJourneyEvent;
   }
   
   // Fallback events have 'type' field
   return {
     source: 'fallback',
-    type: raw.type || 'unknown',
-    node_id: raw.node_id,
-    edge_id: raw.edge_id,
-    from_node_id: raw.from_node_id,
-    workflow_run_id: raw.workflow_run_id,
-    timestamp: raw.timestamp || new Date().toISOString(),
-    note: raw.note,
+    type: typeof raw.type === 'string' ? raw.type : 'unknown',
+    node_id: typeof raw.node_id === 'string' ? raw.node_id : undefined,
+    edge_id: typeof raw.edge_id === 'string' ? raw.edge_id : undefined,
+    from_node_id: typeof raw.from_node_id === 'string' ? raw.from_node_id : undefined,
+    workflow_run_id: typeof raw.workflow_run_id === 'string' ? raw.workflow_run_id : undefined,
+    timestamp: typeof raw.timestamp === 'string' ? raw.timestamp : new Date().toISOString(),
+    note: typeof raw.note === 'string' ? raw.note : undefined,
   } as FallbackJourneyEvent;
 }
 

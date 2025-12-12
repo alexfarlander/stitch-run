@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import { VisualGraph } from '@/types/canvas-schema';
 import { NodeConfig, WorkflowCreationRequest } from '@/types/workflow-creation';
 import { mermaidToCanvas } from '@/lib/canvas/mermaid-parser';
+import type { EdgeMapping } from '@/types/canvas-schema';
 import { canvasToMermaid } from '@/lib/canvas/mermaid-generator';
 
 interface MermaidImportExportProps {
@@ -108,20 +109,20 @@ export function MermaidImportExport({
     try {
       // Parse optional JSON configs
       let nodeConfigs: Record<string, NodeConfig> | undefined;
-      let edgeMappings: Record<string, unknown> | undefined;
+      let edgeMappings: Record<string, EdgeMapping> | undefined;
       
       if (nodeConfigsInput.trim()) {
         try {
           nodeConfigs = JSON.parse(nodeConfigsInput);
-        } catch (_e) {
+        } catch (e) {
           throw new Error(`Invalid nodeConfigs JSON: ${e instanceof Error ? e.message : 'Parse error'}`);
         }
       }
       
       if (edgeMappingsInput.trim()) {
         try {
-          edgeMappings = JSON.parse(edgeMappingsInput);
-        } catch (_e) {
+          edgeMappings = JSON.parse(edgeMappingsInput) as Record<string, EdgeMapping>;
+        } catch (e) {
           throw new Error(`Invalid edgeMappings JSON: ${e instanceof Error ? e.message : 'Parse error'}`);
         }
       }
@@ -129,7 +130,7 @@ export function MermaidImportExport({
       // Parse Mermaid to visual graph
       const graph = mermaidToCanvas(mermaidInput, nodeConfigs, edgeMappings);
       setPreviewGraph(graph);
-    } catch (_error) {
+    } catch (error) {
       setParseError(error instanceof Error ? error.message : 'Failed to parse Mermaid');
     }
   }, [mermaidInput, nodeConfigsInput, edgeMappingsInput]);
@@ -183,7 +184,7 @@ export function MermaidImportExport({
     try {
       await onSaveBeforeImport();
       handleImportConfirm();
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to save before import:', error);
       setParseError('Failed to save current changes. Please try again.');
     } finally {
@@ -215,7 +216,7 @@ export function MermaidImportExport({
       if (onExport) {
         onExport(mermaid);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to export to Mermaid:', error);
     }
   }, [currentGraph, onExport]);

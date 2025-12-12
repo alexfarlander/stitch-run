@@ -58,6 +58,7 @@ export const genericAdapter: WebhookAdapter = {
    * Returns 'unknown_event' if no event type field is found.
    */
   getEventType: (payload: unknown): string => {
-    return payload.event || payload.type || payload.event_type || 'unknown_event';
+    const p = payload as any;
+    return p?.event || p?.type || p?.event_type || 'unknown_event';
   }
 };

@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.mts"
+  ],
+  "exclude": [
+    "node_modules",
+    "packages",
+    ".next",
+    "src/lib/seeds/**",
+    "src/lib/verification/**",
+    "src/app/api/seed/**",
+    "**/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.e2e.*"
+  ]
+}

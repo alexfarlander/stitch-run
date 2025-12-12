@@ -17,7 +17,7 @@ export class ShotstackWorker implements IWorker {
   private mockMode: boolean = false;
 
   constructor() {
-    const _config = getConfig();
+    const config = getConfig();
     
     if (!config.workers.shotstackApiKey) {
       this.mockMode = true;
@@ -43,9 +43,9 @@ export class ShotstackWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: unknown
+    input: any
   ): Promise<void> {
-    const _startTime = Date.now();
+    const startTime = Date.now();
 
     logWorker('info', 'Shotstack worker execution started', {
       worker: 'shotstack',
@@ -122,7 +122,7 @@ export class ShotstackWorker implements IWorker {
       // Extract configuration with defaults
       const resolution = config.resolution || 'sd';
       const format = config.format || 'mp4';
-      const _fps = config.fps || 25;
+      const fps = config.fps || 25;
 
       // Build timeline structure
       const timeline = this.buildTimeline(scenes);
@@ -176,7 +176,7 @@ export class ShotstackWorker implements IWorker {
       // Shotstack will call back when video rendering is complete
       // No callback is triggered here - this is async pattern
 
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

@@ -227,7 +227,7 @@ describe('Error Handler', () => {
 
       try {
         validateRequestBody(null);
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).code).toBe('BAD_REQUEST');
         expect((error as APIError).statusCode).toBe(400);
@@ -279,7 +279,7 @@ describe('Error Handler', () => {
           { name: 'test' },
           ['name', 'email']
         );
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).code).toBe('BAD_REQUEST');
         expect((error as APIError).statusCode).toBe(400);
@@ -294,7 +294,7 @@ describe('Error Handler', () => {
           {},
           ['name', 'email', 'password']
         );
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).details).toEqual([
           'Missing field: name',
@@ -329,7 +329,7 @@ describe('Error Handler', () => {
 
       try {
         validateCanvasId('');
-      } catch (_error) {
+      } catch (error) {
         expect(error).toBeInstanceOf(APIError);
         expect((error as APIError).code).toBe('BAD_REQUEST');
         expect((error as APIError).statusCode).toBe(400);

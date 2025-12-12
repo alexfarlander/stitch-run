@@ -200,7 +200,7 @@ export async function seedSlackNotifyWorkflow(supabase?: SupabaseClient): Promis
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Slack Notify workflow seed failed:', error);
     throw error;
   }

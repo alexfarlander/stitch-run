@@ -13,6 +13,7 @@ const mockFlow: StitchFlow = {
   name: 'Test Flow',
   canvas_type: 'workflow',
   parent_id: null,
+  current_version_id: null,
   graph: {
     nodes: [
       {
@@ -61,6 +62,7 @@ const mockFlow: StitchFlow = {
 const mockRun: StitchRun = {
   id: 'test-run',
   flow_id: 'test-flow',
+  flow_version_id: null,
   entity_id: null,
   trigger: {
     type: 'manual',

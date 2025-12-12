@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const { runId } = await params;
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
 
   const { data: run, error } = await supabase
     .from('stitch_runs')

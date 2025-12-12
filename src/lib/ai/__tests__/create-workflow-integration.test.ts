@@ -19,7 +19,7 @@ describe('CREATE_WORKFLOW Integration Tests', () => {
     for (const flowId of createdFlowIds) {
       try {
         await deleteFlow(flowId);
-      } catch (_error) {
+      } catch (error) {
         // Ignore errors if flow doesn't exist
       }
     }

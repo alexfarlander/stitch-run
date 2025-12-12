@@ -256,7 +256,7 @@ export async function fireCollectorNode(
         upstream_outputs: upstreamOutputs,
       } as CollectorNodeState,
     });
-  } catch (_error) {
+  } catch (error) {
     // Handle errors (Requirement 10.5)
     let errorMessage = 'Failed to process collector node';
     if (error instanceof Error) {

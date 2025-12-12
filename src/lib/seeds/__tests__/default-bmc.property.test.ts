@@ -189,7 +189,7 @@ describe('BMC Seed Script Property Tests', () => {
     
     beforeEach(async () => {
       // Clean up any existing BMCs before each test
-      const _supabase = createServerClient();
+      const supabase = createServerClient();
       await supabase
         .from('stitch_flows')
         .delete()
@@ -202,7 +202,7 @@ describe('BMC Seed Script Property Tests', () => {
     afterEach(async () => {
       // Clean up created BMCs after each test
       if (createdBMCIds.length > 0) {
-        const _supabase = createServerClient();
+        const supabase = createServerClient();
         await supabase
           .from('stitch_flows')
           .delete()
@@ -233,7 +233,7 @@ describe('BMC Seed Script Property Tests', () => {
             expect(uniqueIds.size).toBe(1);
             
             // Verify only one BMC exists in database
-            const _supabase = createServerClient();
+            const supabase = createServerClient();
             const { data: bmcs, error } = await supabase
               .from('stitch_flows')
               .select('id')

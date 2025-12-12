@@ -19,7 +19,7 @@ export class ElevenLabsWorker implements IWorker {
   private mockMode: boolean = false;
 
   constructor() {
-    const _config = getConfig();
+    const config = getConfig();
     
     if (!config.workers.elevenlabsApiKey) {
       this.mockMode = true;
@@ -45,9 +45,9 @@ export class ElevenLabsWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: unknown
+    input: any
   ): Promise<void> {
-    const _startTime = Date.now();
+    const startTime = Date.now();
 
     logWorker('info', 'ElevenLabs worker execution started', {
       worker: 'elevenlabs',
@@ -157,7 +157,7 @@ export class ElevenLabsWorker implements IWorker {
       });
 
       // Upload ArrayBuffer to Supabase Storage
-      const _supabase = createServerClient();
+      const supabase = createServerClient();
       const fileName = `${runId}/${nodeId}/${Date.now()}.mp3`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -208,7 +208,7 @@ export class ElevenLabsWorker implements IWorker {
         },
       });
 
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

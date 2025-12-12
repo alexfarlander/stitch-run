@@ -29,7 +29,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Invalid JSON');
@@ -43,7 +43,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Missing required fields');
@@ -59,7 +59,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('non-empty string');
@@ -73,7 +73,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('non-empty string');
@@ -90,7 +90,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('canvasId must be a string');
@@ -112,7 +112,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.error).toContain('Canvas not found');
@@ -142,7 +142,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('no visual graph data');
@@ -227,7 +227,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Failed to parse LLM response');
@@ -276,7 +276,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.action).toBe('CREATE_WORKFLOW');
@@ -401,7 +401,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.action).toBe('CREATE_WORKFLOW');
@@ -502,7 +502,7 @@ describe('POST /api/ai-manager', () => {
       });
 
       const response = await POST(request);
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.action).toBe('MODIFY_WORKFLOW');

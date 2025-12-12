@@ -44,11 +44,11 @@ describe('Webhook API Endpoint', () => {
 
   afterEach(async () => {
     // Clean up entities
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     for (const entityId of testEntityIds) {
       try {
         await supabase.from('stitch_entities').delete().eq('id', entityId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -58,7 +58,7 @@ describe('Webhook API Endpoint', () => {
     for (const runId of testRunIds) {
       try {
         await deleteRun(runId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -68,7 +68,7 @@ describe('Webhook API Endpoint', () => {
     if (testWebhookConfigId) {
       try {
         await deleteWebhookConfig(testWebhookConfigId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -77,14 +77,14 @@ describe('Webhook API Endpoint', () => {
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
     if (testCanvasId) {
       try {
         await deleteFlow(testCanvasId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -130,7 +130,7 @@ describe('Webhook API Endpoint', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { endpoint_slug: 'test-api-success' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Track for cleanup
       if (data.entityId) testEntityIds.push(data.entityId);
@@ -181,7 +181,7 @@ describe('Webhook API Endpoint', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { endpoint_slug: 'test-api-signature' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Verify response
       expect(response.status).toBe(401);
@@ -229,7 +229,7 @@ describe('Webhook API Endpoint', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { endpoint_slug: 'test-api-valid-sig' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Track for cleanup
       if (data.entityId) testEntityIds.push(data.entityId);
@@ -256,7 +256,7 @@ describe('Webhook API Endpoint', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { endpoint_slug: 'non-existent-endpoint' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Verify response
       expect(response.status).toBe(404);
@@ -298,7 +298,7 @@ describe('Webhook API Endpoint', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { endpoint_slug: 'test-api-inactive' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Verify response
       expect(response.status).toBe(404);
@@ -338,7 +338,7 @@ describe('Webhook API Endpoint', () => {
 
       // Call API endpoint
       const response = await POST(request, { params: { endpoint_slug: 'test-api-invalid-json' } });
-      const _data = await response.json();
+      const data = await response.json();
 
       // Verify response
       expect(response.status).toBe(400);

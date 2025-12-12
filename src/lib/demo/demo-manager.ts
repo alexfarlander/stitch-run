@@ -62,7 +62,7 @@ export class DemoManager {
     const { canvasId, entities: entityConfigs, staggerDelay = 2000 } = config;
 
     // Validate canvas exists
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     const { data: canvas, error: canvasError } = await supabase
       .from('stitch_flows')
       .select('id, name, canvas_type')
@@ -140,7 +140,7 @@ export class DemoManager {
    * @param canvasId - Canvas ID to clean up
    */
   private async cleanupDemoEntities(canvasId: string): Promise<void> {
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
 
     // Query for existing demo entities (Requirement 3.1)
     const { data: existingEntities, error: queryError } = await supabase
@@ -188,11 +188,11 @@ export class DemoManager {
     sessionId: string,
     staggerDelay: number
   ): Promise<string[]> {
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     const entityIds: string[] = [];
 
     for (let i = 0; i < entityConfigs.length; i++) {
-      const _config = entityConfigs[i];
+      const config = entityConfigs[i];
 
       // Add delay between spawns (except for first entity)
       if (i > 0) {
@@ -296,7 +296,7 @@ export class DemoManager {
    * @returns Number of entities deleted
    */
   async cleanupSession(sessionId: string): Promise<number> {
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
 
     // Query entities for this session
     const { data: entities, error: queryError } = await supabase
@@ -337,7 +337,7 @@ export class DemoManager {
    * @returns Array of entities
    */
   async queryEntities(canvasId: string, excludeDemo: boolean = false) {
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
 
     let query = supabase
       .from('stitch_entities')

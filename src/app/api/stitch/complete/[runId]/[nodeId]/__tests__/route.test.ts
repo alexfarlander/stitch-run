@@ -78,7 +78,7 @@ describe('UX Complete API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: 'invalid-run', nodeId: mockNodeId }) });
 
       expect(response.status).toBe(404);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.error).toBe('Run not found');
     });
 
@@ -90,7 +90,7 @@ describe('UX Complete API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: 'invalid-node' }) });
 
       expect(response.status).toBe(404);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.error).toBe('Node not found in run');
     });
 
@@ -111,7 +111,7 @@ describe('UX Complete API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: 'worker-1' }) });
 
       expect(response.status).toBe(400);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.error).toBe('Node is not a UX node');
     });
 
@@ -133,7 +133,7 @@ describe('UX Complete API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.error).toBe('Node is not waiting for user input');
     });
 
@@ -150,7 +150,7 @@ describe('UX Complete API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(400);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.error).toBe('Invalid request payload');
     });
 
@@ -162,7 +162,7 @@ describe('UX Complete API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(404);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.error).toBe('Flow not found');
     });
 
@@ -182,7 +182,7 @@ describe('UX Complete API Endpoint', () => {
       const response = await POST(request, { params: Promise.resolve({ runId: mockRunId, nodeId: mockNodeId }) });
 
       expect(response.status).toBe(404);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.error).toBe('Node not found in flow');
     });
   });
@@ -221,7 +221,7 @@ describe('UX Complete API Endpoint', () => {
       });
 
       expect(response.status).toBe(200);
-      const _data = await response.json();
+      const data = await response.json();
       expect(data.success).toBe(true);
     });
 

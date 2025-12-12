@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const _supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -151,7 +151,7 @@ describe('Historical State API', () => {
     );
 
     expect(response.status).toBe(400);
-    const _data = await response.json();
+    const data = await response.json();
     expect(data.error).toContain('timestamp');
   });
 
@@ -165,7 +165,7 @@ describe('Historical State API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Requirement 7.2: node_arrival should set status to "running"
     expect(data.nodeStates.node1).toBeDefined();
@@ -187,7 +187,7 @@ describe('Historical State API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Requirement 7.3: node_complete should set status to "completed"
     expect(data.nodeStates.node1).toBeDefined();
@@ -205,7 +205,7 @@ describe('Historical State API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Node1 should still be completed
     expect(data.nodeStates.node1.status).toBe('completed');
@@ -226,7 +226,7 @@ describe('Historical State API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Requirement 7.4: node_failure should set status to "failed"
     expect(data.nodeStates.node2).toBeDefined();
@@ -250,7 +250,7 @@ describe('Historical State API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Should have reconstructed states for all nodes that had events
     expect(data.nodeStates).toBeDefined();
@@ -301,7 +301,7 @@ describe('Historical State API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(data.nodeStates).toEqual({});
     expect(data.entityPositions).toEqual({});
@@ -323,7 +323,7 @@ describe('Historical State API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Should only have processed the first event (node_arrival)
     expect(data.nodeStates.node1.status).toBe('running');

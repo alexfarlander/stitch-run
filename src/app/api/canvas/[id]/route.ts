@@ -37,7 +37,7 @@ export async function GET(
     validateCanvasId(id);
 
     // Get flow with current version data
-    const _flow = await getFlow(id, true);
+    const flow = await getFlow(id, true);
 
     if (!flow) {
       throw new APIError(
@@ -51,8 +51,11 @@ export async function GET(
     let canvas: VisualGraph;
     
     // Check if flow has current version with visual_graph
-    if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
-      canvas = (flow as unknown).current_version.visual_graph;
+    const flowWithVersion = flow as typeof flow & {
+      current_version?: { visual_graph?: VisualGraph };
+    };
+    if (flow.current_version_id && flowWithVersion.current_version?.visual_graph) {
+      canvas = flowWithVersion.current_version.visual_graph;
     } else {
       // Fallback to legacy graph format - convert StitchNode to VisualNode
       canvas = {
@@ -94,7 +97,7 @@ export async function GET(
 
     return NextResponse.json(response);
 
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }
@@ -188,8 +191,11 @@ export async function PUT(
 
     // Extract visual graph from current version
     let updatedCanvas: VisualGraph;
-    if (updatedFlow.current_version_id && (updatedFlow as unknown).current_version?.visual_graph) {
-      updatedCanvas = (updatedFlow as unknown).current_version.visual_graph;
+    const updatedFlowWithVersion = updatedFlow as typeof updatedFlow & {
+      current_version?: { visual_graph?: VisualGraph };
+    };
+    if (updatedFlow.current_version_id && updatedFlowWithVersion.current_version?.visual_graph) {
+      updatedCanvas = updatedFlowWithVersion.current_version.visual_graph;
     } else if (canvas) {
       updatedCanvas = canvas;
     } else {
@@ -231,7 +237,7 @@ export async function PUT(
 
     return NextResponse.json(response);
 
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }
@@ -250,7 +256,7 @@ export async function DELETE(
     validateCanvasId(id);
 
     // Check if canvas exists
-    const _flow = await getFlow(id);
+    const flow = await getFlow(id);
     if (!flow) {
       throw new APIError(
         'NOT_FOUND',
@@ -269,7 +275,7 @@ export async function DELETE(
 
     return NextResponse.json(response);
 
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }

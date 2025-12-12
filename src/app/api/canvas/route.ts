@@ -37,8 +37,11 @@ export async function GET(): Promise<NextResponse> {
       let nodeCount = 0;
       let edgeCount = 0;
 
-      if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
-        const visualGraph = (flow as unknown).current_version.visual_graph;
+      const flowWithVersion = flow as typeof flow & {
+        current_version?: { visual_graph?: VisualGraph };
+      };
+      if (flow.current_version_id && flowWithVersion.current_version?.visual_graph) {
+        const visualGraph = flowWithVersion.current_version.visual_graph;
         nodeCount = visualGraph.nodes?.length || 0;
         edgeCount = visualGraph.edges?.length || 0;
       } else {
@@ -58,7 +61,7 @@ export async function GET(): Promise<NextResponse> {
 
     const response: ListCanvasesResponse = { canvases };
     return NextResponse.json(response);
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }
@@ -103,7 +106,7 @@ export async function POST(
       if (typeof content === 'string') {
         try {
           visualGraph = JSON.parse(content);
-        } catch (_e) {
+        } catch (e) {
           throw new APIError(
             'BAD_REQUEST',
             400,
@@ -148,16 +151,16 @@ export async function POST(
       try {
         // Parse Mermaid to VisualGraph
         visualGraph = mermaidToCanvas(content);
-      } catch (_e) {
+      } catch (e) {
         // Check if it's a MermaidParseError with detailed information
         if (e instanceof Error && e.name === 'MermaidParseError') {
-          const mermaidError = e as unknown;
+          const mermaidError = e as { hint?: unknown; line?: unknown };
           const details: string[] = [];
           
-          if (mermaidError.hint) {
+          if (typeof mermaidError.hint === 'string' && mermaidError.hint.trim() !== '') {
             details.push(`Hint: ${mermaidError.hint}`);
           }
-          if (mermaidError.line) {
+          if (typeof mermaidError.line === 'number') {
             details.push(`Line: ${mermaidError.line}`);
           }
           
@@ -195,7 +198,7 @@ export async function POST(
 
     return NextResponse.json(response, { status: 201 });
 
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }

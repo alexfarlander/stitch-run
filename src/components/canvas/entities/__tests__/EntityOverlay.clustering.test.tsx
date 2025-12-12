@@ -45,7 +45,7 @@ describe('EntityOverlay - Clustering Logic', () => {
    */
   it('should display EntityCluster when more than 5 entities at same node', () => {
     // Create 6 entities at the same node
-    const entities: StitchEntity[] = Array.from({ length: 6 }, (_, i) => ({
+    const entities: StitchEntity[] = [...Array(6).keys()].map((i) => ({
       id: `entity-${i}`,
       name: `Entity ${i}`,
       entity_type: 'lead' as const,
@@ -88,7 +88,7 @@ describe('EntityOverlay - Clustering Logic', () => {
    */
   it('should display individual EntityDots when 5 or fewer entities at same node', () => {
     // Create 5 entities at the same node
-    const entities: StitchEntity[] = Array.from({ length: 5 }, (_, i) => ({
+    const entities: StitchEntity[] = [...Array(5).keys()].map((i) => ({
       id: `entity-${i}`,
       name: `Entity ${i}`,
       entity_type: 'lead' as const,
@@ -130,7 +130,7 @@ describe('EntityOverlay - Clustering Logic', () => {
    */
   it('should update cluster count when entities are added or removed', () => {
     // Start with 6 entities
-    const initialEntities: StitchEntity[] = Array.from({ length: 6 }, (_, i) => ({
+    const initialEntities: StitchEntity[] = [...Array(6).keys()].map((i) => ({
       id: `entity-${i}`,
       name: `Entity ${i}`,
       entity_type: 'lead' as const,
@@ -161,7 +161,7 @@ describe('EntityOverlay - Clustering Logic', () => {
     expect(clusterBadge?.textContent).toBe('6');
 
     // Add 2 more entities (now 8 total)
-    const updatedEntities: StitchEntity[] = Array.from({ length: 8 }, (_, i) => ({
+    const updatedEntities: StitchEntity[] = [...Array(8).keys()].map((i) => ({
       id: `entity-${i}`,
       name: `Entity ${i}`,
       entity_type: 'lead' as const,
@@ -196,7 +196,7 @@ describe('EntityOverlay - Clustering Logic', () => {
     // Node 1: 7 entities (should cluster)
     // Node 2: 3 entities (should show individual dots)
     const entities: StitchEntity[] = [
-      ...Array.from({ length: 7 }, (_, i) => ({
+      ...[...Array(7).keys()].map((i) => ({
         id: `entity-node1-${i}`,
         name: `Entity Node1 ${i}`,
         entity_type: 'lead' as const,
@@ -207,7 +207,7 @@ describe('EntityOverlay - Clustering Logic', () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })),
-      ...Array.from({ length: 3 }, (_, i) => ({
+      ...[...Array(3).keys()].map((i) => ({
         id: `entity-node2-${i}`,
         name: `Entity Node2 ${i}`,
         entity_type: 'customer' as const,
@@ -246,7 +246,7 @@ describe('EntityOverlay - Clustering Logic', () => {
 
   it('should transition from cluster to individual dots when count drops to 5', () => {
     // Start with 6 entities (cluster)
-    const initialEntities: StitchEntity[] = Array.from({ length: 6 }, (_, i) => ({
+    const initialEntities: StitchEntity[] = [...Array(6).keys()].map((i) => ({
       id: `entity-${i}`,
       name: `Entity ${i}`,
       entity_type: 'lead' as const,

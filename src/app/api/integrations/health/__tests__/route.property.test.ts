@@ -107,7 +107,7 @@ describe('Health Check API Property Tests', () => {
             try {
               // Call the health check endpoint
               const response = await GET();
-              const _data = await response.json();
+              const data = await response.json();
               
               // Verify response structure
               expect(data).toHaveProperty('integrations');
@@ -159,7 +159,7 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const _data = await response.json();
+              const data = await response.json();
               
               const claudeIntegration = data.integrations.find(
                 (i: unknown) => i.name === 'Claude API'
@@ -190,7 +190,7 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const _data = await response.json();
+              const data = await response.json();
               
               const claudeIntegration = data.integrations.find(
                 (i: unknown) => i.name === 'Claude API'
@@ -219,7 +219,7 @@ describe('Health Check API Property Tests', () => {
             try {
               // Call the health check endpoint
               const response = await GET();
-              const _data = await response.json();
+              const data = await response.json();
               
               // Define all expected integrations
               const expectedIntegrations = [
@@ -269,7 +269,7 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const _data = await response.json();
+              const data = await response.json();
               
               // Should always return exactly 6 integrations
               expect(data.integrations).toHaveLength(6);
@@ -291,7 +291,7 @@ describe('Health Check API Property Tests', () => {
             
             try {
               const response = await GET();
-              const _data = await response.json();
+              const data = await response.json();
               
               // Check that all integration names are present
               const integrationNames = data.integrations.map((i: unknown) => i.name);

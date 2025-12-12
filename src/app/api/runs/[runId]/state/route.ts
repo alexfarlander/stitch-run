@@ -74,7 +74,7 @@ function reconstructNodeStates(events: JourneyEvent[]): Record<string, NodeState
         // Requirement 7.4: Apply node_failure events to set status to "failed"
         nodeStates[nodeId] = {
           status: 'failed',
-          error: event.metadata?.error,
+          error: typeof event.metadata?.error === 'string' ? event.metadata.error : undefined,
         };
         break;
 
@@ -161,7 +161,7 @@ export async function GET(
       );
     }
 
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
 
     // Get the run to find the flow_id (canvas_id)
     const { data: run, error: runError } = await supabase
@@ -227,7 +227,7 @@ export async function GET(
     };
 
     return NextResponse.json(response);
-  } catch (_error) {
+  } catch (error) {
     console.error('Historical state API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

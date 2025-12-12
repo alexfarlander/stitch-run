@@ -64,7 +64,7 @@ export function useRunStatus(runId?: string): UseRunStatusResult {
         setNodeStates((data as StitchRun).node_states);
         setError(null);
         setLoading(false);
-      } catch (_err) {
+      } catch (err) {
         if (!mounted) return;
         setError(err instanceof Error ? err.message : 'Unknown error');
         setLoading(false);

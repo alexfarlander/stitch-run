@@ -10,7 +10,7 @@ import { createFlow } from '@/lib/db/flows';
 import { StitchNode, StitchEdge } from '@/types/stitch';
 import { createClient } from '@supabase/supabase-js';
 
-const _supabase = createClient(
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -34,7 +34,7 @@ describe('Collector Race Condition Fix', () => {
       { id: 'e3', source: 'upstream3', target: 'collector' },
     ];
 
-    const _flow = await createFlow('Collector Race Test', { nodes, edges });
+    const flow = await createFlow('Collector Race Test', { nodes, edges });
 
     flowId = flow.id;
 

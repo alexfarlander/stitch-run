@@ -26,7 +26,7 @@ const createdFlowIds: string[] = [];
 
 beforeEach(async () => {
   // Clean up any leftover test data
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
   
   // Delete test flows (cascade will delete versions and runs)
   if (createdFlowIds.length > 0) {
@@ -41,7 +41,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   // Clean up test data
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
   
   if (createdFlowIds.length > 0) {
     await supabase
@@ -149,7 +149,7 @@ const acyclicGraphArbitrary: fc.Arbitrary<VisualGraph> = fc.array(simpleNodeArbi
  * Create a test flow in the database
  */
 async function createTestFlow(name: string): Promise<string> {
-  const _supabase = createServerClient();
+  const supabase = createServerClient();
   
   // Provide a minimal graph to satisfy the NOT NULL constraint
   // This is a temporary workaround until the migration makes graph nullable
@@ -218,7 +218,7 @@ describe('Version Manager - Property Tests', () => {
           const flowId = await createTestFlow(`test-flow-${Date.now()}`);
           
           // Call autoVersionOnRun (no version exists yet)
-          const _versionId = await autoVersionOnRun(flowId, graph);
+          const versionId = await autoVersionOnRun(flowId, graph);
           
           // Should return a version ID
           expect(versionId).toBeDefined();
@@ -230,7 +230,7 @@ describe('Version Manager - Property Tests', () => {
           expect(version?.flow_id).toBe(flowId);
           
           // Flow should now have current_version_id set
-          const _supabase = createServerClient();
+          const supabase = createServerClient();
           const { data: flow } = await supabase
             .from('stitch_flows')
             .select('current_version_id')
@@ -257,7 +257,7 @@ describe('Version Manager - Property Tests', () => {
           );
           
           // Call autoVersionOnRun with same graph
-          const _versionId = await autoVersionOnRun(flowId, graph);
+          const versionId = await autoVersionOnRun(flowId, graph);
           
           // Should return the same version ID (no new version created)
           expect(versionId).toBe(initialVersionId);
@@ -287,7 +287,7 @@ describe('Version Manager - Property Tests', () => {
           const modifiedGraph = modifyGraph(graph);
           
           // Call autoVersionOnRun with modified graph
-          const _versionId = await autoVersionOnRun(flowId, modifiedGraph);
+          const versionId = await autoVersionOnRun(flowId, modifiedGraph);
           
           // Should return a different version ID (new version created)
           expect(versionId).not.toBe(initialVersionId);
@@ -297,7 +297,7 @@ describe('Version Manager - Property Tests', () => {
           expect(versions.length).toBe(2);
           
           // New version should be the current version
-          const _supabase = createServerClient();
+          const supabase = createServerClient();
           const { data: flow } = await supabase
             .from('stitch_flows')
             .select('current_version_id')
@@ -350,7 +350,7 @@ describe('Version Manager - Property Tests', () => {
           const flowId = await createTestFlow(`test-flow-${Date.now()}`);
           
           // Call autoVersionOnRun (no version exists)
-          const _versionId = await autoVersionOnRun(flowId, graph);
+          const versionId = await autoVersionOnRun(flowId, graph);
           
           // Check commit message
           const version = await getVersion(versionId);
@@ -408,7 +408,7 @@ describe('Version Manager - Property Tests', () => {
           expect(versions.length).toBe(3);
           
           // Latest version should be current
-          const _supabase = createServerClient();
+          const supabase = createServerClient();
           const { data: flow } = await supabase
             .from('stitch_flows')
             .select('current_version_id')

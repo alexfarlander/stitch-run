@@ -88,7 +88,7 @@ export function AIAssistantPanel({ canvasId, currentNodes = [], onGraphUpdate }:
       }
 
       return await response.json();
-    } catch (_error) {
+    } catch (error) {
       // Retry with exponential backoff
       if (retryCount < AI_RETRY_CONFIG.MAX_RETRIES) {
         const delay = Math.min(
@@ -186,7 +186,7 @@ export function AIAssistantPanel({ canvasId, currentNodes = [], onGraphUpdate }:
       
       // Handle the response
       handleAIResponse(data);
-    } catch (_error) {
+    } catch (error) {
       console.error('AI request failed after retries:', error);
       const errorMessage: Message = {
         role: 'assistant',

@@ -14,7 +14,7 @@ import { WorkerCallback } from '@/types/stitch';
  * @returns Fully qualified callback URL
  */
 export function buildCallbackUrl(runId: string, nodeId: string): string {
-  const _config = getConfig();
+  const config = getConfig();
   
   // Validate that baseUrl is set (getConfig already validates, but double-check)
   if (!config.baseUrl) {
@@ -59,7 +59,7 @@ export async function triggerCallback(
     if (!response.ok) {
       throw new Error(`Callback failed with status ${response.status}`);
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('Failed to trigger callback:', {
       runId,
       nodeId,
@@ -102,7 +102,7 @@ export function sanitizeForLogging(data: unknown): any {
     'credentials',
   ];
 
-  const sanitized: unknown = {};
+  const sanitized: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
     const lowerKey = key.toLowerCase();
     if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive))) {

@@ -221,7 +221,7 @@ export async function seedSupportHandlerWorkflow(supabase?: SupabaseClient): Pro
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Support Handler workflow seed failed:', error);
     throw error;
   }

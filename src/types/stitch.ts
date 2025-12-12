@@ -60,7 +60,9 @@ export interface NodeConfig {
   label?: string;
   
   // Allow additional custom configuration
-  [key: string]: unknown;
+  // NOTE: This is intentionally permissive because node configs are user-defined JSON blobs
+  // stored in the DB and vary by worker/node type.
+  [key: string]: any;
 }
 
 /**
@@ -241,7 +243,13 @@ export interface StitchEntity {
 export interface JourneyEvent {
   id: string;
   entity_id: string;
-  event_type: 'edge_start' | 'edge_progress' | 'node_arrival' | 'node_complete' | 'manual_move';
+  event_type:
+    | 'edge_start'
+    | 'edge_progress'
+    | 'node_arrival'
+    | 'node_complete'
+    | 'node_failure'
+    | 'manual_move';
   node_id: string | null;
   edge_id: string | null;
   progress: number | null;

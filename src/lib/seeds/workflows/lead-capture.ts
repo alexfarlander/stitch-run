@@ -226,7 +226,7 @@ export async function seedLeadCaptureWorkflow(supabase?: SupabaseClient): Promis
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Lead Capture workflow seed failed:', error);
     throw error;
   }

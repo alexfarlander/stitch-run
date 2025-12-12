@@ -112,7 +112,7 @@ export function mermaidToCanvas(
   
   // 2. Extract nodes with inferred types and configs
   const nodes: VisualNode[] = parsed.nodes.map(node => {
-    const _config = nodeConfigs?.[node.id];
+    const config = nodeConfigs?.[node.id];
     
     // Infer node type from bracket style first, then label, or use explicit config
     let nodeType: string;
@@ -261,7 +261,7 @@ function parseMermaidSyntax(mermaid: string): ParsedMermaid {
           );
         }
       }
-    } catch (_error) {
+    } catch (error) {
       // Re-throw MermaidParseError with line context if not already set
       if (error instanceof MermaidParseError) {
         if (error.lineNumber === undefined) {

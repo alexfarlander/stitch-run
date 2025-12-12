@@ -15,7 +15,7 @@ import { EventsLogPanel } from './EventsLogPanel';
 import { AIAssistantContent } from './AIAssistantContent';
 import { EntityDetailContent } from './EntityDetailContent';
 import { useCanvasEvents } from '@/hooks/useCanvasEvents';
-import type { Node } from '@xyflow/react';
+import type { Node, Edge } from '@xyflow/react';
 
 type TabId = 'events' | 'ai' | 'entity';
 
@@ -37,7 +37,7 @@ interface RightSidePanelProps {
   onEntityClose: () => void;
   onMoveEntity: (entityId: string, targetNodeId: string) => void;
   currentNodes?: Node[];
-  onGraphUpdate?: (graph: { nodes: Node[]; edges: unknown[] }) => void;
+  onGraphUpdate?: (graph: { nodes: Node[]; edges: Edge[] }) => void | Promise<void>;
 }
 
 /**

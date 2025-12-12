@@ -9,6 +9,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DemoManager } from '@/lib/demo/demo-manager';
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 interface CleanupDemoRequest {
   sessionId?: string;
   canvasId?: string;
@@ -52,13 +56,24 @@ export async function POST(request: NextRequest) {
       // For direct cleanup, we'll query and delete
       const entities = await demoManager.queryEntities(canvasId, false);
       const demoEntities = entities.filter(
-        (e: unknown) => e.metadata?.source === 'demo'
+        (e: unknown) => {
+          if (!isPlainObject(e)) return false;
+          const metadata = e['metadata'];
+          if (!isPlainObject(metadata)) return false;
+          return metadata['source'] === 'demo';
+        }
       );
       
       // Delete each demo entity's session
       const sessionIds = new Set(
         demoEntities
-          .map((e: unknown) => e.metadata?.session_id)
+          .map((e: unknown) => {
+            if (!isPlainObject(e)) return undefined;
+            const metadata = e['metadata'];
+            if (!isPlainObject(metadata)) return undefined;
+            const sessionIdValue = metadata['session_id'];
+            return typeof sessionIdValue === 'string' ? sessionIdValue : undefined;
+          })
           .filter(Boolean)
       );
       
@@ -74,7 +89,7 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(response, { status: 200 });
-  } catch (_error) {
+  } catch (error) {
     console.error('Demo cleanup error:', error);
     return NextResponse.json(
       { 

@@ -16,6 +16,7 @@ export default function TestBMCFinancialPage() {
     name: 'Test BMC with Financial Sections',
     canvas_type: 'bmc',
     parent_id: null,
+    current_version_id: null,
     graph: {
       nodes: [
         // Financial category section (background container)

@@ -11,31 +11,43 @@ import { getFlowAdmin } from '@/lib/db/flows';
 import { walkEdges } from '@/lib/engine/edge-walker';
 import { logCallbackReceived, logExecutionError } from '@/lib/engine/logger';
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * Validates callback payload structure
  * Requirements: 9.1, 9.2, 9.5
  */
-function validateCallbackPayload(payload: unknown): { valid: boolean; error?: string } {
+function validateCallbackPayload(payload: unknown): {
+  valid: boolean;
+  error?: string;
+  callback?: WorkerCallback;
+} {
   // Check if payload is an object
-  if (!payload || typeof payload !== 'object') {
+  if (!isPlainObject(payload)) {
     return { valid: false, error: 'Callback payload must be an object' };
   }
 
+  const status = payload['status'];
+  const output = payload['output'];
+  const error = payload['error'];
+
   // Validate status field (required)
-  if (!payload.status) {
+  if (!status) {
     return { valid: false, error: 'Missing required field: status' };
   }
 
-  if (!['completed', 'failed'].includes(payload.status)) {
+  if (status !== 'completed' && status !== 'failed') {
     return { 
       valid: false, 
-      error: `Invalid status value: "${payload.status}". Must be "completed" or "failed"` 
+      error: `Invalid status value: "${String(status)}". Must be "completed" or "failed"` 
     };
   }
 
   // Validate output field for completed status (Requirement 9.3)
-  if (payload.status === 'completed') {
-    if (payload.output !== undefined && typeof payload.output !== 'object') {
+  if (status === 'completed') {
+    if (output !== undefined && output !== null && typeof output !== 'object') {
       return { 
         valid: false, 
         error: 'Output field must be an object when provided' 
@@ -44,8 +56,8 @@ function validateCallbackPayload(payload: unknown): { valid: boolean; error?: st
   }
 
   // Validate error field for failed status (Requirement 9.5)
-  if (payload.status === 'failed') {
-    if (payload.error !== undefined && typeof payload.error !== 'string') {
+  if (status === 'failed') {
+    if (error !== undefined && typeof error !== 'string') {
       return { 
         valid: false, 
         error: 'Error field must be a string when provided' 
@@ -53,7 +65,16 @@ function validateCallbackPayload(payload: unknown): { valid: boolean; error?: st
     }
   }
 
-  return { valid: true };
+  const errorString = typeof error === 'string' ? error : undefined;
+
+  return {
+    valid: true,
+    callback: {
+      status,
+      output,
+      error: errorString,
+    },
+  };
 }
 
 /**
@@ -66,7 +87,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string; nodeId: string }> }
 ) {
-  const _startTime = Date.now();
+  const startTime = Date.now();
   let runId: string | undefined;
   let nodeId: string | undefined;
 
@@ -114,9 +135,9 @@ export async function POST(
     }
 
     // Parse callback payload
-    let callback: WorkerCallback;
+    let rawCallback: unknown;
     try {
-      callback = await request.json();
+      rawCallback = await request.json();
     } catch (parseError) {
       logExecutionError('Failed to parse callback JSON', parseError, {
         runId,
@@ -129,18 +150,20 @@ export async function POST(
     }
 
     // Validate callback structure (Requirements 9.1, 9.2, 9.3, 9.5)
-    const validation = validateCallbackPayload(callback);
+    const validation = validateCallbackPayload(rawCallback);
     if (!validation.valid) {
       logExecutionError('Invalid callback payload structure', new Error(validation.error), {
         runId,
         nodeId,
-        receivedPayload: callback,
+        receivedPayload: rawCallback,
       });
       return NextResponse.json(
         { error: validation.error },
         { status: 400 }
       );
     }
+
+    const callback = validation.callback!;
 
     // Log callback receipt (Requirement 10.3)
     logCallbackReceived(
@@ -156,14 +179,14 @@ export async function POST(
       // Merge callback output with any stored input from the node state
       // This implements the "pass-through" pattern for async workers
       const currentNodeState = run.node_states[nodeId];
-      const storedInput = currentNodeState?.output || {};
+      const storedInput = currentNodeState?.output;
       
       // Merge: stored input + new callback output
       // This ensures data flows through the pipeline (e.g., voice_text survives for downstream nodes)
-      const mergedOutput = {
-        ...storedInput,
-        ...callback.output,
-      };
+      const mergedOutput =
+        isPlainObject(storedInput) && isPlainObject(callback.output)
+          ? { ...storedInput, ...callback.output }
+          : { input: storedInput, output: callback.output };
 
       // Update to completed with merged output (Requirement 9.2, 9.3)
       await updateNodeState(runId, nodeId, {
@@ -181,7 +204,7 @@ export async function POST(
     }
 
     // Apply entity movement if configured
-    const _flow = await getFlowAdmin(run.flow_id);
+    const flow = await getFlowAdmin(run.flow_id);
     if (flow) {
       const node = flow.graph.nodes.find(n => n.id === nodeId);
       if (node && node.type === 'Worker') {
@@ -210,7 +233,7 @@ export async function POST(
       { success: true },
       { status: 200 }
     );
-  } catch (_error) {
+  } catch (error) {
     // Enhanced error logging (Requirement 10.5)
     logExecutionError('Callback processing error', error, {
       runId,

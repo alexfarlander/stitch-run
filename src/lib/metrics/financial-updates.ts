@@ -73,7 +73,7 @@ function calculateStripeFee(amount: number): number {
 export async function updateFinancials(
   payload: FinancialUpdatePayload
 ): Promise<void> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   // Get current BMC canvas (get the most recent one if multiple exist)
   const { data: bmcList, error: fetchError } = await supabase
@@ -185,7 +185,7 @@ export async function updateFinancials(
  * @returns Promise that resolves when reset is complete
  */
 export async function resetFinancialMetrics(): Promise<void> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   // Get current BMC canvas (get the most recent one if multiple exist)
   const { data: bmcList, error: fetchError } = await supabase
@@ -253,7 +253,7 @@ export async function resetFinancialMetrics(): Promise<void> {
  * @returns Object containing current financial metric values
  */
 export async function getFinancialMetrics(): Promise<Record<string, number>> {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   const { data: bmcList, error } = await supabase
     .from('stitch_flows')

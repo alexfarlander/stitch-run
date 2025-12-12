@@ -9,6 +9,10 @@
 
 import { VisualGraph } from '@/types/canvas-schema';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 // ============================================================================
 // Action Types
 // ============================================================================
@@ -191,41 +195,43 @@ export function isValidAction(action: string): action is AIManagerAction {
  */
 export function validateResponse(response: unknown): asserts response is AIManagerResponse {
   // Check if response is an object
-  if (!response || typeof response !== 'object') {
+  if (!isRecord(response)) {
     throw new ActionExecutorError(
       'Response must be a JSON object',
       'VALIDATION_ERROR',
       { receivedType: typeof response }
     );
   }
+  const r = response;
   
   // Check for action field
-  if (!('action' in response)) {
+  if (!('action' in r)) {
     throw new ActionExecutorError(
       'Response missing required "action" field',
       'VALIDATION_ERROR',
-      { receivedFields: Object.keys(response) }
+      { receivedFields: Object.keys(r) }
     );
   }
   
   // Validate action type
-  if (!isValidAction(response.action)) {
+  const action = r['action'];
+  if (typeof action !== 'string' || !isValidAction(action)) {
     throw new ActionExecutorError(
-      `Invalid action type: ${response.action}`,
+      `Invalid action type: ${String(action)}`,
       'VALIDATION_ERROR',
       { 
-        receivedAction: response.action,
+        receivedAction: action,
         validActions: VALID_ACTIONS
       }
     );
   }
   
   // Check for payload field
-  if (!('payload' in response)) {
+  if (!('payload' in r)) {
     throw new ActionExecutorError(
       'Response missing required "payload" field',
       'VALIDATION_ERROR',
-      { receivedFields: Object.keys(response) }
+      { receivedFields: Object.keys(r) }
     );
   }
 }
@@ -239,21 +245,23 @@ export function validateResponse(response: unknown): asserts response is AIManag
  * @throws ActionExecutorError if validation fails
  */
 export function validateCreateWorkflowPayload(payload: unknown): asserts payload is CreateWorkflowPayload {
-  if (!payload || typeof payload !== 'object') {
+  if (!isRecord(payload)) {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW payload must be an object',
       'VALIDATION_ERROR'
     );
   }
+  const p = payload;
   
-  if (!payload.name || typeof payload.name !== 'string') {
+  if (typeof p['name'] !== 'string' || p['name'].trim() === '') {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW payload missing required "name" field',
       'VALIDATION_ERROR'
     );
   }
   
-  if (!payload.canvas || typeof payload.canvas !== 'object') {
+  const canvas = p['canvas'];
+  if (!isRecord(canvas)) {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW payload missing required "canvas" field',
       'VALIDATION_ERROR'
@@ -261,14 +269,14 @@ export function validateCreateWorkflowPayload(payload: unknown): asserts payload
   }
   
   // Validate canvas structure
-  if (!Array.isArray(payload.canvas.nodes)) {
+  if (!Array.isArray(canvas['nodes'])) {
     throw new ActionExecutorError(
       'Canvas must have "nodes" array',
       'VALIDATION_ERROR'
     );
   }
   
-  if (!Array.isArray(payload.canvas.edges)) {
+  if (!Array.isArray(canvas['edges'])) {
     throw new ActionExecutorError(
       'Canvas must have "edges" array',
       'VALIDATION_ERROR'
@@ -283,21 +291,23 @@ export function validateCreateWorkflowPayload(payload: unknown): asserts payload
  * @throws ActionExecutorError if validation fails
  */
 export function validateModifyWorkflowPayload(payload: unknown): asserts payload is ModifyWorkflowPayload {
-  if (!payload || typeof payload !== 'object') {
+  if (!isRecord(payload)) {
     throw new ActionExecutorError(
       'MODIFY_WORKFLOW payload must be an object',
       'VALIDATION_ERROR'
     );
   }
+  const p = payload;
   
-  if (!payload.canvasId || typeof payload.canvasId !== 'string') {
+  if (typeof p['canvasId'] !== 'string' || p['canvasId'].trim() === '') {
     throw new ActionExecutorError(
       'MODIFY_WORKFLOW payload missing required "canvasId" field',
       'VALIDATION_ERROR'
     );
   }
   
-  if (!payload.canvas || typeof payload.canvas !== 'object') {
+  const canvas = p['canvas'];
+  if (!isRecord(canvas)) {
     throw new ActionExecutorError(
       'MODIFY_WORKFLOW payload missing required "canvas" field',
       'VALIDATION_ERROR'
@@ -305,14 +315,14 @@ export function validateModifyWorkflowPayload(payload: unknown): asserts payload
   }
   
   // Validate canvas structure
-  if (!Array.isArray(payload.canvas.nodes)) {
+  if (!Array.isArray(canvas['nodes'])) {
     throw new ActionExecutorError(
       'Canvas must have "nodes" array',
       'VALIDATION_ERROR'
     );
   }
   
-  if (!Array.isArray(payload.canvas.edges)) {
+  if (!Array.isArray(canvas['edges'])) {
     throw new ActionExecutorError(
       'Canvas must have "edges" array',
       'VALIDATION_ERROR'
@@ -329,21 +339,23 @@ export function validateModifyWorkflowPayload(payload: unknown): asserts payload
  * @throws ActionExecutorError if validation fails
  */
 export function validateRunWorkflowPayload(payload: unknown): asserts payload is RunWorkflowPayload {
-  if (!payload || typeof payload !== 'object') {
+  if (!isRecord(payload)) {
     throw new ActionExecutorError(
       'RUN_WORKFLOW payload must be an object',
       'VALIDATION_ERROR'
     );
   }
+  const p = payload;
   
-  if (!payload.canvasId || typeof payload.canvasId !== 'string') {
+  if (typeof p['canvasId'] !== 'string' || p['canvasId'].trim() === '') {
     throw new ActionExecutorError(
       'RUN_WORKFLOW payload missing required "canvasId" field',
       'VALIDATION_ERROR'
     );
   }
   
-  if (!payload.input || typeof payload.input !== 'object') {
+  const input = p['input'];
+  if (!isRecord(input)) {
     throw new ActionExecutorError(
       'RUN_WORKFLOW payload missing required "input" field',
       'VALIDATION_ERROR'
@@ -358,14 +370,15 @@ export function validateRunWorkflowPayload(payload: unknown): asserts payload is
  * @throws ActionExecutorError if validation fails
  */
 export function validateGetStatusPayload(payload: unknown): asserts payload is GetStatusPayload {
-  if (!payload || typeof payload !== 'object') {
+  if (!isRecord(payload)) {
     throw new ActionExecutorError(
       'GET_STATUS payload must be an object',
       'VALIDATION_ERROR'
     );
   }
+  const p = payload;
   
-  if (!payload.runId || typeof payload.runId !== 'string') {
+  if (typeof p['runId'] !== 'string' || p['runId'].trim() === '') {
     throw new ActionExecutorError(
       'GET_STATUS payload missing required "runId" field',
       'VALIDATION_ERROR'
@@ -445,30 +458,32 @@ export function parseAndValidateResponse(llmResponseText: string): AIManagerResp
  * @throws ActionExecutorError if validation fails
  */
 export function validateCreateWorkflowResponse(result: unknown): void {
-  if (!result || typeof result !== 'object') {
+  if (!isRecord(result)) {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW response must be an object',
       'VALIDATION_ERROR'
     );
   }
+  const r = result;
   
-  if (!result.canvas || typeof result.canvas !== 'object') {
+  const canvas = r['canvas'];
+  if (!isRecord(canvas)) {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW response missing required "canvas" field',
       'VALIDATION_ERROR',
-      { receivedFields: Object.keys(result) }
+      { receivedFields: Object.keys(r) }
     );
   }
   
   // Validate canvas structure
-  if (!Array.isArray(result.canvas.nodes)) {
+  if (!Array.isArray(canvas['nodes'])) {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW response canvas must have "nodes" array',
       'VALIDATION_ERROR'
     );
   }
   
-  if (!Array.isArray(result.canvas.edges)) {
+  if (!Array.isArray(canvas['edges'])) {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW response canvas must have "edges" array',
       'VALIDATION_ERROR'
@@ -476,11 +491,11 @@ export function validateCreateWorkflowResponse(result: unknown): void {
   }
   
   // Validate canvasId is present
-  if (!result.canvasId || typeof result.canvasId !== 'string') {
+  if (typeof r['canvasId'] !== 'string' || r['canvasId'].trim() === '') {
     throw new ActionExecutorError(
       'CREATE_WORKFLOW response missing required "canvasId" field',
       'VALIDATION_ERROR',
-      { receivedFields: Object.keys(result) }
+      { receivedFields: Object.keys(r) }
     );
   }
 }
@@ -494,18 +509,19 @@ export function validateCreateWorkflowResponse(result: unknown): void {
  * @throws ActionExecutorError if validation fails
  */
 export function validateRunWorkflowResponse(result: unknown): void {
-  if (!result || typeof result !== 'object') {
+  if (!isRecord(result)) {
     throw new ActionExecutorError(
       'RUN_WORKFLOW response must be an object',
       'VALIDATION_ERROR'
     );
   }
+  const r = result;
   
-  if (!result.runId || typeof result.runId !== 'string') {
+  if (typeof r['runId'] !== 'string' || r['runId'].trim() === '') {
     throw new ActionExecutorError(
       'RUN_WORKFLOW response missing required "runId" field',
       'VALIDATION_ERROR',
-      { receivedFields: Object.keys(result) }
+      { receivedFields: Object.keys(r) }
     );
   }
 }
@@ -527,7 +543,7 @@ export function validateResponseFormat(action: AIManagerAction, result: unknown)
   // Try to serialize and deserialize to ensure it's valid JSON
   try {
     JSON.parse(JSON.stringify(result));
-  } catch (_error) {
+  } catch (error) {
     throw new ActionExecutorError(
       'Response is not valid JSON-serializable',
       'VALIDATION_ERROR',
@@ -606,7 +622,7 @@ export async function executeAction<T>(
     default:
       // TypeScript should prevent this, but handle it anyway
       throw new ActionExecutorError(
-        `Unknown action type: ${(response as unknown).action}`,
+        `Unknown action type: ${(response as any).action}`,
         'VALIDATION_ERROR'
       );
   }
@@ -794,7 +810,7 @@ export async function handleCreateWorkflow(
       canvasId: flow.id,
       canvas: payload.canvas,
     };
-  } catch (_error) {
+  } catch (error) {
     throw new ActionExecutorError(
       'Failed to store canvas in database',
       'DATABASE_ERROR',
@@ -916,7 +932,7 @@ export async function handleModifyWorkflow(
   const { isValidWorkerType } = await import('@/lib/workers/registry');
   
   // Step 1: Load current canvas from database (Requirement 5.1)
-  const _flow = await getFlow(payload.canvasId, true);
+  const flow = await getFlow(payload.canvasId, true);
   
   if (!flow) {
     throw new ActionExecutorError(
@@ -1145,7 +1161,7 @@ export async function handleModifyWorkflow(
       canvasId: payload.canvasId,
       canvas: modifiedCanvas,
     };
-  } catch (_error) {
+  } catch (error) {
     throw new ActionExecutorError(
       'Failed to store modified canvas in database',
       'DATABASE_ERROR',
@@ -1175,7 +1191,7 @@ export async function handleRunWorkflow(
   let flow;
   try {
     flow = await getFlow(payload.canvasId, true);
-  } catch (_error) {
+  } catch (error) {
     throw new ActionExecutorError(
       `Failed to load canvas: ${payload.canvasId}`,
       'NOT_FOUND',
@@ -1247,7 +1263,7 @@ export async function handleRunWorkflow(
       status: 'running',
       statusUrl: statusUrl
     };
-  } catch (_error) {
+  } catch (error) {
     throw new ActionExecutorError(
       'Failed to start workflow execution',
       'EXECUTION_ERROR',
@@ -1292,7 +1308,7 @@ export async function handleGetStatus(
   let run;
   try {
     run = await getRun(runId);
-  } catch (_error) {
+  } catch (error) {
     throw new ActionExecutorError(
       `Failed to retrieve run: ${runId}`,
       'DATABASE_ERROR',
@@ -1371,7 +1387,7 @@ export async function handleGetStatus(
             finalOutputs = undefined;
           }
         }
-      } catch (_error) {
+      } catch (error) {
         // If we can't load the version, just skip finalOutputs
         // This is not critical to the status response
         console.warn(`Failed to load version for terminal outputs: ${error}`);

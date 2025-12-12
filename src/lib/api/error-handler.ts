@@ -78,15 +78,15 @@ export function handleAPIError(error: unknown): NextResponse<ErrorResponse> {
     // Check for Mermaid parse errors (from mermaid-parser.ts)
     if (error.name === 'MermaidParseError') {
       const details: string[] = [];
-      const mermaidError = error as unknown;
+      const mermaidError = error as unknown as { hint?: unknown; line?: unknown };
       
       // Add hint if available
-      if (mermaidError.hint) {
+      if (typeof mermaidError.hint === 'string' && mermaidError.hint.trim() !== '') {
         details.push(`Hint: ${mermaidError.hint}`);
       }
       
       // Add line number if available
-      if (mermaidError.line) {
+      if (typeof mermaidError.line === 'number') {
         details.push(`Line: ${mermaidError.line}`);
       }
       

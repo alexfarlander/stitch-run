@@ -275,7 +275,7 @@ export async function moveEntityToSection(
   const supabase = getAdminClient();
 
   // Build update payload
-  const updatePayload: unknown = {
+  const updatePayload: Record<string, unknown> = {
     current_node_id: targetSectionId,
     current_edge_id: null,
     edge_progress: null,

@@ -46,7 +46,10 @@ export function extractValue(
     }
     
     if (segment.type === 'property') {
-      current = current[segment.value as string];
+      if (typeof current !== 'object') {
+        return undefined;
+      }
+      current = (current as Record<string, unknown>)[segment.value as string];
     } else if (segment.type === 'index') {
       if (!Array.isArray(current)) {
         return undefined;

@@ -6,11 +6,13 @@
 
 'use client';
 
+import type { Node as FlowNode } from '@xyflow/react';
 import { useNodes, useViewport, Panel } from '@xyflow/react';
 import { useRunStatus } from '@/hooks/useRunStatus';
 import { NodeStatusIndicator } from './nodes/NodeStatusIndicator';
 import { useNodeStatus } from './hooks/useNodeStatus';
 import { useEffect } from 'react';
+import type { NodeState } from '@/types/stitch';
 
 interface RunStatusOverlayProps {
   runId?: string;
@@ -117,7 +119,7 @@ export function RunStatusOverlay({ runId }: RunStatusOverlayProps) {
 }
 
 interface NodeStatusItemProps {
-  node: Node;
+  node: FlowNode;
   nodeStates: Record<string, NodeState>;
   viewport: { zoom: number; x: number; y: number };
 }

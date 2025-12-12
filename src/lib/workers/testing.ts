@@ -43,7 +43,7 @@ class MockWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: unknown
+    input: any
   ): Promise<void> {
     logWorker('info', 'Mock worker execution started', {
       worker: this.workerName,
@@ -125,7 +125,7 @@ export function createMockWorker(workerName: string): IWorker {
  * @returns true if API key is present, false otherwise
  */
 export function checkApiKey(workerName: string): boolean {
-  const _config = getConfig();
+  const config = getConfig();
   
   switch (workerName) {
     case 'claude':
@@ -167,7 +167,7 @@ export function getRequiredEnvVars(workerName: string): string[] {
  * @returns Test result with success status and details
  */
 export async function testWorker(config: WorkerTestConfig): Promise<WorkerTestResult> {
-  const _startTime = Date.now();
+  const startTime = Date.now();
   const { workerName, mockMode, testInput } = config;
 
   logWorker('info', 'Worker test started', {
@@ -207,7 +207,7 @@ export async function testWorker(config: WorkerTestConfig): Promise<WorkerTestRe
       logWorker('info', 'Using real worker', { workerName });
       worker = workerRegistry.getWorker(workerName);
     }
-  } catch (_error) {
+  } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logWorker('error', 'Failed to create worker instance', {
       workerName,
@@ -323,7 +323,7 @@ export async function testWorker(config: WorkerTestConfig): Promise<WorkerTestRe
       callbackReceived: true,
     };
 
-  } catch (_error) {
+  } catch (error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

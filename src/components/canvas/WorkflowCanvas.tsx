@@ -45,11 +45,11 @@ interface WorkflowCanvasProps {
 
 // Node type registry for workflow nodes
 const nodeTypes: NodeTypes = {
-  Worker: WorkerNode as unknown,
-  Collector: CollectorNode as unknown,
-  UX: UXNode as unknown,
-  Splitter: SplitterNode as unknown,
-  MediaSelect: MediaSelectNode as unknown,
+  Worker: WorkerNode,
+  Collector: CollectorNode,
+  UX: UXNode,
+  Splitter: SplitterNode,
+  MediaSelect: MediaSelectNode,
 };
 
 // Edge type registry for workflow edges
@@ -79,13 +79,21 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
   const { run } = useRealtimeRun(runId || '');
 
   // Initialize nodes and edges with local state for interaction
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  type WorkflowNodeData = Record<string, unknown> & {
+    label?: string;
+    node_states?: StitchRun['node_states'];
+  };
+  type WorkflowEdgeData = Record<string, unknown>;
+  type WorkflowNode = Node<WorkflowNodeData>;
+  type WorkflowEdge = Edge<WorkflowEdgeData>;
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>([]);
 
   // Initial load of graph data
   useEffect(() => {
     if (flow.graph) {
-      const initialNodes = flow.graph.nodes.map((node) => ({
+      const initialNodes: WorkflowNode[] = flow.graph.nodes.map((node) => ({
         id: node.id,
         type: node.type,
         position: node.position,
@@ -93,14 +101,14 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
           ...node.data,
           node_states: nodeStates,
           // Explicitly pass selected if needed, though React Flow handles it via selected prop on Node
-        },
+        } as WorkflowNodeData,
         style: node.style,
         selectable: true,
         draggable: true,
       }));
       setNodes(initialNodes);
 
-      const initialEdges = flow.graph.edges.map((edge) => ({
+      const initialEdges: WorkflowEdge[] = flow.graph.edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
@@ -113,7 +121,7 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
         },
         data: {
           isTraversing: traversingEdges.get(edge.id) || false,
-        },
+        } as WorkflowEdgeData,
       }));
       setEdges(initialEdges);
     }
@@ -149,7 +157,8 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
   }, []);
 
   // Handle node click
-  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: WorkflowNode) => {
+    void event;
     setSelectedNodeId(node.id);
   }, []);
 
@@ -194,7 +203,7 @@ export function WorkflowCanvas({ flow, runId }: WorkflowCanvasProps) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to update node configuration');
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error saving node configuration:', error);
       throw error;
     }

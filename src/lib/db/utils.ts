@@ -70,7 +70,7 @@ export async function withTransaction<T>(
   
   try {
     return await operation(client);
-  } catch (_error) {
+  } catch (error) {
     if (error instanceof DatabaseError) {
       throw error;
     }

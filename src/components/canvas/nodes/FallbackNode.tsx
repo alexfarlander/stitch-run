@@ -13,8 +13,13 @@ import { AlertTriangle } from 'lucide-react';
  * Validates: Requirements 6.2
  */
 export const FallbackNode = memo(({ id, type, data }: NodeProps) => {
+  const dataRecord =
+    typeof data === 'object' && data !== null && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+
   // Use originalType from data if available, otherwise use the type prop
-  const displayType = (data as unknown)?.originalType || type;
+  const displayType = typeof dataRecord.originalType === 'string' ? dataRecord.originalType : type;
   
   return (
     <div className="bg-yellow-900/50 border-2 border-yellow-500 rounded-lg p-4 min-w-[200px]">
@@ -35,10 +40,10 @@ export const FallbackNode = memo(({ id, type, data }: NodeProps) => {
               <span className="text-white/50">Type:</span>{' '}
               <span className="font-mono">{displayType}</span>
             </div>
-            {(data as unknown)?.label && (
+            {typeof dataRecord.label === 'string' && dataRecord.label.trim() !== '' && (
               <div>
                 <span className="text-white/50">Label:</span>{' '}
-                <span>{String((data as unknown).label)}</span>
+                <span>{dataRecord.label}</span>
               </div>
             )}
           </div>

@@ -118,7 +118,7 @@ export default function MediaLibraryPage() {
       await upload(input);
       toast.success('Media uploaded successfully');
       setUploadDialogOpen(false);
-    } catch (_err) {
+    } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed');
     }
   };
@@ -130,7 +130,7 @@ export default function MediaLibraryPage() {
       // Open in new tab
       window.open(url, '_blank');
       toast.success('Download started');
-    } catch (_err) {
+    } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Download failed');
     }
   };
@@ -140,7 +140,7 @@ export default function MediaLibraryPage() {
     try {
       await navigator.clipboard.writeText(media.url);
       toast.success('URL copied to clipboard');
-    } catch (_err) {
+    } catch (err) {
       toast.error('Failed to copy URL');
     }
   };
@@ -171,7 +171,7 @@ export default function MediaLibraryPage() {
       toast.success('Media updated successfully');
       setEditDialogOpen(false);
       setEditingMedia(null);
-    } catch (_err) {
+    } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Update failed');
     }
   };
@@ -196,7 +196,7 @@ export default function MediaLibraryPage() {
       if (previewMedia?.id === deletingMedia.id) {
         setPreviewMedia(null);
       }
-    } catch (_err) {
+    } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed');
     }
   };

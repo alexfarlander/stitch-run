@@ -12,6 +12,7 @@
 import { WebhookAdapter, ExtractedEntity } from './types';
 import { mapPayloadToEntity } from '../entity-mapper';
 import { WebhookConfig } from '@/types/stitch';
+import { secureCompare } from '../security';
 
 /**
  * n8n webhook adapter
@@ -38,9 +39,11 @@ export const n8nAdapter: WebhookAdapter = {
     
     // Check for n8n-specific headers
     const incomingSecret = headers.get('x-webhook-secret') || headers.get('x-auth-token');
-    
-    // Simple string comparison
-    return incomingSecret === secret;
+
+    if (!incomingSecret) return false;
+
+    // Timing-safe string comparison
+    return secureCompare(incomingSecret, secret);
   },
   
   /**
@@ -76,6 +79,7 @@ export const n8nAdapter: WebhookAdapter = {
    * Falls back to 'n8n_workflow_trigger' if not found.
    */
   getEventType: (payload: unknown): string => {
-    return payload.event || payload.type || 'n8n_workflow_trigger';
+    const p = payload as any;
+    return p?.event || p?.type || 'n8n_workflow_trigger';
   }
 };

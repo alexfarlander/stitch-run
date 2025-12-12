@@ -113,7 +113,7 @@ export function mergeUpstreamOutputs(
   }
   
   // Merge all upstream outputs
-  const mergedInput: unknown = {};
+  const mergedInput: Record<string, unknown> = {};
   
   for (const edge of inboundEdges) {
     const sourceState = run.node_states[edge.source];
@@ -122,7 +122,7 @@ export function mergeUpstreamOutputs(
     if (sourceState && sourceState.output !== undefined) {
       // If output is an object, merge its properties
       if (typeof sourceState.output === 'object' && sourceState.output !== null && !Array.isArray(sourceState.output)) {
-        Object.assign(mergedInput, sourceState.output);
+        Object.assign(mergedInput, sourceState.output as Record<string, unknown>);
       } else {
         // For non-object outputs, use the source node ID as the key
         mergedInput[edge.source] = sourceState.output;

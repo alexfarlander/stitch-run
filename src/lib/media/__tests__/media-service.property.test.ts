@@ -19,7 +19,7 @@ import type { MediaType } from '../../../types/media';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const _supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Test configuration - reduced for faster testing
 const testConfig = { numRuns: 10 };
@@ -124,7 +124,7 @@ async function cleanupMedia(mediaId: string): Promise<void> {
       // Delete from database
       await supabase.from('stitch_media').delete().eq('id', mediaId);
     }
-  } catch (_error) {
+  } catch (error) {
     // Ignore cleanup errors
     console.warn(`Cleanup failed for media ${mediaId}:`, error);
   }

@@ -7,10 +7,11 @@
 import { processWebhook } from '../processor';
 import { createWebhookConfig, deleteWebhookConfig } from '../../db/webhook-configs';
 import { getWebhookEventById } from '../../db/webhook-events';
-import { createFlow, deleteFlow } from '../../db/flows';
+import { createFlow, createFlowWithVersion, deleteFlow } from '../../db/flows';
 import { getRun, deleteRun } from '../../db/runs';
 import { getAdminClient } from '../../supabase/client';
-import { StitchNode, StitchEdge, EntityMapping } from '@/types/stitch';
+import type { VisualGraph } from '@/types/canvas-schema';
+import { EntityMapping } from '@/types/stitch';
 import crypto from 'crypto';
 
 describe('Webhook Processing Orchestration', () => {
@@ -29,26 +30,37 @@ describe('Webhook Processing Orchestration', () => {
     testCanvasId = canvas.id;
 
     // Create a test workflow with nodes and edges
-    const nodes: StitchNode[] = [
-      { id: 'start', type: 'Worker', position: { x: 0, y: 0 }, data: { workerType: 'test' } },
-      { id: 'end', type: 'Worker', position: { x: 100, y: 0 }, data: { workerType: 'test' } },
-    ];
+    const visualGraph: VisualGraph = {
+      nodes: [
+        {
+          id: 'start',
+          type: 'Worker',
+          position: { x: 0, y: 0 },
+          data: { label: 'Start' },
+        },
+        {
+          id: 'end',
+          type: 'Worker',
+          position: { x: 100, y: 0 },
+          data: { label: 'End' },
+        },
+      ],
+      edges: [
+        { id: 'edge-1', source: 'start', target: 'end' },
+      ],
+    };
 
-    const edges: StitchEdge[] = [
-      { id: 'edge-1', source: 'start', target: 'end' },
-    ];
-
-    const workflow = await createFlow('Test Workflow', { nodes, edges });
-    testFlowId = workflow.id;
+    const { flow } = await createFlowWithVersion('Test Workflow', visualGraph, 'workflow');
+    testFlowId = flow.id;
   });
 
   afterEach(async () => {
     // Clean up entities
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     for (const entityId of testEntityIds) {
       try {
         await supabase.from('stitch_entities').delete().eq('id', entityId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -58,7 +70,7 @@ describe('Webhook Processing Orchestration', () => {
     for (const runId of testRunIds) {
       try {
         await deleteRun(runId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -68,7 +80,7 @@ describe('Webhook Processing Orchestration', () => {
     if (testWebhookConfigId) {
       try {
         await deleteWebhookConfig(testWebhookConfigId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -77,14 +89,14 @@ describe('Webhook Processing Orchestration', () => {
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
     if (testCanvasId) {
       try {
         await deleteFlow(testCanvasId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
@@ -156,7 +168,7 @@ describe('Webhook Processing Orchestration', () => {
       expect(webhookEvent?.error).toBeNull();
 
       // Verify entity was created
-      const _supabase = getAdminClient();
+      const supabase = getAdminClient();
       const { data: entity } = await supabase
         .from('stitch_entities')
         .select('*')
@@ -200,7 +212,7 @@ describe('Webhook Processing Orchestration', () => {
       testWebhookConfigId = webhookConfig.id;
 
       // Create initial entity
-      const _supabase = getAdminClient();
+      const supabase = getAdminClient();
       const { data: initialEntity } = await supabase
         .from('stitch_entities')
         .insert({

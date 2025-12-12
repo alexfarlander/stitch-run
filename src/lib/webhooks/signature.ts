@@ -33,12 +33,17 @@ export function validateSignature(
     hmac.update(rawBody);
     const computedSignature = hmac.digest('hex');
 
+    // timingSafeEqual throws if byte lengths differ
+    if (signature.length !== computedSignature.length) {
+      return false;
+    }
+
     // Use timing-safe comparison to prevent timing attacks
     return crypto.timingSafeEqual(
       Buffer.from(signature),
       Buffer.from(computedSignature)
     );
-  } catch (_error) {
+  } catch (error) {
     console.error('Signature validation error:', error);
     return false;
   }

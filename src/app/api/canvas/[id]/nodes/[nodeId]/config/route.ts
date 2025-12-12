@@ -143,7 +143,7 @@ export async function PUT(
     }
     
     // Get current flow with version data
-    const _flow = await getFlow(canvasId, true);
+    const flow = await getFlow(canvasId, true);
     
     if (!flow) {
       throw new APIError(
@@ -155,8 +155,11 @@ export async function PUT(
     
     // Extract current visual graph
     let currentGraph: VisualGraph;
-    if (flow.current_version_id && (flow as unknown).current_version?.visual_graph) {
-      currentGraph = (flow as unknown).current_version.visual_graph;
+    const flowWithVersion = flow as typeof flow & {
+      current_version?: { visual_graph?: VisualGraph };
+    };
+    if (flow.current_version_id && flowWithVersion.current_version?.visual_graph) {
+      currentGraph = flowWithVersion.current_version.visual_graph;
     } else {
       // Fallback to legacy graph format
       currentGraph = {
@@ -207,14 +210,19 @@ export async function PUT(
           return node;
         }
         
+        const mergedConfig: Record<string, unknown> = {
+          ...(node.data.config && typeof node.data.config === 'object' ? node.data.config : {}),
+          ...(config ?? {}),
+          ...(inputs ? { inputs } : {}),
+        };
+
         // Update node data
         const updatedNode: VisualNode = {
           ...node,
           data: {
             ...node.data,
             ...(workerType && { worker_type: workerType }),
-            ...(config && { config: { ...node.data.config, ...config } }),
-            ...(inputs && { inputs }),
+            ...(Object.keys(mergedConfig).length > 0 && { config: mergedConfig }),
             ...(entityMovement && { entityMovement })
           }
         };
@@ -243,7 +251,7 @@ export async function PUT(
     
     return NextResponse.json(response);
     
-  } catch (_error) {
+  } catch (error) {
     return handleAPIError(error);
   }
 }

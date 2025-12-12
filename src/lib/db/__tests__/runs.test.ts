@@ -62,14 +62,14 @@ describe('Run Database Operations', () => {
     if (testRunId) {
       try {
         await deleteRun(testRunId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }
     if (testFlowId) {
       try {
         await deleteFlow(testFlowId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore cleanup errors
       }
     }

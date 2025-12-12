@@ -228,7 +228,7 @@ export async function seedTrialActivationWorkflow(supabase?: SupabaseClient): Pr
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Trial Activation workflow seed failed:', error);
     throw error;
   }

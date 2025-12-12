@@ -18,7 +18,7 @@ export class ClaudeWorker implements IWorker {
   private mockMode: boolean = false;
 
   constructor() {
-    const _config = getConfig();
+    const config = getConfig();
     
     if (!config.workers.anthropicApiKey) {
       this.mockMode = true;
@@ -46,9 +46,9 @@ export class ClaudeWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: unknown
+    input: any
   ): Promise<void> {
-    const _startTime = Date.now();
+    const startTime = Date.now();
 
     logWorker('info', 'Claude worker execution started', {
       worker: 'claude',
@@ -174,19 +174,20 @@ Create exactly 4 scenes that tell a cohesive story based on the user's topic.`;
       let parsedResponse: unknown;
       try {
         parsedResponse = JSON.parse(cleanJson);
-      } catch (_error) {
+      } catch (error) {
         // Log the raw text so we can debug why it failed
         console.error('Failed to parse raw output:', cleanJson);
         throw new Error(`Failed to parse Claude response as JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
       // Validate response structure
-      if (!parsedResponse.scenes || !Array.isArray(parsedResponse.scenes)) {
+      const parsedAny = parsedResponse as any;
+      if (!parsedAny.scenes || !Array.isArray(parsedAny.scenes)) {
         throw new Error('Claude response must contain a "scenes" array');
       }
 
       // Validate each scene
-      const scenes: Scene[] = parsedResponse.scenes;
+      const scenes: Scene[] = parsedAny.scenes as Scene[];
       for (let i = 0; i < scenes.length; i++) {
         const scene = scenes[i];
         if (!scene.visual_prompt || typeof scene.visual_prompt !== 'string') {
@@ -212,7 +213,7 @@ Create exactly 4 scenes that tell a cohesive story based on the user's topic.`;
         output: { scenes },
       });
 
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

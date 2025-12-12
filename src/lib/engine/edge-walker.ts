@@ -132,7 +132,7 @@ export async function walkEdges(
       // Check for movement (Success case)
       // Note: walkEdges is only called on success, so success=true
       await handleNodeCompletion(run, completedNodeId, output, true);
-    } catch (_error) {
+    } catch (error) {
       logExecutionError('Failed to handle entity movement', error, {
         runId: run.id,
         completedNodeId,
@@ -174,41 +174,42 @@ export async function walkEdges(
  * - Journey edges (solid, for entity travel)
  * - System edges (dashed, for background processes)
  * 
+ * Uses the versioned ExecutionGraph to ensure consistent execution
  * Validates: Requirements 12.1, 12.2, 12.3, 12.4, 12.5
- * 
+ *
  * @param nodeId - The ID of the BMC node that completed
  * @param entityId - The ID of the entity (for journey edges)
- * @param canvasId - The ID of the BMC canvas
+ * @param run - The run object (contains flow_version_id for graph lookup)
  * @returns Object with results from both journey and system edge execution
  */
 export async function walkParallelEdges(
   nodeId: string,
   entityId: string,
-  canvasId: string
+  run: StitchRun
 ): Promise<{
   journeyEdges: { success: boolean; error?: string }[];
   systemEdges: { success: boolean; error?: string }[];
 }> {
-  const supabase = getAdminClient();
-
-  // Load the BMC canvas
-  const { data: flow, error: flowError } = await supabase
-    .from('stitch_flows')
-    .select('graph')
-    .eq('id', canvasId)
-    .single();
-
-  if (flowError || !flow) {
-    console.error('Failed to load canvas for parallel edge walking:', flowError);
-    return { journeyEdges: [], systemEdges: [] };
+  // Load the execution graph from the versioned flow
+  if (!run.flow_version_id) {
+    throw new Error(`Run ${run.id} missing flow_version_id - cannot walk edges`);
   }
 
-  // Find all edges from this node
-  const allEdges = flow.graph.edges.filter((edge: unknown) => edge.source === nodeId);
+  const version = await getVersion(run.flow_version_id);
+  if (!version) {
+    throw new Error(`Flow version ${run.flow_version_id} not found`);
+  }
+
+  const graph = version.execution_graph;
+
+  // Get all outbound edges from this node using the pre-compiled graph
+  const allEdges = graph.outboundEdges[nodeId] || [];
 
   // Separate journey edges and system edges
-  const journeyEdges = allEdges.filter((edge: unknown) => edge.type === 'journey' || !edge.type);
-  const systemEdges = allEdges.filter((edge: unknown) => edge.type === 'system');
+  const journeyEdges = allEdges.filter(edge => edge.type !== 'system');
+  const systemEdges = allEdges.filter(edge => edge.type === 'system');
+
+  const canvasId = run.flow_id; // Get canvas ID from run
 
   console.log(`[Parallel Edge Walking] Node ${nodeId}:`, {
     journeyEdgeCount: journeyEdges.length,
@@ -220,11 +221,11 @@ export async function walkParallelEdges(
   const [journeyResults, systemResults] = await Promise.allSettled([
     // Journey edge execution (entity movement)
     Promise.allSettled(
-      journeyEdges.map(async (edge: unknown) => {
+      journeyEdges.map(async (edge) => {
         try {
           await executeJourneyEdge(edge, entityId, canvasId);
           return { success: true };
-        } catch (_error) {
+        } catch (error) {
           console.error(`Journey edge ${edge.id} failed:`, error);
           return {
             success: false,
@@ -236,11 +237,11 @@ export async function walkParallelEdges(
 
     // System edge execution (background processes)
     Promise.allSettled(
-      systemEdges.map(async (edge: unknown) => {
+      systemEdges.map(async (edge) => {
         try {
           await executeSystemEdgeInternal(edge, entityId, canvasId);
           return { success: true };
-        } catch (_error) {
+        } catch (error) {
           console.error(`System edge ${edge.id} failed:`, error);
           return {
             success: false,
@@ -440,7 +441,7 @@ async function executeSystemEdgeInternal(
 
     // In production, this would execute the actual system action
     // For now, we just log it
-  } catch (_error) {
+  } catch (error) {
     console.error(`Failed to execute system edge ${edge.id}:`, error);
     throw error;
   }
@@ -617,7 +618,7 @@ function mergeUpstreamOutputsWithGraph(
   }
 
   // Merge all upstream outputs
-  const mergedInput: unknown = {};
+  const mergedInput: Record<string, unknown> = {};
 
   for (const upstreamId of upstreamNodeIds) {
     const upstreamState = run.node_states[upstreamId];
@@ -638,7 +639,7 @@ function mergeUpstreamOutputsWithGraph(
       } else {
         // No mapping, merge output directly
         if (typeof upstreamState.output === 'object' && upstreamState.output !== null && !Array.isArray(upstreamState.output)) {
-          Object.assign(mergedInput, upstreamState.output);
+          Object.assign(mergedInput, upstreamState.output as Record<string, unknown>);
         } else {
           mergedInput[upstreamId] = upstreamState.output;
         }

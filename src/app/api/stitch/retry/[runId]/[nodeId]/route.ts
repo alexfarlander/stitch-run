@@ -7,12 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRunAdmin, updateNodeState } from '@/lib/db/runs';
 import { getVersion } from '@/lib/canvas/version-manager';
-import { fireNode } from '@/lib/engine/edge-walker';
+import type { ExecutionGraph } from '@/types/execution-graph';
 
 /**
  * Helper function to get upstream node IDs from ExecutionGraph
  */
-function getUpstreamNodeIds(nodeId: string, executionGraph: unknown): string[] {
+function getUpstreamNodeIds(nodeId: string, executionGraph: ExecutionGraph): string[] {
   const upstreamIds: string[] = [];
   
   // Check adjacency map to find nodes that point to this node
@@ -86,6 +86,7 @@ export async function POST(
     }
 
     const executionGraph = version.execution_graph;
+    const typedExecutionGraph = executionGraph as ExecutionGraph;
 
     // Get updated run state after reset
     const updatedRun = await getRunAdmin(runId);
@@ -98,7 +99,7 @@ export async function POST(
 
     // Re-evaluate upstream dependencies and fire node if satisfied (Requirement 10.3)
     // Check dependencies using execution graph
-    const upstreamNodeIds = getUpstreamNodeIds(nodeId, executionGraph);
+    const upstreamNodeIds = getUpstreamNodeIds(nodeId, typedExecutionGraph);
     const allUpstreamCompleted = upstreamNodeIds.every(upstreamId => {
       const upstreamState = updatedRun.node_states[upstreamId];
       return upstreamState && upstreamState.status === 'completed';
@@ -107,7 +108,7 @@ export async function POST(
     if (allUpstreamCompleted) {
       // Fire this specific node directly using execution graph
       const { fireNodeWithGraph } = await import('@/lib/engine/edge-walker');
-      await fireNodeWithGraph(nodeId, executionGraph, updatedRun);
+      await fireNodeWithGraph(nodeId, typedExecutionGraph, updatedRun);
     }
 
     // Return success response
@@ -115,7 +116,7 @@ export async function POST(
       { success: true },
       { status: 200 }
     );
-  } catch (_error) {
+  } catch (error) {
     console.error('Retry processing error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -2,19 +2,10 @@
  * AI Module - LLM Client and AI Manager
  */
 
-export {
-  LLMClient,
-  LLMError,
-  ClaudeLLMClient,
-  ClaudeLLMClientConfig,
-  createLLMClient,
-} from './llm-client';
+export { LLMError, ClaudeLLMClient, createLLMClient } from './llm-client';
+export type { LLMClient, ClaudeLLMClientConfig } from './llm-client';
 
 export {
-  StrippedNode,
-  StrippedEdge,
-  StrippedCanvas,
-  AIManagerContext,
   stripNodeUIProperties,
   stripEdgeUIProperties,
   stripCanvasUIProperties,
@@ -22,20 +13,12 @@ export {
   buildAIManagerContext,
   formatContextAsJSON,
 } from './context-builder';
+export type { StrippedNode, StrippedEdge, StrippedCanvas, AIManagerContext } from './context-builder';
+
+export { buildAIManagerPrompt, buildSimplePrompt } from './prompt-template';
+export type { AIManagerAction, PromptTemplateConfig } from './prompt-template';
 
 export {
-  AIManagerAction,
-  PromptTemplateConfig,
-  buildAIManagerPrompt,
-  buildSimplePrompt,
-} from './prompt-template';
-
-export {
-  AIManagerResponse,
-  CreateWorkflowPayload,
-  ModifyWorkflowPayload,
-  RunWorkflowPayload,
-  GetStatusPayload,
   ActionExecutorError,
   parseLLMResponse,
   isValidAction,
@@ -47,4 +30,11 @@ export {
   validatePayload,
   parseAndValidateResponse,
   executeAction,
+} from './action-executor';
+export type {
+  AIManagerResponse,
+  CreateWorkflowPayload,
+  ModifyWorkflowPayload,
+  RunWorkflowPayload,
+  GetStatusPayload,
 } from './action-executor';

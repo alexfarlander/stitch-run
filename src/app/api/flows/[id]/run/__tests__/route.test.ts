@@ -72,7 +72,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     // Verify
     expect(response.status).toBe(200);
@@ -108,7 +108,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     // Verify
     expect(response.status).toBe(200);
@@ -168,7 +168,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     // Verify
     expect(response.status).toBe(404);
@@ -190,7 +190,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     // Verify
     expect(response.status).toBe(400);
@@ -212,7 +212,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     // Verify
     expect(response.status).toBe(400);
@@ -235,7 +235,7 @@ describe('POST /api/flows/[id]/run', () => {
 
     // Call endpoint
     const response = await POST(request, { params: { id: mockFlowId } });
-    const _data = await response.json();
+    const data = await response.json();
 
     // Verify
     expect(response.status).toBe(500);

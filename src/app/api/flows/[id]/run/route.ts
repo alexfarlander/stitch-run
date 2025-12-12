@@ -49,7 +49,7 @@ export async function POST(
     const { id: flowId } = await params;
 
     // Validate flow exists
-    const _flow = await getFlow(flowId);
+    const flow = await getFlow(flowId);
     if (!flow) {
       return NextResponse.json(
         { error: 'Flow not found' },
@@ -71,7 +71,7 @@ export async function POST(
     if (visualGraph) {
       try {
         versionId = await autoVersionOnRun(flowId, visualGraph);
-      } catch (_error) {
+      } catch (error) {
         console.error('Auto-versioning failed:', error);
         return NextResponse.json(
           { 
@@ -106,7 +106,7 @@ export async function POST(
       status: 'started',
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error running flow:', error);
     return NextResponse.json(
       { 

@@ -19,7 +19,7 @@ import { StitchNode, StitchEdge, EntityMapping } from '@/types/stitch';
  * Creates them if they don't exist
  */
 async function ensureBMCItemNodes(canvasId: string) {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   // Get the current BMC canvas
   const { data: canvas, error: canvasError } = await supabase
@@ -162,7 +162,7 @@ async function ensureBMCItemNodes(canvasId: string) {
  * Creates the "Lead Capture Logic" workflow
  */
 async function createLeadCaptureWorkflow(canvasId: string) {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   // Check if workflow already exists
   const { data: existing } = await supabase
@@ -248,7 +248,7 @@ async function createLeadCaptureWorkflow(canvasId: string) {
  * Creates webhook configuration for LinkedIn leads
  */
 async function createWebhookConfig(canvasId: string, workflowId: string) {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   // Check if webhook config already exists
   const { data: existing } = await supabase
@@ -305,7 +305,7 @@ async function createWebhookConfig(canvasId: string, workflowId: string) {
  * Seeds demo entities at various stages of the journey
  */
 async function seedDemoEntities(canvasId: string) {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   // Delete existing demo entities to recreate with correct node IDs
   await supabase
@@ -401,7 +401,7 @@ async function seedDemoEntities(canvasId: string) {
 export async function seedDemoJourney() {
   console.log('🌱 Seeding Demo Journey...\n');
   
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   try {
     // Step 1: Get the default BMC canvas
@@ -455,7 +455,7 @@ export async function seedDemoJourney() {
       workflowId
     };
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Demo Journey seed failed:', error);
     throw error;
   }

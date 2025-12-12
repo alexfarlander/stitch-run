@@ -13,7 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const _supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
@@ -138,7 +138,7 @@ describe('Timeline API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(data.events).toBeDefined();
     expect(data.events.length).toBe(4);
@@ -170,7 +170,7 @@ describe('Timeline API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Should get first 3 events (before or equal to timestamp)
     expect(data.events.length).toBeLessThanOrEqual(3);
@@ -199,7 +199,7 @@ describe('Timeline API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     // Should get events after or equal to timestamp
     expect(data.events.length).toBeGreaterThan(0);
@@ -247,7 +247,7 @@ describe('Timeline API', () => {
 
     expect(response.ok).toBe(true);
 
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(data.events).toEqual([]);
     expect(data.totalEvents).toBe(0);

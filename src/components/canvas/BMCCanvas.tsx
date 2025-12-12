@@ -232,7 +232,8 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
   }, [flow.graph.edges, traversingEdges, selectedNodeId, entities, setEdges]);
 
   // Handle double-clicks for drill-down (sections, section-items, and financial-items)
-  const handleNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
+  const handleNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+    void event;
     if (node.type === 'section') {
       const data = node.data as unknown as SectionNodeData;
       if (data.child_canvas_id) {
@@ -249,7 +250,9 @@ export function BMCCanvas({ flow, runId }: BMCCanvasProps) {
   }, [drillInto]);
 
   // Handle item single clicks - selection only, no drill-down
-  const handleNodeClick = useCallback((_event: React.MouseEvent, _node: Node) => {
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    void event;
+    void node;
     // Selection is handled automatically by React Flow
     // No drill-down on single click
   }, []);

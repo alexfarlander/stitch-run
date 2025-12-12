@@ -23,12 +23,31 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
+import { RateLimiters, getClientIdentifier, applyRateLimitHeaders } from '@/lib/api/rate-limiter';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ nodeId: string }> }
 ) {
   try {
+    // Step 0: Rate limiting - prevent abuse
+    const { nodeId: nodeIdParam } = await params;
+    const clientIp = getClientIdentifier(request);
+    const identifier = `${nodeIdParam}:${clientIp}`; // Rate limit per node + IP
+
+    const rateLimitResult = await RateLimiters.webhook.check(identifier);
+    if (!rateLimitResult.success) {
+      const response = NextResponse.json(
+        {
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded. Please try again later.',
+          statusCode: 429
+        },
+        { status: 429 }
+      );
+      return applyRateLimitHeaders(response, rateLimitResult);
+    }
+
     // Step 1: Extract nodeId from params
     const { nodeId } = await params;
     
@@ -153,7 +172,7 @@ export async function POST(
       { status: 200 }
     );
     
-  } catch (_error) {
+  } catch (error) {
     console.error('MCP webhook API error:', error);
     return NextResponse.json(
       { 

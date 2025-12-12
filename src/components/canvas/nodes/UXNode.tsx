@@ -16,7 +16,7 @@ interface UXNodeData {
   onDragOver?: (e: React.DragEvent) => void;
 }
 
-export const UXNode = memo(({ id, data }: NodeProps) => {
+export const UXNode = memo(({ id, data, selected }: NodeProps) => {
   const nodeData = data as UXNodeData;
   const { status, label } = useNodeStatus(id, nodeData.node_states);
 
@@ -28,7 +28,7 @@ export const UXNode = memo(({ id, data }: NodeProps) => {
         type="UX"
         status={status}
         label={label}
-        selected={props.selected}
+        selected={selected}
         onDrop={nodeData.onDrop}
         onDragOver={nodeData.onDragOver}
       >

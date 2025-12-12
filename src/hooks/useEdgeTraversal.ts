@@ -69,7 +69,7 @@ export function useEdgeTraversal(canvasId: string | undefined): Map<string, bool
     const channel = supabase
       .channel(`edge-traversal:${canvasId}`)
       .on(
-        'postgres_changes' as unknown,
+        'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
@@ -80,13 +80,14 @@ export function useEdgeTraversal(canvasId: string | undefined): Map<string, bool
           if (!mountedRef.current) return;
 
           // Validate payload structure
-          if (!payload?.new) {
+          const p = payload as { new?: unknown } | null;
+          if (!p?.new) {
             console.warn('Invalid journey event payload: missing new data');
             return;
           }
 
           // Normalize the event to typed format
-          const event = normalizeJourneyEvent(payload.new);
+          const event = normalizeJourneyEvent(p.new);
           
           // Only process database events with edge_start type
           if (!isDatabaseEvent(event) || event.event_type !== 'edge_start') {

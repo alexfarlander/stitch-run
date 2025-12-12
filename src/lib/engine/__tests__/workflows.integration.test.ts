@@ -26,7 +26,7 @@ describe('Integration Tests: Complete Workflows', () => {
     for (const runId of createdRunIds) {
       try {
         await deleteRun(runId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore errors during cleanup
       }
     }
@@ -35,7 +35,7 @@ describe('Integration Tests: Complete Workflows', () => {
     for (const flowId of createdFlowIds) {
       try {
         await deleteFlow(flowId);
-      } catch (_e) {
+      } catch (e) {
         // Ignore errors during cleanup
       }
     }
@@ -73,7 +73,7 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e2', source: 'worker1', target: 'worker2' },
     ];
 
-    const _flow = await createFlow('Linear Flow Test', { nodes, edges });
+    const flow = await createFlow('Linear Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
@@ -85,7 +85,7 @@ describe('Integration Tests: Complete Workflows', () => {
     expect(run.node_states['worker2'].status).toBe('pending');
 
     // Simulate start node completion
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -175,14 +175,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e4', source: 'collector', target: 'end' },
     ];
 
-    const _flow = await createFlow('Parallel Flow Test', { nodes, edges });
+    const flow = await createFlow('Parallel Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start node completion with array output
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -293,14 +293,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e2', source: 'ux-gate', target: 'worker' },
     ];
 
-    const _flow = await createFlow('UX Flow Test', { nodes, edges });
+    const flow = await createFlow('UX Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start node completion
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -393,14 +393,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e4', source: 'worker', target: 'collector' },
     ];
 
-    const _flow = await createFlow('Mixed Flow Test', { nodes, edges });
+    const flow = await createFlow('Mixed Flow Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start completion
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -506,14 +506,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e2', source: 'worker1', target: 'worker2' },
     ];
 
-    const _flow = await createFlow('Error Recovery Test', { nodes, edges });
+    const flow = await createFlow('Error Recovery Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start completion
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -618,14 +618,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e3', source: 'worker2', target: 'worker3' },
     ];
 
-    const _flow = await createFlow('Recovery Test', { nodes, edges });
+    const flow = await createFlow('Recovery Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate partial execution: start and worker1 completed, worker2 running
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -720,14 +720,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e4', source: 'collector', target: 'end' },
     ];
 
-    const _flow = await createFlow('Empty Array Test', { nodes, edges });
+    const flow = await createFlow('Empty Array Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start with empty array
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({
@@ -799,14 +799,14 @@ describe('Integration Tests: Complete Workflows', () => {
       { id: 'e3', source: 'worker', target: 'collector' },
     ];
 
-    const _flow = await createFlow('Failure Propagation Test', { nodes, edges });
+    const flow = await createFlow('Failure Propagation Test', { nodes, edges });
     createdFlowIds.push(flow.id);
 
     const run = await createRun(flow.id);
     createdRunIds.push(run.id);
 
     // Simulate start with array
-    const _supabase = getAdminClient();
+    const supabase = getAdminClient();
     await supabase
       .from('stitch_runs')
       .update({

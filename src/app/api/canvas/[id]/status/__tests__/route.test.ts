@@ -26,7 +26,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(400);
     expect(data.error).toContain('Missing required query parameter: runId');
@@ -40,7 +40,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(404);
     expect(data.error).toContain('Run not found');
@@ -68,7 +68,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(400);
     expect(data.error).toContain('does not belong to canvas');
@@ -99,7 +99,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.status).toBe('pending');
@@ -135,7 +135,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.status).toBe('running');
@@ -167,7 +167,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.status).toBe('failed');
@@ -217,7 +217,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.status).toBe('completed');
@@ -250,7 +250,7 @@ describe('GET /api/canvas/[id]/status', () => {
     const params = { id: 'test-id' };
 
     const response = await GET(request, { params });
-    const _data = await response.json();
+    const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.statusUrl).toContain('/api/canvas/test-id/status?runId=run-123');

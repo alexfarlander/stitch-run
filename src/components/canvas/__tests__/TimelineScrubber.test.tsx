@@ -317,7 +317,7 @@ describe('TimelineScrubber Component', () => {
       
       // Create events that are very close together (should be clustered)
       const baseTime = new Date('2024-01-01T10:00:00Z');
-      const mockEvents: JourneyEvent[] = Array.from({ length: 100 }, (_, i) => ({
+      const mockEvents: JourneyEvent[] = [...Array(100).keys()].map((i) => ({
         id: `event-${i}`,
         entity_id: 'test-entity-id',
         event_type: i % 2 === 0 ? 'node_complete' : 'edge_start',

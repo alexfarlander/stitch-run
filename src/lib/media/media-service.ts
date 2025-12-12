@@ -126,11 +126,12 @@ export async function uploadMedia(input: MediaUploadInput, userId?: string): Pro
   }
   
   // Fallback: check if it has a size property (for Blob-like objects in Node)
-  if (!fileSize && typeof (input.file as unknown).size === 'number') {
-    fileSize = (input.file as unknown).size;
+  const fileAny = input.file as any;
+  if (!fileSize && typeof fileAny?.size === 'number') {
+    fileSize = fileAny.size;
   }
-  if (!mimeType && typeof (input.file as unknown).type === 'string') {
-    mimeType = (input.file as unknown).type;
+  if (!mimeType && typeof fileAny?.type === 'string') {
+    mimeType = fileAny.type;
   }
   
   // Upload to Supabase Storage
@@ -207,7 +208,7 @@ export async function uploadFromUrl(
     if (!response.ok) {
       throw new Error(`Failed to fetch URL: ${response.statusText}`);
     }
-  } catch (_error) {
+  } catch (error) {
     throw new Error(`URL fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
   

@@ -208,7 +208,7 @@ export async function seedCRMSyncWorkflow(supabase?: SupabaseClient): Promise<st
     
     return workflow.id;
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ CRM Sync workflow seed failed:', error);
     throw error;
   }

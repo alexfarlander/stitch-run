@@ -133,7 +133,7 @@ export function MediaList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
+            {[...Array(5).keys()].map((i) => (
               <MediaRowSkeleton key={i} />
             ))}
           </TableBody>

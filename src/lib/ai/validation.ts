@@ -10,17 +10,20 @@
 import { isValidWorkerType, getAvailableWorkerTypes } from '@/lib/workers/registry';
 import type { Node, Edge } from '@xyflow/react';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * Type guard to check if an object is a valid Node
  */
 export function isValidNode(obj: unknown): obj is Node {
   return (
-    obj &&
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.position === 'object' &&
-    typeof obj.position.x === 'number' &&
-    typeof obj.position.y === 'number'
+    isRecord(obj) &&
+    typeof obj['id'] === 'string' &&
+    isRecord(obj['position']) &&
+    typeof (obj['position'] as Record<string, unknown>)['x'] === 'number' &&
+    typeof (obj['position'] as Record<string, unknown>)['y'] === 'number'
   );
 }
 
@@ -29,11 +32,10 @@ export function isValidNode(obj: unknown): obj is Node {
  */
 export function isValidEdge(obj: unknown): obj is Edge {
   return (
-    obj &&
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.source === 'string' &&
-    typeof obj.target === 'string'
+    isRecord(obj) &&
+    typeof obj['id'] === 'string' &&
+    typeof obj['source'] === 'string' &&
+    typeof obj['target'] === 'string'
   );
 }
 
@@ -70,8 +72,13 @@ export function validateWorkerTypes(nodes: Node[]): ValidationResult {
   const errors: ValidationError[] = [];
 
   for (const node of nodes) {
+    const data =
+      node.data && typeof node.data === 'object' && !Array.isArray(node.data)
+        ? (node.data as Record<string, unknown>)
+        : {};
     // Accept both workerType (camelCase) and worker_type (snake_case)
-    const workerType = node.data?.workerType || node.data?.worker_type || node.data?.type;
+    const workerTypeRaw = data['workerType'] ?? data['worker_type'] ?? data['type'];
+    const workerType = typeof workerTypeRaw === 'string' ? workerTypeRaw : undefined;
     
     if (!workerType) {
       errors.push({

@@ -30,14 +30,16 @@ const run = await startRun(flowId, {
 });
 ```
 
-### Using `fireNode` Directly (For Webhooks)
+### Starting from a Specific Entry Edge (For Webhooks)
 
-Webhooks use `fireNode` directly after creating the run and placing the entity on the entry edge:
+Webhooks should start execution using the **versioned graphs** (ExecutionGraph + VisualGraph) rather than `flow.graph`.
+This avoids integrity risks if `stitch_flows.graph` diverges from the version referenced by `run.flow_version_id`.
 
 ```typescript
-import { fireNode } from '@/lib/engine/edge-walker';
+import { fireNodeWithGraph } from '@/lib/engine/edge-walker';
 import { createRunAdmin } from '@/lib/db/runs';
 import { startJourney } from '@/lib/db/entities';
+import { getVersionAdmin } from '@/lib/canvas/version-manager';
 
 // 1. Place entity on entry edge (visual journey)
 await startJourney(entityId, entryEdgeId);
@@ -53,8 +55,14 @@ const run = await createRunAdmin(flowId, {
   },
 });
 
-// 3. Fire the target node
-await fireNode(targetNodeId, flow, run);
+// 3. Load versioned graphs and fire the target node
+const version = await getVersionAdmin(run.flow_version_id!);
+if (!version) throw new Error('Version not found');
+
+const entryEdge = version.visual_graph.edges.find((e) => e.id === entryEdgeId);
+if (!entryEdge) throw new Error('Entry edge not found');
+
+await fireNodeWithGraph(entryEdge.target, version.execution_graph, run);
 ```
 
 ## Entity Attachment

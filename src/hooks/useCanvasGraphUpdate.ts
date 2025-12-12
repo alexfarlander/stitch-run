@@ -40,7 +40,7 @@ export function useCanvasGraphUpdate(canvasId: string) {
 
         // The canvas will update automatically via Supabase real-time subscriptions
         // or the parent component will refetch the flow data
-      } catch (_error) {
+      } catch (error) {
         console.error('Error updating canvas:', error);
         throw error;
       }

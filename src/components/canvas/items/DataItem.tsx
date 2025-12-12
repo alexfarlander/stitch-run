@@ -41,7 +41,7 @@ const DataItemComponent = memo(({ id, data }: NodeProps) => {
     }
   };
   
-  const Icon = useMemo(() => getTypeIcon(), [dataType]);
+  const Icon = useMemo(() => getTypeIcon(), [type]);
   
   return (
     <div className="relative" data-node-id={id}>

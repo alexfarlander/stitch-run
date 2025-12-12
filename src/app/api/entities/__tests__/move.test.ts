@@ -20,7 +20,7 @@ import { getAdminClient } from '@/lib/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 
 describe('Entity Movement API', () => {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   let testCanvasId: string;
   let testEntityId: string;
   let testNodeIds: { source: string; target: string };
@@ -101,7 +101,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('Target node does not exist');
@@ -117,7 +117,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.entity).toBeDefined();
@@ -158,7 +158,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('No edge connects');
@@ -216,7 +216,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.entity.current_node_id).toBe(testNodeIds.target);
@@ -251,7 +251,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(data.entity.current_edge_id).toBeNull();
       expect(data.entity.edge_progress).toBeNull();
@@ -270,7 +270,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.journeyEvent).toBeDefined();
@@ -289,7 +289,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(data.journeyEvent.metadata).toBeDefined();
       expect(data.journeyEvent.metadata.source_node_id).toBe(testNodeIds.source);
@@ -307,7 +307,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.error).toContain('targetNodeId is required');
@@ -324,7 +324,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: fakeEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.error).toContain('Entity not found');
@@ -346,7 +346,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.error).toContain('Canvas not found');
@@ -364,7 +364,7 @@ describe('Entity Movement API', () => {
       });
 
       const response = await POST(request, { params: { entityId: testEntityId } });
-      const _data = await response.json();
+      const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('entity');

@@ -109,7 +109,7 @@ export function NodeConfigPanel({
         setConfig(nodeConfig);
         setOriginalConfig(nodeConfig);
         setValidationErrors({});
-      } catch (_err) {
+      } catch (err) {
         console.error('Error fetching node config:', err);
         setError(err instanceof Error ? err.message : 'Failed to load configuration');
       } finally {
@@ -300,7 +300,7 @@ export function NodeConfigPanel({
     try {
       await onSave(nodeId, config);
       onClose();
-    } catch (_err) {
+    } catch (err) {
       console.error('Error saving node config:', err);
       setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
@@ -331,12 +331,19 @@ export function NodeConfigPanel({
 
   // Render input field based on schema type
   const renderInputField = (fieldName: string, schema: InputSchema) => {
-    const value = config?.inputs[fieldName] ?? '';
+    const rawValue = config?.inputs[fieldName];
     const fieldId = `field-${fieldName}`;
     const hasError = !!validationErrors[fieldName];
 
     switch (schema.type) {
       case 'string':
+        {
+          const value =
+            rawValue === undefined || rawValue === null
+              ? ''
+              : typeof rawValue === 'string'
+                ? rawValue
+                : String(rawValue);
         return (
           <div>
             <Input
@@ -353,8 +360,18 @@ export function NodeConfigPanel({
             )}
           </div>
         );
+        }
 
       case 'number':
+        {
+          const value =
+            rawValue === undefined || rawValue === null
+              ? ''
+              : typeof rawValue === 'number'
+                ? rawValue
+                : typeof rawValue === 'string'
+                  ? rawValue
+                  : '';
         return (
           <div>
             <Input
@@ -371,6 +388,7 @@ export function NodeConfigPanel({
             )}
           </div>
         );
+        }
 
       case 'boolean':
         return (
@@ -378,7 +396,7 @@ export function NodeConfigPanel({
             <input
               id={fieldId}
               type="checkbox"
-              checked={!!value}
+              checked={!!rawValue}
               onChange={(e) => handleInputChange(fieldName, e.target.checked)}
               className="h-4 w-4 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-2 focus:ring-blue-500"
             />
@@ -394,7 +412,11 @@ export function NodeConfigPanel({
           <div>
             <textarea
               id={fieldId}
-              value={typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
+              value={
+                typeof rawValue === 'string'
+                  ? rawValue
+                  : JSON.stringify(rawValue ?? '', null, 2)
+              }
               onChange={(e) => {
                 try {
                   const parsed = JSON.parse(e.target.value);

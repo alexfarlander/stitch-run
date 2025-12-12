@@ -18,7 +18,7 @@ export class MiniMaxWorker implements IWorker {
   private mockMode: boolean = false;
 
   constructor() {
-    const _config = getConfig();
+    const config = getConfig();
     
     if (!config.workers.minimaxApiKey || !config.workers.minimaxGroupId) {
       this.mockMode = true;
@@ -50,9 +50,9 @@ export class MiniMaxWorker implements IWorker {
     runId: string,
     nodeId: string,
     config: NodeConfig,
-    input: unknown
+    input: any
   ): Promise<void> {
-    const _startTime = Date.now();
+    const startTime = Date.now();
 
     logWorker('info', 'MiniMax worker execution started', {
       worker: 'minimax',
@@ -170,7 +170,7 @@ export class MiniMaxWorker implements IWorker {
       // MiniMax will call back when video generation is complete
       // The callback handler will merge the videoUrl with this stored input
 
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

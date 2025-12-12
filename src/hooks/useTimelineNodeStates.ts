@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { NodeState, JourneyEvent } from '@/types/stitch';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 interface UseTimelineNodeStatesResult {
   nodeStates: Record<string, NodeState>;
@@ -67,8 +67,6 @@ export function useTimelineNodeStates(
         }
 
         // Reconstruct historical state from journey events
-        const _supabase = createBrowserClient();
-        
         // Query all journey events up to the selected timestamp
         // Requirement 7.1: Query all journey events up to that timestamp
         const { data: events, error: queryError } = await supabase
@@ -111,7 +109,7 @@ export function useTimelineNodeStates(
                 // Requirement 7.4: Apply node_failure events to set status to "failed"
                 reconstructed[nodeId] = {
                   status: 'failed',
-                  error: event.metadata?.error,
+                  error: typeof event.metadata?.error === 'string' ? event.metadata.error : undefined,
                 };
                 break;
 
@@ -127,7 +125,7 @@ export function useTimelineNodeStates(
           setNodeStates(reconstructed);
           setLoading(false);
         }
-      } catch (_err) {
+      } catch (err) {
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Unknown error');
           setLoading(false);

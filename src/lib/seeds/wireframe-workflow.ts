@@ -24,7 +24,7 @@ import { StitchNode, StitchEdge } from '@/types/stitch';
  * Scene Collector → Wireframe Review (UX)
  */
 async function createWireframeWorkflow(canvasId: string) {
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   // Check if workflow already exists
   const { data: existing } = await supabase
@@ -259,7 +259,7 @@ async function createWireframeWorkflow(canvasId: string) {
 export async function seedWireframeWorkflow() {
   console.log('🌱 Seeding Wireframe Generation Workflow...\n');
   
-  const _supabase = getAdminClient();
+  const supabase = getAdminClient();
   
   try {
     // Step 1: Get the default BMC canvas
@@ -300,7 +300,7 @@ export async function seedWireframeWorkflow() {
       workflowId,
     };
     
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Wireframe workflow seed failed:', error);
     throw error;
   }
