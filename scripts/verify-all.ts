@@ -93,7 +93,7 @@ async function runVerificationScript(
       name: scriptName,
       result,
     };
-  } catch (_error) {
+  } catch (error) {
     return {
       name: scriptName,
       result: {
@@ -127,10 +127,10 @@ async function main() {
     logSection('Master Verification - All Systems');
     logInfo('Running all verification scripts...\n');
 
-    const _supabase = createServerClient();
+    const supabase = createServerClient();
 
     // Get BMC canvas
-    const { data: bmcs } = await _supabase
+    const { data: bmcs } = await supabase
       .from('stitch_flows')
       .select('id, name, canvas_type')
       .eq('canvas_type', 'bmc');
@@ -145,7 +145,7 @@ async function main() {
     }
 
     // Get Video Factory V2 workflow
-    const { data: workflows } = await _supabase
+    const { data: workflows } = await supabase
       .from('stitch_flows')
       .select('id, name, canvas_type')
       .eq('canvas_type', 'workflow')
@@ -203,9 +203,9 @@ async function main() {
       logInfo('  - npx tsx scripts/verify-video-factory-v2.ts');
       process.exit(1);
     }
-  } catch (_error) {
+  } catch (error) {
     logError('Unexpected error during master verification');
-    console.error(_error);
+    console.error(error);
     process.exit(1);
   }
 }

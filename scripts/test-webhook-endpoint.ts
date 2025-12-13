@@ -94,7 +94,7 @@ async function testWebhook(testCase: WebhookTestCase): Promise<void> {
   console.log(`\n🧪 Testing: ${testCase.name}`);
   console.log(`   Source: ${testCase.source}`);
   console.log(`   Payload:`, JSON.stringify(testCase.payload, null, 2));
-  
+
   try {
     const response = await fetch(`${BASE_URL}/api/webhooks/clockwork/${testCase.source}`, {
       method: 'POST',
@@ -103,15 +103,15 @@ async function testWebhook(testCase: WebhookTestCase): Promise<void> {
       },
       body: JSON.stringify(testCase.payload),
     });
-    
-    const _data = await response.json();
-    
+
+    const data = await response.json();
+
     console.log(`   Status: ${response.status} (expected: ${testCase.expectedStatus})`);
     console.log(`   Response:`, JSON.stringify(data, null, 2));
-    
+
     if (response.status === testCase.expectedStatus) {
       console.log(`   ✅ PASS`);
-      
+
       // If successful, verify entity was created/updated
       if (response.status === 200 && data.entity_id) {
         await verifyEntity(data.entity_id, testCase);
@@ -119,45 +119,45 @@ async function testWebhook(testCase: WebhookTestCase): Promise<void> {
     } else {
       console.log(`   ❌ FAIL: Expected status ${testCase.expectedStatus}, got ${response.status}`);
     }
-  } catch (_error) {
-    console.error(`   ❌ ERROR:`, _error);
+  } catch (error) {
+    console.error(`   ❌ ERROR:`, error);
   }
 }
 
 async function verifyEntity(entityId: string, testCase: WebhookTestCase): Promise<void> {
-  const _supabase = getAdminClient();
-  
+  const supabase = getAdminClient();
+
   // Verify entity exists
-  const { data: entity, error: entityError } = await _supabase
+  const { data: entity, error: entityError } = await supabase
     .from('stitch_entities')
     .select('*')
     .eq('id', entityId)
     .single();
-  
+
   if (entityError || !entity) {
     console.log(`   ⚠️  Entity verification failed: ${entityError?.message}`);
     return;
   }
-  
+
   console.log(`   📍 Entity verified:`);
   console.log(`      - Name: ${entity.name}`);
   console.log(`      - Email: ${entity.email}`);
   console.log(`      - Type: ${entity.entity_type}`);
   console.log(`      - Current Node: ${entity.current_node_id}`);
-  
+
   // Verify journey event was created
-  const { data: events, error: eventsError } = await _supabase
+  const { data: events, error: eventsError } = await supabase
     .from('stitch_journey_events')
     .select('*')
     .eq('entity_id', entityId)
     .order('timestamp', { ascending: false })
     .limit(1);
-  
+
   if (eventsError) {
     console.log(`   ⚠️  Journey event verification failed: ${eventsError.message}`);
     return;
   }
-  
+
   if (events && events.length > 0) {
     const latestEvent = events[0];
     console.log(`   📝 Latest journey event:`);
@@ -168,33 +168,33 @@ async function verifyEntity(entityId: string, testCase: WebhookTestCase): Promis
 }
 
 async function checkBMCExists(): Promise<boolean> {
-  const _supabase = getAdminClient();
-  
-  const { data: bmc, error } = await _supabase
+  const supabase = getAdminClient();
+
+  const { data: bmc, error } = await supabase
     .from('stitch_flows')
     .select('id, name')
     .eq('canvas_type', 'bmc')
     .maybeSingle();
-  
+
   if (error || !bmc) {
     console.error('❌ BMC canvas not found. Please run the seed script first:');
     console.error('   tsx scripts/seed-clockwork.ts');
     return false;
   }
-  
+
   console.log(`✅ BMC canvas found: ${bmc.name} (${bmc.id})`);
   return true;
 }
 
 async function cleanupTestEntities(): Promise<void> {
   console.log('\n🧹 Cleaning up test entities...');
-  const _supabase = getAdminClient();
-  
-  const { error } = await _supabase
+  const supabase = getAdminClient();
+
+  const { error } = await supabase
     .from('stitch_entities')
     .delete()
     .like('email', 'test-%@monsters.io');
-  
+
   if (error) {
     console.error('⚠️  Cleanup failed:', error.message);
   } else {
@@ -205,21 +205,21 @@ async function cleanupTestEntities(): Promise<void> {
 async function main() {
   console.log('🚀 Clockwork Canvas Webhook Endpoint Test');
   console.log('==========================================');
-  
+
   // Check if BMC exists
   const bmcExists = await checkBMCExists();
   if (!bmcExists) {
     process.exit(1);
   }
-  
+
   // Run all test cases
   for (const testCase of testCases) {
     await testWebhook(testCase);
   }
-  
+
   // Cleanup test entities
   await cleanupTestEntities();
-  
+
   console.log('\n✅ All tests complete!');
 }
 

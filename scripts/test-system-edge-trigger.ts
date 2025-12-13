@@ -65,21 +65,21 @@ async function testSystemEdgeTrigger() {
     if (nodeSystemEdges.length === 0) {
       console.log(`ℹ️  No system edges connected to node ${testEntity.current_node_id}`);
       console.log('   This is expected for some nodes.\n');
-      
+
       // Try a node that should have system edges
       const testNodeId = 'item-linkedin-ads';
       const testNodeEdges = systemEdges.filter(
         (edge: any) => edge.source === testNodeId
       );
-      
+
       if (testNodeEdges.length > 0) {
         console.log(`🔄 Testing with node ${testNodeId} instead...`);
         console.log(`   System edges: ${testNodeEdges.length}\n`);
-        
+
         console.log('🚀 Triggering system edges...\n');
         await triggerSystemEdges(testNodeId, testEntity.id, bmcCanvas.id);
         console.log('✅ System edges triggered successfully!\n');
-        
+
         console.log('📋 System edges that were triggered:');
         testNodeEdges.forEach((edge: any) => {
           console.log(`   - ${edge.id}: ${edge.source} -> ${edge.target} (${edge.data?.systemAction})`);
@@ -91,7 +91,7 @@ async function testSystemEdgeTrigger() {
       console.log(`🔄 Triggering ${nodeSystemEdges.length} system edge(s)...\n`);
       await triggerSystemEdges(testEntity.current_node_id, testEntity.id, bmcCanvas.id);
       console.log('✅ System edges triggered successfully!\n');
-      
+
       console.log('📋 System edges that were triggered:');
       nodeSystemEdges.forEach((edge: any) => {
         console.log(`   - ${edge.id}: ${edge.source} -> ${edge.target} (${edge.data?.systemAction})`);
@@ -99,7 +99,7 @@ async function testSystemEdgeTrigger() {
     }
 
     console.log('\n✅ Test completed successfully!');
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Test failed:', error);
     process.exit(1);
   }

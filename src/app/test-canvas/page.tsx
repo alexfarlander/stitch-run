@@ -4,7 +4,7 @@
 
 'use client';
 
-import { StitchCanvas } from '@/components/canvas';
+import { WorkflowCanvas } from '@/components/canvas';
 import { StitchFlow, StitchRun } from '@/types/stitch';
 
 // Mock flow for testing
@@ -95,7 +95,7 @@ export default function TestCanvasPage() {
         </p>
       </div>
       <div className="flex-1">
-        <StitchCanvas flow={mockFlow} run={mockRun} />
+        <WorkflowCanvas flow={mockFlow} run={mockRun} />
       </div>
     </div>
   );

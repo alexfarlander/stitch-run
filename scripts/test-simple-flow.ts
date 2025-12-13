@@ -168,12 +168,12 @@ async function main() {
   }
   
   // Create admin client
-  const _supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
   
   try {
     // Step 1: Find the Simple Test Flow workflow
     logExecution('info', 'Step 1: Finding Simple Test Flow workflow...');
-    const { data: workflow, error: workflowError } = await _supabase
+    const { data: workflow, error: workflowError } = await supabase
       .from('stitch_flows')
       .select('id, name, graph')
       .eq('name', 'Simple Test Flow')
@@ -221,7 +221,7 @@ async function main() {
     let inputReady = false;
     const inputStartTime = Date.now();
     while (Date.now() - inputStartTime < 10000) {
-      const { data: currentRun, error } = await _supabase
+      const { data: currentRun, error } = await supabase
         .from('stitch_runs')
         .select('node_states')
         .eq('id', run.id)
@@ -252,7 +252,6 @@ async function main() {
     
     // Import required functions
     const { updateNodeState } = await import('../src/lib/db/runs');
-    const { getFlowAdmin } = await import('../src/lib/db/flows');
     const { walkEdges } = await import('../src/lib/engine/edge-walker');
     
     // Update the input node to completed with the test input
@@ -264,7 +263,7 @@ async function main() {
     logExecution('success', 'Input node marked as completed');
     
     // Get the updated run and flow
-    const { data: updatedRun, error: runError } = await _supabase
+    const { data: updatedRun, error: runError } = await supabase
       .from('stitch_runs')
       .select('*')
       .eq('id', run.id)
@@ -274,13 +273,8 @@ async function main() {
       throw new Error(`Failed to fetch updated run: ${runError?.message}`);
     }
     
-    const flow = await getFlowAdmin(workflow.id);
-    if (!flow) {
-      throw new Error('Failed to fetch flow');
-    }
-    
     // Trigger edge-walking to continue execution
-    await walkEdges('input', flow, updatedRun);
+    await walkEdges('input', updatedRun);
     
     logExecution('success', 'Edge-walking triggered, Claude worker should start');
     
@@ -312,19 +306,20 @@ async function main() {
         process.exit(1);
       }
     } else {
+      const output = claudeResult.output as ClaudeOutput | undefined;
       logExecution('success', 'Claude worker completed', {
-        outputPreview: claudeResult.output ? {
-          sceneCount: claudeResult.output.scenes?.length,
-          firstScene: claudeResult.output.scenes?.[0],
+        outputPreview: output ? {
+          sceneCount: output.scenes?.length,
+          firstScene: output.scenes?.[0],
         } : null,
       });
     }
-    
+
     // Step 4: Validate output format
     logExecution('info', 'Step 4: Validating output format...');
-    
+
     const validation = validateOutput(claudeResult.output);
-    
+
     if (!validation.valid) {
       logExecution('error', 'Output validation failed', {
         errors: validation.errors,
@@ -332,10 +327,11 @@ async function main() {
       });
       process.exit(1);
     }
-    
+
+    const validatedOutput = claudeResult.output as ClaudeOutput;
     logExecution('success', 'Output format validation passed', {
-      sceneCount: claudeResult.output.scenes.length,
-      scenes: claudeResult.output.scenes,
+      sceneCount: validatedOutput.scenes.length,
+      scenes: validatedOutput.scenes,
     });
     
     // Wait for Output node to be ready
@@ -385,7 +381,7 @@ async function main() {
     
     process.exit(0);
     
-  } catch (_error) {
+  } catch (error) {
     logExecution('error', 'Test execution failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,

@@ -107,28 +107,28 @@ function checkDiagramFile(filename: string): DiagramCheck {
 
     // Check for common syntax errors
     const contentLines = mermaidContent.split('\n');
-    
+
     // Check for unclosed brackets/parentheses
     let openBrackets = 0;
     let openParens = 0;
     let openBraces = 0;
-    
+
     contentLines.forEach((line, index) => {
       const lineNum = index + 1;
-      
+
       // Skip comment lines for bracket counting
       if (line.trim().startsWith('%%')) {
         return;
       }
-      
+
       // Count brackets
       openBrackets += (line.match(/\[/g) || []).length;
       openBrackets -= (line.match(/\]/g) || []).length;
-      
+
       // Count parentheses
       openParens += (line.match(/\(/g) || []).length;
       openParens -= (line.match(/\)/g) || []).length;
-      
+
       // Count braces (but skip ER diagram relationship syntax like ||--o{)
       // For ER diagrams and class diagrams, only count braces in entity/class definitions
       if (diagramType === 'erDiagram' || diagramType === 'classDiagram') {
@@ -145,16 +145,16 @@ function checkDiagramFile(filename: string): DiagramCheck {
         openBraces += (line.match(/\{/g) || []).length;
         openBraces -= (line.match(/\}/g) || []).length;
       }
-      
+
       // Check for common issues
       if (line.includes('-->') && diagramType === 'sequenceDiagram') {
         check.warnings.push(`Line ${lineNum}: Using '-->' in sequence diagram (should use '->' or '->>')`);
       }
-      
+
       if (line.includes('->') && diagramType === 'graph') {
         // This is actually valid for graphs
       }
-      
+
       // Check for trailing whitespace (can cause issues)
       if (line.endsWith(' ') || line.endsWith('\t')) {
         check.warnings.push(`Line ${lineNum}: Trailing whitespace`);
@@ -166,12 +166,12 @@ function checkDiagramFile(filename: string): DiagramCheck {
       check.errors.push(`Unmatched brackets: ${openBrackets > 0 ? 'unclosed' : 'extra closing'}`);
       check.valid = false;
     }
-    
+
     if (openParens !== 0) {
       check.errors.push(`Unmatched parentheses: ${openParens > 0 ? 'unclosed' : 'extra closing'}`);
       check.valid = false;
     }
-    
+
     if (openBraces !== 0) {
       check.errors.push(`Unmatched braces: ${openBraces > 0 ? 'unclosed' : 'extra closing'}`);
       check.valid = false;
@@ -206,12 +206,13 @@ function checkDiagramFile(filename: string): DiagramCheck {
       }
     }
 
-  } catch (_error) {
-    check.errors.push(`Error reading file: ${error instanceof Error ? error.message : String(error)}`);
-    check.valid = false;
   }
+  } catch (error) {
+  check.errors.push(`Error reading file: ${error instanceof Error ? error.message : String(error)}`);
+  check.valid = false;
+}
 
-  return check;
+return check;
 }
 
 function printResults(checks: DiagramCheck[]): void {
@@ -227,11 +228,11 @@ function printResults(checks: DiagramCheck[]): void {
     const resetColor = '\x1b[0m';
 
     console.log(`${statusColor}${status}${resetColor} ${check.file}`);
-    
+
     if (check.type) {
       console.log(`  Type: ${check.type}`);
     }
-    
+
     if (check.lineCount) {
       console.log(`  Lines: ${check.lineCount}`);
     }

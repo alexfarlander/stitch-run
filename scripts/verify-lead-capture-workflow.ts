@@ -24,7 +24,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const _supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface VerificationResult {
   check: string;
@@ -34,19 +34,19 @@ interface VerificationResult {
 
 async function verifyLeadCaptureWorkflow(): Promise<void> {
   console.log('🔍 Verifying Lead Capture Workflow...\n');
-  
+
   const results: VerificationResult[] = [];
-  
+
   try {
     // Check 1: Workflow exists
     console.log('📋 Check 1: Workflow exists in database...');
-    const { data: workflow, error: workflowError } = await _supabase
+    const { data: workflow, error: workflowError } = await supabase
       .from('stitch_flows')
       .select('*')
       .eq('name', 'Lead Capture Logic')
       .eq('canvas_type', 'workflow')
       .maybeSingle();
-    
+
     if (workflowError) {
       results.push({
         check: 'Workflow exists',
@@ -55,7 +55,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       throw new Error('Cannot continue verification without workflow');
     }
-    
+
     if (!workflow) {
       results.push({
         check: 'Workflow exists',
@@ -64,23 +64,23 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       throw new Error('Workflow not found. Run: tsx scripts/seed-clockwork.ts');
     }
-    
+
     results.push({
       check: 'Workflow exists',
       passed: true,
       details: `Found workflow with ID: ${workflow.id}`,
     });
     console.log(`✅ Workflow found (ID: ${workflow.id})\n`);
-    
+
     // Check 2: Workflow has correct parent_id (links to BMC)
     console.log('📋 Check 2: Workflow links to BMC canvas...');
-    const { data: bmc, error: bmcError } = await _supabase
+    const { data: bmc, error: bmcError } = await supabase
       .from('stitch_flows')
       .select('id')
       .eq('canvas_type', 'bmc')
       .limit(1)
       .maybeSingle();
-    
+
     if (bmcError || !bmc) {
       results.push({
         check: 'Workflow parent_id links to BMC',
@@ -102,11 +102,11 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       console.log(`❌ Workflow parent_id mismatch\n`);
     }
-    
+
     // Check 3: Workflow has 4 nodes
     console.log('📋 Check 3: Workflow has 4 nodes...');
     const nodes = workflow.graph?.nodes || [];
-    
+
     if (nodes.length === 4) {
       results.push({
         check: 'Workflow has 4 nodes',
@@ -122,7 +122,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       console.log(`❌ Expected 4 nodes, found ${nodes.length}\n`);
     }
-    
+
     // Check 4: Nodes have correct IDs and types
     console.log('📋 Check 4: Nodes have correct IDs and types...');
     const expectedNodes = [
@@ -131,7 +131,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       { id: 'crm-sync', type: 'Worker', label: 'CRM Sync' },
       { id: 'assign-sdr', type: 'Worker', label: 'Assign SDR' },
     ];
-    
+
     let allNodesCorrect = true;
     for (const expected of expectedNodes) {
       const node = nodes.find((n: any) => n.id === expected.id);
@@ -163,7 +163,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
         console.log(`✅ Node '${expected.id}' is correct (${expected.type}: ${expected.label})`);
       }
     }
-    
+
     if (allNodesCorrect) {
       results.push({
         check: 'All nodes have correct IDs, types, and labels',
@@ -171,11 +171,11 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
     }
     console.log('');
-    
+
     // Check 5: Workflow has 3 edges
     console.log('📋 Check 5: Workflow has 3 edges...');
     const edges = workflow.graph?.edges || [];
-    
+
     if (edges.length === 3) {
       results.push({
         check: 'Workflow has 3 edges',
@@ -191,7 +191,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       console.log(`❌ Expected 3 edges, found ${edges.length}\n`);
     }
-    
+
     // Check 6: Edges connect nodes correctly
     console.log('📋 Check 6: Edges connect nodes correctly...');
     const expectedEdges = [
@@ -199,7 +199,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       { source: 'score-lead', target: 'crm-sync' },
       { source: 'crm-sync', target: 'assign-sdr' },
     ];
-    
+
     let allEdgesCorrect = true;
     for (const expected of expectedEdges) {
       const edge = edges.find(
@@ -217,7 +217,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
         console.log(`✅ Edge ${expected.source} → ${expected.target} exists`);
       }
     }
-    
+
     if (allEdgesCorrect) {
       results.push({
         check: 'All edges connect correctly',
@@ -225,10 +225,10 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
     }
     console.log('');
-    
+
     // Check 7: Node configurations
     console.log('📋 Check 7: Node configurations...');
-    
+
     // Validate Lead node
     const validateNode = nodes.find((n: any) => n.id === 'validate-lead');
     if (validateNode?.data?.workerType === 'data-transform') {
@@ -246,7 +246,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       console.log(`❌ Validate Lead has wrong workerType`);
     }
-    
+
     // Score Lead node
     const scoreNode = nodes.find((n: any) => n.id === 'score-lead');
     if (scoreNode?.data?.workerType === 'claude') {
@@ -264,7 +264,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       console.log(`❌ Score Lead has wrong workerType`);
     }
-    
+
     // CRM Sync node
     const crmNode = nodes.find((n: any) => n.id === 'crm-sync');
     if (crmNode?.data?.workerType === 'webhook-trigger') {
@@ -282,7 +282,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       console.log(`❌ CRM Sync has wrong workerType`);
     }
-    
+
     // Assign SDR node
     const assignNode = nodes.find((n: any) => n.id === 'assign-sdr');
     if (assignNode?.data?.workerType === 'data-transform') {
@@ -300,20 +300,20 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       });
       console.log(`❌ Assign SDR has wrong workerType`);
     }
-    
+
     console.log('');
-    
+
     // Summary
     console.log('═══════════════════════════════════════════════════════════');
     console.log('📊 VERIFICATION SUMMARY');
     console.log('═══════════════════════════════════════════════════════════\n');
-    
+
     const passed = results.filter(r => r.passed).length;
     const total = results.length;
     const percentage = Math.round((passed / total) * 100);
-    
+
     console.log(`✅ Passed: ${passed}/${total} checks (${percentage}%)\n`);
-    
+
     if (passed === total) {
       console.log('🎉 All checks passed! Lead Capture workflow is correctly configured.\n');
       console.log('📋 Workflow Structure:');
@@ -321,7 +321,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
       console.log('✅ Ready for Requirements 7.1, 7.2, 7.3');
     } else {
       console.log('❌ Some checks failed. Review the details above.\n');
-      
+
       const failed = results.filter(r => !r.passed);
       console.log('Failed checks:');
       failed.forEach(r => {
@@ -331,14 +331,14 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
         }
       });
     }
-    
+
     console.log('\n═══════════════════════════════════════════════════════════');
-    
+
     process.exit(passed === total ? 0 : 1);
-    
-  } catch (_error) {
+
+  } catch (error) {
     console.error('\n❌ Verification failed:', error);
-    
+
     if (results.length > 0) {
       console.log('\n📊 Partial Results:');
       results.forEach(r => {
@@ -349,7 +349,7 @@ async function verifyLeadCaptureWorkflow(): Promise<void> {
         }
       });
     }
-    
+
     process.exit(1);
   }
 }

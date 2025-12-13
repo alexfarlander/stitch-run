@@ -39,58 +39,58 @@ async function verifyEndpoints() {
   console.log('Step 2: Checking imports...');
   try {
     const demoScript = await import('../src/lib/demo/demo-script');
-  
-  if (typeof demoScript.CLOCKWORK_DEMO_SCRIPT === 'undefined') {
-    console.log('❌ CLOCKWORK_DEMO_SCRIPT not exported from demo-script.ts');
+
+    if (typeof demoScript.CLOCKWORK_DEMO_SCRIPT === 'undefined') {
+      console.log('❌ CLOCKWORK_DEMO_SCRIPT not exported from demo-script.ts');
+      errors++;
+    } else if (!Array.isArray(demoScript.CLOCKWORK_DEMO_SCRIPT)) {
+      console.log('❌ CLOCKWORK_DEMO_SCRIPT is not an array');
+      errors++;
+    } else {
+      console.log(`✅ CLOCKWORK_DEMO_SCRIPT: ${demoScript.CLOCKWORK_DEMO_SCRIPT.length} events`);
+    }
+
+    if (typeof demoScript.getDemoScriptDuration !== 'function') {
+      console.log('❌ getDemoScriptDuration not exported');
+      errors++;
+    } else {
+      const duration = demoScript.getDemoScriptDuration();
+      console.log(`✅ getDemoScriptDuration: ${duration}ms`);
+    }
+
+    if (typeof demoScript.getDemoScriptEventCount !== 'function') {
+      console.log('❌ getDemoScriptEventCount not exported');
+      errors++;
+    } else {
+      const count = demoScript.getDemoScriptEventCount();
+      console.log(`✅ getDemoScriptEventCount: ${count} events`);
+    }
+  } catch (error) {
+    console.log('❌ Failed to import demo-script.ts:', error);
     errors++;
-  } else if (!Array.isArray(demoScript.CLOCKWORK_DEMO_SCRIPT)) {
-    console.log('❌ CLOCKWORK_DEMO_SCRIPT is not an array');
-    errors++;
-  } else {
-    console.log(`✅ CLOCKWORK_DEMO_SCRIPT: ${demoScript.CLOCKWORK_DEMO_SCRIPT.length} events`);
   }
-  
-  if (typeof demoScript.getDemoScriptDuration !== 'function') {
-    console.log('❌ getDemoScriptDuration not exported');
-    errors++;
-  } else {
-    const duration = demoScript.getDemoScriptDuration();
-    console.log(`✅ getDemoScriptDuration: ${duration}ms`);
-  }
-  
-  if (typeof demoScript.getDemoScriptEventCount !== 'function') {
-    console.log('❌ getDemoScriptEventCount not exported');
-    errors++;
-  } else {
-    const count = demoScript.getDemoScriptEventCount();
-    console.log(`✅ getDemoScriptEventCount: ${count} events`);
-  }
-} catch (error) {
-  console.log('❌ Failed to import demo-script.ts:', _error);
-  errors++;
-}
-console.log('');
+  console.log('');
 
   // Check financial updates
   console.log('Step 3: Checking financial updates module...');
   try {
     const financialUpdates = await import('../src/lib/metrics/financial-updates');
-  
-  if (typeof financialUpdates.resetFinancialMetrics !== 'function') {
-    console.log('❌ resetFinancialMetrics not exported');
-    errors++;
-  } else {
-    console.log('✅ resetFinancialMetrics exported');
-  }
-  
-  if (typeof financialUpdates.updateFinancials !== 'function') {
-    console.log('❌ updateFinancials not exported');
-    errors++;
-  } else {
-    console.log('✅ updateFinancials exported');
-  }
+
+    if (typeof financialUpdates.resetFinancialMetrics !== 'function') {
+      console.log('❌ resetFinancialMetrics not exported');
+      errors++;
+    } else {
+      console.log('✅ resetFinancialMetrics exported');
+    }
+
+    if (typeof financialUpdates.updateFinancials !== 'function') {
+      console.log('❌ updateFinancials not exported');
+      errors++;
+    } else {
+      console.log('✅ updateFinancials exported');
+    }
   } catch (error) {
-    console.log('❌ Failed to import financial-updates.ts:', _error);
+    console.log('❌ Failed to import financial-updates.ts:', error);
     errors++;
   }
   console.log('');
@@ -99,18 +99,18 @@ console.log('');
   console.log('Step 4: Checking clockwork entities...');
   try {
     const clockworkEntities = await import('../src/lib/seeds/clockwork-entities');
-  
-  if (typeof clockworkEntities.CLOCKWORK_ENTITIES === 'undefined') {
-    console.log('❌ CLOCKWORK_ENTITIES not exported');
-    errors++;
-  } else if (!Array.isArray(clockworkEntities.CLOCKWORK_ENTITIES)) {
-    console.log('❌ CLOCKWORK_ENTITIES is not an array');
-    errors++;
-  } else {
-    console.log(`✅ CLOCKWORK_ENTITIES: ${clockworkEntities.CLOCKWORK_ENTITIES.length} entities`);
-  }
+
+    if (typeof clockworkEntities.CLOCKWORK_ENTITIES === 'undefined') {
+      console.log('❌ CLOCKWORK_ENTITIES not exported');
+      errors++;
+    } else if (!Array.isArray(clockworkEntities.CLOCKWORK_ENTITIES)) {
+      console.log('❌ CLOCKWORK_ENTITIES is not an array');
+      errors++;
+    } else {
+      console.log(`✅ CLOCKWORK_ENTITIES: ${clockworkEntities.CLOCKWORK_ENTITIES.length} entities`);
+    }
   } catch (error) {
-    console.log('❌ Failed to import clockwork-entities.ts:', _error);
+    console.log('❌ Failed to import clockwork-entities.ts:', error);
     errors++;
   }
   console.log('');

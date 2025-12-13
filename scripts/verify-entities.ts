@@ -19,13 +19,13 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const _supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function verifyEntities() {
   console.log('🔍 Verifying entity setup...\n');
 
   // Get the BMC canvas (use the default one)
-  const { data: bmcs, error: bmcError } = await _supabase
+  const { data: bmcs, error: bmcError } = await supabase
     .from('stitch_flows')
     .select('id, name')
     .eq('canvas_type', 'bmc')
@@ -41,7 +41,7 @@ async function verifyEntities() {
   console.log(`✅ Found BMC: ${bmc.name} (${bmc.id})\n`);
 
   // Get all entities for this canvas
-  const { data: entities, error: entitiesError } = await _supabase
+  const { data: entities, error: entitiesError } = await supabase
     .from('stitch_entities')
     .select('*')
     .eq('canvas_id', bmc.id);
@@ -58,7 +58,7 @@ async function verifyEntities() {
 
   console.log(`✅ Found ${entities.length} entities:\n`);
 
-  entities.forEach((entity: unknown) => {
+  entities.forEach((entity: any) => {
     const typeColor = {
       lead: '🔵',
       customer: '🟢',
@@ -78,7 +78,7 @@ async function verifyEntities() {
   });
 
   // Verify nodes exist
-  const { data: flow, error: flowError } = await _supabase
+  const { data: flow, error: flowError } = await supabase
     .from('stitch_flows')
     .select('graph')
     .eq('id', bmc.id)
@@ -90,11 +90,11 @@ async function verifyEntities() {
   }
 
   const nodeIds = new Set(flow.graph.nodes.map((n: any) => n.id));
-  
+
   console.log('📊 Validation:\n');
-  
+
   let allValid = true;
-  entities.forEach((entity: unknown) => {
+  entities.forEach((entity: any) => {
     if (entity.current_node_id && !nodeIds.has(entity.current_node_id)) {
       console.log(`❌ ${entity.name}: Invalid node ID "${entity.current_node_id}"`);
       allValid = false;
@@ -108,7 +108,7 @@ async function verifyEntities() {
   });
 
   console.log('');
-  
+
   if (allValid) {
     console.log('🎉 All entities are properly positioned!');
     console.log('\n📍 To view entities on the canvas:');
@@ -120,6 +120,6 @@ async function verifyEntities() {
 }
 
 verifyEntities().catch((error) => {
-  console.error('❌ Verification failed:', _error);
+  console.error('❌ Verification failed:', error);
   process.exit(1);
 });
