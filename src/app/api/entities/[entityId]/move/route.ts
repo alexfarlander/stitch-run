@@ -61,8 +61,8 @@ export async function POST(
     // Requirement 14.1: Verify target node exists
     // We need to check if the target node exists in the canvas
     const { data: canvas, error: canvasError } = await supabase
-      .from('stitch_canvases')
-      .select('canvas')
+      .from('stitch_flows')
+      .select('graph')
       .eq('id', entity.canvas_id)
       .single();
 
@@ -73,7 +73,7 @@ export async function POST(
       );
     }
 
-    const canvasData = canvas.canvas as unknown;
+    const canvasData = canvas.graph as unknown;
     if (!isPlainObject(canvasData)) {
       return NextResponse.json(
         { error: 'Canvas data is invalid' },

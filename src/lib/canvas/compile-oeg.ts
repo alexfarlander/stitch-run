@@ -62,11 +62,13 @@ export function compileToOEG(visualGraph: VisualGraph): CompileResult {
   const adjacency: Record<string, string[]> = Object.create(null);
   const edgeData: Record<string, EdgeMapping> = Object.create(null);
   const outboundEdges: Record<string, import('@/types/execution-graph').CompactEdge[]> = Object.create(null);
+  const inboundEdges: Record<string, string[]> = Object.create(null);
 
-  // Initialize adjacency and outboundEdges for all nodes
+  // Initialize adjacency, outboundEdges, and inboundEdges for all nodes
   for (const node of visualGraph.nodes) {
     adjacency[node.id] = [];
     outboundEdges[node.id] = [];
+    inboundEdges[node.id] = [];
   }
 
   // Build adjacency map, edge data index, and outbound edges list
@@ -91,6 +93,13 @@ export function compileToOEG(visualGraph: VisualGraph): CompileResult {
         adjacency[edge.source] = [];
       }
       adjacency[edge.source].push(edge.target);
+
+      // Also populate inboundEdges (reverse adjacency map)
+      // This enables O(1) upstream node lookup
+      if (!inboundEdges[edge.target]) {
+        inboundEdges[edge.target] = [];
+      }
+      inboundEdges[edge.target].push(edge.source);
     }
 
     // 3. Index edge data by "source->target" (Requirement 3.6)
@@ -131,6 +140,7 @@ export function compileToOEG(visualGraph: VisualGraph): CompileResult {
       adjacency,
       edgeData,
       outboundEdges,
+      inboundEdges,
       entryNodes,
       terminalNodes
     }

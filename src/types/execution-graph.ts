@@ -112,6 +112,17 @@ export interface ExecutionGraph {
   outboundEdges: Record<string, CompactEdge[]>;
 
   /**
+   * Reverse adjacency map for instant upstream lookup
+   * Maps target node ID to array of source node IDs
+   * Example: { "nodeC": ["nodeA", "nodeB"] }
+   *
+   * This enables O(1) lookup of upstream nodes during execution.
+   * Like adjacency, this contains only logical dependencies (journey edges).
+   * System edges are excluded since they don't create dependencies.
+   */
+  inboundEdges: Record<string, string[]>;
+
+  /**
    * Entry points (nodes with no incoming edges)
    * These are the starting nodes for workflow execution
    * Example: ["start", "input1"]

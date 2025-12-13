@@ -1,0 +1,26 @@
+stateDiagram-v2
+    [*] --> OnEdge: startJourney()
+    OnEdge --> OnEdge: moveAlongEdge()<br/>progress 0.0→1.0
+    OnEdge --> AtNode: Node fires
+    AtNode --> OnEdge: walkEdges()<br/>next edge
+    AtNode --> [*]: Terminal node
+
+    state AtNode {
+        [*] --> Processing
+        Processing --> Success: completed
+        Processing --> Failed: failed
+        Processing --> Waiting: waiting_for_user
+        Waiting --> Success: user completes
+    }
+
+    note right of OnEdge
+        Entity position tracked by:
+        - current_edge_id
+        - edge_progress (0.0-1.0)
+    end note
+
+    note right of AtNode
+        Entity position tracked by:
+        - current_node_id
+        - completion status
+    end note

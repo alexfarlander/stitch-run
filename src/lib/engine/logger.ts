@@ -30,17 +30,18 @@ function formatLogEntry(entry: BaseLogEntry): string {
 
 /**
  * Log a structured message
+ * Exported for use in edge-walker when specific helpers don't exist
  */
-function log(level: LogLevel, message: string, context: Record<string, unknown> = {}): void {
+export function log(level: LogLevel, message: string, context: Record<string, unknown> = {}): void {
   const entry: BaseLogEntry = {
     timestamp: new Date().toISOString(),
     level,
     message,
     ...context,
   };
-  
+
   const formatted = formatLogEntry(entry);
-  
+
   switch (level) {
     case 'error':
       console.error(formatted);
@@ -248,7 +249,7 @@ export function logCollectorWaiting(
 
 /**
  * Log collector firing
- * 
+ *
  * @param runId - The run ID
  * @param collectorNodeId - The collector node ID
  * @param mergedOutput - The merged output from all upstream paths
@@ -263,4 +264,80 @@ export function logCollectorFiring(
     collectorNodeId,
     mergedOutput: JSON.stringify(mergedOutput),
   });
+}
+
+/**
+ * Log parallel edge walking
+ *
+ * @param runId - The run ID
+ * @param nodeId - The node ID where edges are being walked
+ * @param journeyEdgeCount - Number of journey edges
+ * @param systemEdgeCount - Number of system edges
+ */
+export function logParallelEdgeWalking(
+  runId: string,
+  nodeId: string,
+  journeyEdgeCount: number,
+  systemEdgeCount: number
+): void {
+  log('info', 'Parallel edge walking', {
+    runId,
+    nodeId,
+    journeyEdgeCount,
+    systemEdgeCount,
+  });
+}
+
+/**
+ * Log parallel edge walking results
+ *
+ * @param runId - The run ID
+ * @param nodeId - The node ID
+ * @param journeyResults - Results from journey edges
+ * @param systemResults - Results from system edges
+ */
+export function logParallelEdgeResults(
+  runId: string,
+  nodeId: string,
+  journeyResults: Array<{ success: boolean; edgeId?: string; error?: string }>,
+  systemResults: Array<{ success: boolean; edgeId?: string; error?: string }>
+): void {
+  log('info', 'Parallel edge walking results', {
+    runId,
+    nodeId,
+    journeyResults,
+    systemResults,
+    journeySuccessCount: journeyResults.filter(r => r.success).length,
+    systemSuccessCount: systemResults.filter(r => r.success).length,
+  });
+}
+
+/**
+ * Log journey edge event
+ *
+ * @param level - Log level
+ * @param message - Log message
+ * @param context - Additional context
+ */
+export function logJourneyEdge(
+  level: LogLevel,
+  message: string,
+  context: Record<string, unknown> = {}
+): void {
+  log(level, `Journey Edge: ${message}`, context);
+}
+
+/**
+ * Log system edge event
+ *
+ * @param level - Log level
+ * @param message - Log message
+ * @param context - Additional context
+ */
+export function logSystemEdge(
+  level: LogLevel,
+  message: string,
+  context: Record<string, unknown> = {}
+): void {
+  log(level, `System Edge: ${message}`, context);
 }

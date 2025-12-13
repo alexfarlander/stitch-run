@@ -1,0 +1,38 @@
+flowchart LR
+    subgraph Trigger["Trigger Sources"]
+        Manual[Manual Start]
+        Webhook[Webhook Event]
+        API[API Call]
+    end
+
+    subgraph Init["Initialization"]
+        LoadVersion[Load Flow Version]
+        CompileGraph[Get Execution Graph]
+        CreateRun[Create Run Record]
+    end
+
+    subgraph Execute["Edge-Walking Engine"]
+        GetEntry[Get Entry Nodes]
+        FireNode[Fire Node]
+        UpdateState[Update Node State]
+        WalkEdges[Walk Outbound Edges]
+        CheckDeps[Check Dependencies]
+    end
+
+    subgraph Complete["Completion"]
+        Terminal[Terminal Node]
+        RunComplete[Run Complete]
+    end
+
+    Trigger --> LoadVersion
+    LoadVersion --> CompileGraph
+    CompileGraph --> CreateRun
+    CreateRun --> GetEntry
+    GetEntry --> FireNode
+    FireNode --> UpdateState
+    UpdateState --> WalkEdges
+    WalkEdges --> CheckDeps
+    CheckDeps -->|deps satisfied| FireNode
+    CheckDeps -->|waiting| WalkEdges
+    FireNode -->|terminal| Terminal
+    Terminal --> RunComplete

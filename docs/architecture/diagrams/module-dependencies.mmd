@@ -1,0 +1,54 @@
+flowchart TB
+    subgraph Presentation
+        Components[components/]
+        Hooks[hooks/]
+        Pages[app/]
+    end
+
+    subgraph API
+        Routes[app/api/]
+    end
+
+    subgraph Library
+        Engine[lib/engine/]
+        Canvas[lib/canvas/]
+        DB[lib/db/]
+        AI[lib/ai/]
+        Workers[lib/workers/]
+        Navigation[lib/navigation/]
+    end
+
+    subgraph Types
+        TypeDefs[types/]
+    end
+
+    subgraph External
+        Supabase[(Supabase)]
+        Claude[Claude API]
+        WorkerAPIs[Worker APIs]
+    end
+
+    Components --> Hooks
+    Components --> TypeDefs
+    Hooks --> DB
+    Hooks --> TypeDefs
+    Pages --> Components
+    Pages --> Routes
+
+    Routes --> Engine
+    Routes --> Canvas
+    Routes --> DB
+    Routes --> TypeDefs
+
+    Engine --> DB
+    Engine --> Workers
+    Engine --> TypeDefs
+    Canvas --> DB
+    Canvas --> TypeDefs
+    AI --> Claude
+    AI --> TypeDefs
+    Workers --> WorkerAPIs
+    Workers --> TypeDefs
+    Navigation --> TypeDefs
+
+    DB --> Supabase

@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant Engine as Edge Walker
+    participant DB as Database
+    participant Worker as External Worker
+    participant Callback as Callback API
+
+    Engine->>DB: Update node: running
+    Engine->>Worker: POST WorkerPayload
+    Note over Worker: {<br/>  callbackUrl,<br/>  config,<br/>  input,<br/>  nodeId,<br/>  runId<br/>}
+
+    Worker-->>Engine: 202 Accepted
+
+    Note over Worker: Async Processing...
+
+    Worker->>Callback: POST /api/stitch/callback/{runId}/{nodeId}
+    Note over Callback: {<br/>  status: completed|failed,<br/>  output?: {...},<br/>  error?: string<br/>}
+
+    Callback->>DB: Update node state
+    Callback->>Engine: walkEdges(nodeId)
+    Engine->>DB: Check downstream deps
+    Engine->>Engine: Fire ready nodes

@@ -17,7 +17,7 @@ export interface CanvasStackItem {
 interface CanvasRecord {
   id: string;
   name: string;
-  type: string;
+  canvas_type: string;
   parent_id: string | null;
 }
 
@@ -208,8 +208,8 @@ export class CanvasNavigation {
       // Walk up the parent chain
       while (currentId) {
         const { data, error } = await supabase
-          .from('stitch_canvases')
-          .select('id, name, type, parent_id')
+          .from('stitch_flows')
+          .select('id, name, canvas_type, parent_id')
           .eq('id', currentId)
           .single();
 
@@ -224,7 +224,7 @@ export class CanvasNavigation {
         path.unshift({
           id: canvasData.id,
           name: canvasData.name,
-          type: canvasData.type as CanvasType,
+          type: canvasData.canvas_type as CanvasType,
         });
 
         currentId = canvasData.parent_id;

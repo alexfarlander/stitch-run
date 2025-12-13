@@ -1,0 +1,35 @@
+flowchart LR
+    subgraph Visual["Visual Graph (Design Time)"]
+        VNodes[Nodes with UI Props<br/>position, style, dimensions]
+        VEdges[Edges with UI Props<br/>handles, labels, animated]
+        ReactFlow[React Flow JSON]
+    end
+
+    subgraph Compile["Compilation"]
+        Validate[Validate Graph<br/>cycles, inputs, workers]
+        Strip[Strip UI Properties]
+        Index[Build Adjacency Maps]
+        Compute[Compute Entry/Terminal]
+    end
+
+    subgraph Execution["Execution Graph (Runtime)"]
+        ENodes["nodes: Record&lt;id, ExecutionNode&gt;"]
+        Adjacency["adjacency: Record&lt;id, id[]&gt;"]
+        Inbound["inboundEdges: Record&lt;id, id[]&gt;"]
+        EdgeData["edgeData: Record&lt;key, mapping&gt;"]
+        Entry["entryNodes: string[]"]
+        Terminal["terminalNodes: string[]"]
+    end
+
+    VNodes --> Validate
+    VEdges --> Validate
+    ReactFlow --> Validate
+    Validate --> Strip
+    Strip --> Index
+    Index --> Compute
+    Compute --> ENodes
+    Compute --> Adjacency
+    Compute --> Inbound
+    Compute --> EdgeData
+    Compute --> Entry
+    Compute --> Terminal

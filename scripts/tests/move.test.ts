@@ -43,11 +43,11 @@ describe('Entity Movement API', () => {
     };
 
     const { data: canvas, error: canvasError } = await supabase
-      .from('stitch_canvases')
+      .from('stitch_flows')
       .insert({
         name: 'Test Canvas',
         canvas_type: 'workflow',
-        canvas: canvasData,
+        graph: canvasData,
       })
       .select()
       .single();
@@ -86,7 +86,7 @@ describe('Entity Movement API', () => {
       await supabase.from('stitch_entities').delete().eq('id', testEntityId);
     }
     if (testCanvasId) {
-      await supabase.from('stitch_canvases').delete().eq('id', testCanvasId);
+      await supabase.from('stitch_flows').delete().eq('id', testCanvasId);
     }
   });
 
@@ -130,9 +130,9 @@ describe('Entity Movement API', () => {
       // Add a disconnected node
       const disconnectedNodeId = 'node-disconnected';
       const { error: updateError } = await supabase
-        .from('stitch_canvases')
+        .from('stitch_flows')
         .update({
-          canvas: {
+          graph: {
             nodes: [
               { id: testNodeIds.source, type: 'worker', position: { x: 0, y: 0 } },
               { id: testNodeIds.target, type: 'worker', position: { x: 100, y: 0 } },

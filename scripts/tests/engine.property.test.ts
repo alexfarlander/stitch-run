@@ -1,7 +1,10 @@
 /**
- * Property-based tests for execution engine core
+ * Property-based tests for legacy execution engine core
  * Uses fast-check for property-based testing
  * Tests: Properties 26, 27, 28, 29, 31
+ *
+ * @deprecated These tests verify the legacy O(E) engine functions.
+ * Modern code should use ExecutionGraph-based functions from edge-walker.ts
  */
 
 import { describe, it, expect } from 'vitest';
@@ -12,7 +15,7 @@ import {
   areUpstreamDependenciesCompleted,
   mergeUpstreamOutputs,
   isTerminalNode,
-} from '../index';
+} from '../../src/lib/engine/legacy';
 import { StitchFlow, StitchEdge, StitchNode, StitchRun, NodeState } from '@/types/stitch';
 
 // ============================================================================

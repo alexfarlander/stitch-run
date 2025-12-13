@@ -1,0 +1,72 @@
+erDiagram
+    stitch_flows ||--o{ stitch_flow_versions : "has versions"
+    stitch_flows ||--o{ stitch_runs : "executes as"
+    stitch_flows ||--o{ stitch_flows : "parent-child"
+    stitch_flow_versions ||--o{ stitch_runs : "pinned to"
+    stitch_runs ||--o{ stitch_journey_events : "tracks"
+    stitch_entities ||--o{ stitch_runs : "triggers"
+    stitch_entities ||--o{ stitch_journey_events : "generates"
+    stitch_webhook_configs ||--|| stitch_flows : "triggers"
+    stitch_webhook_events ||--|| stitch_webhook_configs : "logged by"
+
+    stitch_flows {
+        uuid id PK
+        string name
+        string canvas_type
+        uuid parent_id FK
+        uuid current_version_id FK
+        jsonb graph
+    }
+
+    stitch_flow_versions {
+        uuid id PK
+        uuid flow_id FK
+        int version_number
+        jsonb visual_graph
+        jsonb execution_graph
+    }
+
+    stitch_runs {
+        uuid id PK
+        uuid flow_id FK
+        uuid flow_version_id FK
+        uuid entity_id FK
+        string status
+        jsonb node_states
+        jsonb trigger
+    }
+
+    stitch_entities {
+        uuid id PK
+        string name
+        string entity_type
+        uuid current_node_id
+        uuid current_edge_id
+        float edge_progress
+        jsonb journey
+    }
+
+    stitch_journey_events {
+        uuid id PK
+        uuid entity_id FK
+        uuid run_id FK
+        string event_type
+        uuid node_id
+        uuid edge_id
+        jsonb metadata
+    }
+
+    stitch_webhook_configs {
+        uuid id PK
+        uuid flow_id FK
+        string slug
+        jsonb entity_mapping
+        string signature_type
+    }
+
+    stitch_webhook_events {
+        uuid id PK
+        uuid webhook_config_id FK
+        jsonb payload
+        string status
+    }

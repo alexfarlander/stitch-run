@@ -1,0 +1,39 @@
+flowchart TB
+    subgraph NodeTypes["Node Types"]
+        Worker[Worker Node<br/>External Service Call]
+        UX[UX Node<br/>Human Gate]
+        Splitter[Splitter Node<br/>Parallel Fan-out]
+        Collector[Collector Node<br/>Parallel Fan-in]
+        Section[Section Node<br/>BMC Container]
+    end
+
+    subgraph WorkerFlow["Worker Execution"]
+        WCall[Call Worker Service]
+        WAsync[Async Processing]
+        WCallback[POST Callback]
+        WContinue[Continue Workflow]
+    end
+
+    subgraph UXFlow["UX Execution"]
+        UWait[Set: waiting_for_user]
+        UDisplay[Display in UI]
+        UComplete[User Completes]
+        UContinue[Continue Workflow]
+    end
+
+    subgraph SplitFlow["Splitter Execution"]
+        SFire[Fire Immediately]
+        SParallel[Multiple Outbound Edges]
+        SIndependent[Independent Paths]
+    end
+
+    subgraph CollectFlow["Collector Execution"]
+        CWait[Wait for All Inputs]
+        CMerge[Merge Outputs]
+        CFire[Fire When Ready]
+    end
+
+    Worker --> WCall --> WAsync --> WCallback --> WContinue
+    UX --> UWait --> UDisplay --> UComplete --> UContinue
+    Splitter --> SFire --> SParallel --> SIndependent
+    Collector --> CWait --> CMerge --> CFire

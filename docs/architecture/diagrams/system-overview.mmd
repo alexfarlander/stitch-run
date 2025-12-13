@@ -1,0 +1,87 @@
+flowchart TB
+    subgraph Client["Client Layer"]
+        UI[React UI]
+        Canvas[Canvas Editor<br/>BMC / Workflow / Detail]
+        Panels[Side Panels<br/>Properties / Status / Journey]
+    end
+
+    subgraph API["API Layer (Next.js Routes)"]
+        CanvasAPI["/api/canvas/*<br/>Flow CRUD"]
+        StitchAPI["/api/stitch/*<br/>Execution Control"]
+        WebhookAPI["/webhooks/{slug}<br/>External Triggers"]
+        CallbackAPI["/api/stitch/callback/*<br/>Worker Callbacks"]
+    end
+
+    subgraph Core["Core Engine (src/lib/engine)"]
+        EdgeWalker[Edge Walker<br/>Orchestration Engine]
+        Handlers[Node Handlers]
+        Logger[Structured Logger]
+    end
+
+    subgraph Handlers
+        WorkerH[Worker Handler]
+        UXH[UX Handler]
+        SplitterH[Splitter Handler]
+        CollectorH[Collector Handler]
+    end
+
+    subgraph Services["Business Services (src/lib)"]
+        CanvasLib[Canvas Library<br/>Compilation / Validation]
+        Navigation[Navigation Manager<br/>Drill-down Stack]
+        AIManager[AI Manager<br/>Claude Integration]
+    end
+
+    subgraph Workers["Worker Registry (src/lib/workers)"]
+        Claude[Claude LLM]
+        ElevenLabs[ElevenLabs TTS]
+        Shotstack[Shotstack Video]
+        MiniMax[MiniMax Video]
+        Custom[Custom Workers...]
+    end
+
+    subgraph Data["Data Layer (src/lib/db)"]
+        RunsDB[Runs Manager]
+        FlowsDB[Flows Manager]
+        EntitiesDB[Entities Manager]
+        WebhooksDB[Webhooks Manager]
+    end
+
+    subgraph Storage["Supabase"]
+        PG[(PostgreSQL)]
+        Realtime[Realtime<br/>Subscriptions]
+    end
+
+    %% Client connections
+    UI --> Canvas
+    UI --> Panels
+    Canvas --> CanvasAPI
+    Panels --> StitchAPI
+
+    %% API to Services
+    CanvasAPI --> CanvasLib
+    CanvasAPI --> FlowsDB
+    StitchAPI --> EdgeWalker
+    WebhookAPI --> EntitiesDB
+    WebhookAPI --> EdgeWalker
+    CallbackAPI --> EdgeWalker
+
+    %% Engine flow
+    EdgeWalker --> Handlers
+    EdgeWalker --> RunsDB
+    EdgeWalker --> EntitiesDB
+    WorkerH --> Workers
+
+    %% Services
+    CanvasLib --> FlowsDB
+    Navigation --> UI
+    AIManager --> Claude
+
+    %% Data persistence
+    RunsDB --> PG
+    FlowsDB --> PG
+    EntitiesDB --> PG
+    WebhooksDB --> PG
+
+    %% Real-time
+    PG --> Realtime
+    Realtime -.->|subscriptions| UI

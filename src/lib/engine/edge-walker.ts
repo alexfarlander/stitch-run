@@ -6,13 +6,6 @@
 
 import { StitchFlow, StitchRun, StitchNode, TriggerMetadata } from '@/types/stitch';
 import { ExecutionGraph, ExecutionNode } from '@/types/execution-graph';
-import {
-  getOutboundEdges,
-  getTargetNodes,
-  areUpstreamDependenciesCompleted,
-  mergeUpstreamOutputs,
-  isTerminalNode,
-} from './index';
 import { fireWorkerNode } from './handlers/worker';
 import { fireUXNode } from './handlers/ux';
 import { fireSplitterNode } from './handlers/splitter';
@@ -27,7 +20,11 @@ import {
   logEdgeWalking,
   logExecutionError,
   logNodeExecution,
-  logParallelInstanceCreation
+  logParallelInstanceCreation,
+  logParallelEdgeWalking,
+  logParallelEdgeResults,
+  logJourneyEdge,
+  logSystemEdge
 } from './logger';
 
 /**
@@ -211,10 +208,7 @@ export async function walkParallelEdges(
 
   const canvasId = run.flow_id; // Get canvas ID from run
 
-  console.log(`[Parallel Edge Walking] Node ${nodeId}:`, {
-    journeyEdgeCount: journeyEdges.length,
-    systemEdgeCount: systemEdges.length,
-  });
+  logParallelEdgeWalking(run.id, nodeId, journeyEdges.length, systemEdges.length);
 
   // Execute journey edges and system edges in parallel (Requirement 12.1)
   // Use Promise.allSettled to handle failures independently (Requirement 12.3)
@@ -224,11 +218,12 @@ export async function walkParallelEdges(
       journeyEdges.map(async (edge) => {
         try {
           await executeJourneyEdge(edge, entityId, canvasId);
-          return { success: true };
+          return { success: true, edgeId: edge.id };
         } catch (error) {
-          console.error(`Journey edge ${edge.id} failed:`, error);
+          logExecutionError(`Journey edge ${edge.id} failed`, error, { runId: run.id, edgeId: edge.id });
           return {
             success: false,
+            edgeId: edge.id,
             error: error instanceof Error ? error.message : 'Unknown error'
           };
         }
@@ -240,11 +235,12 @@ export async function walkParallelEdges(
       systemEdges.map(async (edge) => {
         try {
           await executeSystemEdgeInternal(edge, entityId, canvasId);
-          return { success: true };
+          return { success: true, edgeId: edge.id };
         } catch (error) {
-          console.error(`System edge ${edge.id} failed:`, error);
+          logExecutionError(`System edge ${edge.id} failed`, error, { runId: run.id, edgeId: edge.id });
           return {
             success: false,
+            edgeId: edge.id,
             error: error instanceof Error ? error.message : 'Unknown error'
           };
         }
@@ -262,10 +258,7 @@ export async function walkParallelEdges(
     : [];
 
   // Log execution results (Requirement 12.5)
-  console.log(`[Parallel Edge Walking] Results for node ${nodeId}:`, {
-    journeyEdges: journeyEdgeResults,
-    systemEdges: systemEdgeResults,
-  });
+  logParallelEdgeResults(run.id, nodeId, journeyEdgeResults, systemEdgeResults);
 
   return {
     journeyEdges: journeyEdgeResults,
@@ -315,7 +308,11 @@ async function executeJourneyEdge(
       timestamp: new Date().toISOString(),
     });
   } catch (broadcastError) {
-    console.warn('[Journey Edge] Failed to broadcast source node activation:', broadcastError);
+    logJourneyEdge('warn', 'Failed to broadcast source node activation', {
+      edgeId: edge.id,
+      entityId,
+      error: broadcastError instanceof Error ? broadcastError.message : String(broadcastError)
+    });
   }
 
   // Step 2: Create edge_start journey event (triggers animation)
@@ -333,10 +330,19 @@ async function executeJourneyEdge(
     });
 
   if (startEventError) {
-    console.warn('Failed to create edge_start event:', startEventError);
+    logJourneyEdge('warn', 'Failed to create edge_start event', {
+      edgeId: edge.id,
+      entityId,
+      error: startEventError.message
+    });
   }
 
-  console.log(`[Journey Edge] Entity ${entityId} started traveling on edge "${edge.id}": ${edge.source} -> ${edge.target}`);
+  logJourneyEdge('info', `Entity started traveling on edge`, {
+    edgeId: edge.id,
+    entityId,
+    source: edge.source,
+    target: edge.target
+  });
 
   // Step 3: Schedule arrival after animation duration (imported from animation-config)
   setTimeout(async () => {
@@ -353,7 +359,12 @@ async function executeJourneyEdge(
       .eq('id', entityId);
 
     if (arrivalError) {
-      console.error(`Failed to complete entity arrival: ${arrivalError.message}`);
+      logJourneyEdge('error', 'Failed to complete entity arrival', {
+        edgeId: edge.id,
+        entityId,
+        targetNode: edge.target,
+        error: arrivalError.message
+      });
       return;
     }
 
@@ -376,7 +387,12 @@ async function executeJourneyEdge(
         timestamp: new Date().toISOString(),
       });
     } catch (broadcastError) {
-      console.warn('[Journey Edge] Failed to broadcast arrival event:', broadcastError);
+      logJourneyEdge('warn', 'Failed to broadcast arrival event', {
+        edgeId: edge.id,
+        entityId,
+        targetNode: edge.target,
+        error: broadcastError instanceof Error ? broadcastError.message : String(broadcastError)
+      });
     }
 
     // Create node_arrival journey event
@@ -394,10 +410,19 @@ async function executeJourneyEdge(
       });
 
     if (arrivalEventError) {
-      console.warn('Failed to create node_arrival event:', arrivalEventError);
+      logJourneyEdge('warn', 'Failed to create node_arrival event', {
+        edgeId: edge.id,
+        entityId,
+        targetNode: edge.target,
+        error: arrivalEventError.message
+      });
     }
 
-    console.log(`[Journey Edge] Entity ${entityId} arrived at: ${edge.target}`);
+    logJourneyEdge('info', 'Entity arrived at target node', {
+      edgeId: edge.id,
+      entityId,
+      targetNode: edge.target
+    });
   }, ENTITY_TRAVEL_DURATION_MS);
 }
 
@@ -429,20 +454,32 @@ async function executeSystemEdgeInternal(
     // Execute the system action
     const systemAction = edge.data?.systemAction;
     if (!systemAction) {
-      console.warn(`System edge ${edge.id} has no systemAction defined`);
+      logSystemEdge('warn', 'System edge has no systemAction defined', {
+        edgeId: edge.id,
+        source: edge.source,
+        target: edge.target
+      });
       return;
     }
 
     // Log the system action (actual execution would happen here)
-    console.log(`[System Edge] ${edge.source} -> ${edge.target}: ${systemAction}`, {
-      entity_id: entityId,
-      timestamp: new Date().toISOString(),
+    logSystemEdge('info', `Executing system action: ${systemAction}`, {
+      edgeId: edge.id,
+      source: edge.source,
+      target: edge.target,
+      systemAction,
+      entityId
     });
 
     // In production, this would execute the actual system action
     // For now, we just log it
   } catch (error) {
-    console.error(`Failed to execute system edge ${edge.id}:`, error);
+    logSystemEdge('error', 'Failed to execute system edge', {
+      edgeId: edge.id,
+      source: edge.source,
+      target: edge.target,
+      error: error instanceof Error ? error.message : String(error)
+    });
     throw error;
   }
 }
@@ -654,16 +691,8 @@ function mergeUpstreamOutputsWithGraph(
  * Helper function to get upstream node IDs from ExecutionGraph
  */
 function getUpstreamNodeIds(nodeId: string, executionGraph: ExecutionGraph): string[] {
-  const upstreamIds: string[] = [];
-
-  // Check adjacency map to find nodes that point to this node
-  for (const [sourceId, targetIds] of Object.entries(executionGraph.adjacency)) {
-    if (targetIds.includes(nodeId)) {
-      upstreamIds.push(sourceId);
-    }
-  }
-
-  return upstreamIds;
+  // O(1) lookup using pre-computed inboundEdges map
+  return executionGraph.inboundEdges[nodeId] || [];
 }
 
 /**
@@ -708,100 +737,3 @@ function formatNodeLabel(nodeId: string): string {
   return nodeActions[nodeId] || `arrived at ${nodeId.replace('item-', '').replace(/-/g, ' ')}`;
 }
 
-/**
- * Legacy fireNode function for backward compatibility
- * This is kept for any code that still uses the old flow-based approach
- * @deprecated Use fireNodeWithGraph instead
- */
-export async function fireNode(
-  nodeId: string,
-  flow: StitchFlow,
-  run: StitchRun
-): Promise<void> {
-  // Find the node in the flow
-  const node = flow.graph.nodes.find(n => n.id === nodeId);
-  if (!node) {
-    logExecutionError('Node not found in flow', new Error(`Node not found: ${nodeId}`), {
-      runId: run.id,
-      nodeId,
-      flowId: flow.id,
-    });
-    return;
-  }
-
-  // 🔍 PARALLEL CHECK: Does this node have parallel instances in the DB?
-  const parallelKeys = Object.keys(run.node_states).filter(
-    key => key.startsWith(`${nodeId}_`) && /_\d+$/.test(key)
-  );
-
-  // If parallel instances exist, fire THEM instead of the static node
-  if (parallelKeys.length > 0) {
-    logParallelInstanceCreation(run.id, nodeId, parallelKeys);
-
-    await Promise.all(
-      parallelKeys.map(async (parallelId) => {
-        const state = run.node_states[parallelId];
-        const input = state?.output || {};
-
-        switch (node.type) {
-          case 'Worker':
-            await fireWorkerNode(run.id, parallelId, node.data, input);
-            break;
-          case 'UX':
-            await fireUXNode(run.id, parallelId, node.data, input);
-            break;
-          default:
-            logExecutionError(
-              'Parallel execution not implemented for node type',
-              new Error(`Unsupported parallel node type: ${node.type}`),
-              {
-                runId: run.id,
-                nodeId: parallelId,
-                nodeType: node.type,
-              }
-            );
-        }
-      })
-    );
-
-    return;
-  }
-
-  // No parallel instances, proceed with standard static node execution
-  const input = mergeUpstreamOutputs(nodeId, flow, run);
-
-  // Fire the node based on its type
-  switch (node.type) {
-    case 'Worker':
-      await fireWorkerNode(run.id, nodeId, node.data, input);
-      break;
-    case 'UX':
-      logNodeExecution(run.id, nodeId, 'UX', input);
-      await fireUXNode(run.id, nodeId, node.data, input);
-      break;
-    case 'Splitter': {
-      logNodeExecution(run.id, nodeId, 'Splitter', input);
-      const outboundEdges = getOutboundEdges(nodeId, flow);
-      const downstreamNodeIds = getTargetNodes(outboundEdges);
-      await fireSplitterNode(run.id, nodeId, node.data, input, downstreamNodeIds);
-      break;
-    }
-    case 'Collector': {
-      logNodeExecution(run.id, nodeId, 'Collector', input);
-      const inboundEdges = flow.graph.edges.filter(e => e.target === nodeId);
-      const upstreamNodeIds = inboundEdges.map(e => e.source);
-      await fireCollectorNode(run.id, nodeId, node.data, upstreamNodeIds);
-      break;
-    }
-    default:
-      logExecutionError(
-        'Unknown node type',
-        new Error(`Unknown node type: ${node.type}`),
-        {
-          runId: run.id,
-          nodeId,
-          nodeType: node.type,
-        }
-      );
-  }
-}
